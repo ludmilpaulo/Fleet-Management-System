@@ -35,17 +35,53 @@ class Company(models.Model):
     subscription_plan = models.CharField(
         max_length=20,
         choices=[
+            ('trial', 'Trial'),
             ('basic', 'Basic'),
             ('professional', 'Professional'),
             ('enterprise', 'Enterprise'),
         ],
-        default='basic',
+        default='trial',
         help_text="Subscription plan"
+    )
+    
+    # Subscription Details
+    subscription_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('active', 'Active'),
+            ('trial', 'Trial'),
+            ('expired', 'Expired'),
+            ('suspended', 'Suspended'),
+            ('cancelled', 'Cancelled'),
+        ],
+        default='trial',
+        help_text="Current subscription status"
+    )
+    
+    trial_started_at = models.DateTimeField(default=timezone.now, help_text="Trial start date")
+    trial_ends_at = models.DateTimeField(blank=True, null=True, help_text="Trial period end date")
+    subscription_started_at = models.DateTimeField(blank=True, null=True, help_text="Paid subscription start date")
+    subscription_ends_at = models.DateTimeField(blank=True, null=True, help_text="Subscription end date")
+    
+    # Billing Information
+    billing_email = models.EmailField(blank=True, null=True, help_text="Billing contact email")
+    billing_address = models.TextField(blank=True, null=True, help_text="Billing address")
+    payment_method = models.CharField(
+        max_length=20,
+        choices=[
+            ('card', 'Credit Card'),
+            ('bank', 'Bank Transfer'),
+            ('invoice', 'Invoice'),
+        ],
+        blank=True,
+        null=True,
+        help_text="Payment method"
     )
     
     # Status
     is_active = models.BooleanField(default=True, help_text="Whether the company is active")
-    trial_ends_at = models.DateTimeField(blank=True, null=True, help_text="Trial period end date")
+    is_trial_active = models.BooleanField(default=True, help_text="Whether trial is active")
+    is_payment_overdue = models.BooleanField(default=False, help_text="Whether payment is overdue")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -56,6 +92,47 @@ class Company(models.Model):
         verbose_name = 'Company'
         verbose_name_plural = 'Companies'
         ordering = ['name']
+    
+    def save(self, *args, **kwargs):
+        # Set trial end date if not set and this is a new company
+        if not self.pk and not self.trial_ends_at:
+            from datetime import timedelta
+            self.trial_ends_at = timezone.now() + timedelta(days=14)  # 2 weeks trial
+        
+        super().save(*args, **kwargs)
+    
+    def is_trial_expired(self):
+        """Check if trial period has expired"""
+        if not self.is_trial_active:
+            return False
+        return timezone.now() > self.trial_ends_at
+    
+    def days_remaining_in_trial(self):
+        """Get days remaining in trial"""
+        if not self.is_trial_active or not self.trial_ends_at:
+            return 0
+        remaining = self.trial_ends_at - timezone.now()
+        return max(0, remaining.days)
+    
+    def can_access_platform(self):
+        """Check if company can access the platform"""
+        if not self.is_active:
+            return False
+        
+        if self.subscription_status == 'active':
+            return True
+        
+        if self.subscription_status == 'trial' and not self.is_trial_expired():
+            return True
+        
+        return False
+    
+    def get_subscription_display(self):
+        """Get human-readable subscription status"""
+        if self.subscription_status == 'trial':
+            days_left = self.days_remaining_in_trial()
+            return f"Trial ({days_left} days left)"
+        return self.get_subscription_status_display()
     
     def __str__(self):
         return self.name

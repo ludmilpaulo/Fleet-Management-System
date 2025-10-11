@@ -234,7 +234,7 @@ export default function InspectorDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Pending Inspections</CardTitle>
-              <CardDescription>Today's scheduled vehicle inspections</CardDescription>
+              <CardDescription>Today&apos;s scheduled vehicle inspections</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

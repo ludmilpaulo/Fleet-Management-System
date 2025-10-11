@@ -44,13 +44,14 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'corsheaders',
     'channels',
-    # 'django_celery_beat',
+    'django_celery_beat',
     'account',
     'fleet_app',
     'inspections',
     'issues',
     'tickets',
     'telemetry',
+    'platform_admin',
 ]
 
 MIDDLEWARE = [

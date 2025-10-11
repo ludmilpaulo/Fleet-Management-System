@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -18,14 +18,16 @@ import {
   Bell,
   Search,
   User,
-  Building2
+  Building2,
+  Crown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser, initializeAuth } from '@/store/slices/authSlice';
-import { toggleSidebar, setSidebarOpen, addNotification } from '@/store/slices/uiSlice';
+import { setSidebarOpen, addNotification } from '@/store/slices/uiSlice';
 import { NotificationContainer } from '@/components/ui/notification';
+import TrialWarning from '@/components/trial-warning';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -37,7 +39,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
-  const { sidebarOpen, notifications, unreadNotifications } = useAppSelector((state) => state.ui);
+  const { sidebarOpen, unreadNotifications } = useAppSelector((state) => state.ui);
 
   useEffect(() => {
     // Initialize auth state from localStorage
@@ -84,6 +86,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           { name: 'Users', href: '/dashboard/admin/users', icon: Users },
           { name: 'Vehicles', href: '/dashboard/admin/vehicles', icon: Truck },
           { name: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
+          { name: 'Subscription', href: '/dashboard/subscription', icon: Crown },
           { name: 'Settings', href: '/dashboard/admin/settings', icon: Settings },
         ];
       case 'staff':
@@ -304,6 +307,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Page content */}
         <main className="p-3 sm:p-4 lg:p-6 xl:p-8">
+          {/* Trial Warning */}
+          {user && (
+            <TrialWarning
+              daysRemaining={14} // Mock data - replace with actual subscription data
+              subscriptionStatus="trial" // Mock data - replace with actual subscription status
+              onUpgrade={() => router.push('/dashboard/subscription')}
+            />
+          )}
           {children}
         </main>
       </div>

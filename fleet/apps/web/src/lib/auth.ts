@@ -113,7 +113,7 @@ export const authAPI = {
   // Login
   login: async (data: LoginData): Promise<LoginResponse> => {
     const response = await api.post('/login/', data);
-    const { user, token } = response.data;
+    const { token } = response.data;
     
     // Store token in cookie
     Cookies.set('auth_token', token, { expires: 7 }); // 7 days
@@ -124,7 +124,7 @@ export const authAPI = {
   // Register
   register: async (data: RegisterData): Promise<LoginResponse> => {
     const response = await api.post('/register/', data);
-    const { user, token } = response.data;
+    const { token } = response.data;
     
     // Store token in cookie
     Cookies.set('auth_token', token, { expires: 7 }); // 7 days
@@ -269,7 +269,7 @@ export const getCurrentUser = (): User | null => {
   if (userStr) {
     try {
       return JSON.parse(userStr);
-    } catch (error) {
+    } catch {
       localStorage.removeItem('current_user');
     }
   }

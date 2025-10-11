@@ -126,12 +126,12 @@ export default function SignUpPage() {
             router.push('/dashboard');
         }
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Error is handled by Redux slice
       dispatch(addNotification({
         type: 'error',
         title: 'Registration Failed',
-        message: err || 'Registration failed',
+        message: err instanceof Error ? err.message : 'Registration failed',
       }));
     }
   };

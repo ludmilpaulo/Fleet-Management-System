@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { removeNotification, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications } from '@/store/slices/uiSlice';

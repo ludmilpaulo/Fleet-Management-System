@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Building2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Input } from './input';
-import { Button } from './button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
+import { Card, CardContent } from './card';
 import { Badge } from './badge';
 import { companyAPI, Company } from '@/lib/auth';
 

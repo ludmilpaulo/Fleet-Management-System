@@ -28,6 +28,7 @@ urlpatterns = [
     path('api/issues/', include('issues.urls')),
     path('api/tickets/', include('tickets.urls')),
     path('api/telemetry/', include('telemetry.urls')),
+    path('api/platform-admin/', include('platform_admin.urls')),
     # path('api/schema/', include('drf_spectacular.urls')),
 ]
 

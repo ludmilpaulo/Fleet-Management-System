@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState, AppDispatch } from '@/store'
-import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle } from '@/store/slices/vehiclesSlice'
+import { fetchVehicles, deleteVehicle } from '@/store/slices/vehiclesSlice'
 import { DataTable } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,8 +27,7 @@ import {
 
 export default function VehiclesPage() {
   const dispatch = useDispatch<AppDispatch>()
-  const { vehicles, loading, error } = useSelector((state: RootState) => state.vehicles)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const { vehicles, loading } = useSelector((state: RootState) => state.vehicles)
 
   useEffect(() => {
     dispatch(fetchVehicles())

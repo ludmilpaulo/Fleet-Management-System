@@ -12,7 +12,6 @@ import {
   AlertTriangle, 
   CheckCircle, 
   Clock, 
-  TrendingUp,
   Activity,
   AlertCircle
 } from 'lucide-react'
