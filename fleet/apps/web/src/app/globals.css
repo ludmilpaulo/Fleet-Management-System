@@ -33,3 +33,133 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Gradient text utilities */
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent;
+  }
+  
+  .gradient-text-blue {
+    @apply bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent;
+  }
+  
+  .gradient-text-purple {
+    @apply bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent;
+  }
+  
+  /* Gradient background utilities */
+  .gradient-bg-blue {
+    @apply bg-gradient-to-br from-blue-50 via-white to-purple-50;
+  }
+  
+  .gradient-bg-purple {
+    @apply bg-gradient-to-br from-purple-50 via-white to-pink-50;
+  }
+  
+  .gradient-bg-green {
+    @apply bg-gradient-to-br from-green-50 via-white to-emerald-50;
+  }
+  
+  /* Card enhancements */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+  
+  .card-gradient {
+    @apply bg-gradient-to-br from-white to-gray-50 border border-gray-100;
+  }
+  
+  /* Button enhancements */
+  .btn-gradient {
+    @apply bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+  
+  .btn-gradient-success {
+    @apply bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+  
+  /* Animated gradients */
+  .animated-gradient {
+    @apply bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-[length:200%_auto] animate-gradient;
+  }
+  
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
+  }
+  
+  /* Smooth animations */
+  .fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  .slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+  
+  .scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gradient-to-b from-blue-400 to-purple-500 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply from-blue-500 to-purple-600;
+}

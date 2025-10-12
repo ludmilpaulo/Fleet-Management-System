@@ -221,19 +221,19 @@ export default function SubscriptionPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between slide-up">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-2">
               Subscription Management
             </h1>
-            <p className="text-gray-600">Manage your subscription and billing</p>
+            <p className="text-gray-600 text-lg">Manage your plan and billing seamlessly</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button variant="outline" className="hover:border-blue-600 hover:text-blue-600 transition-all duration-300">
               <Download className="w-4 h-4 mr-2" />
               Download Invoice
             </Button>
-            <Button>
+            <Button className="btn-gradient">
               <CreditCard className="w-4 h-4 mr-2" />
               Update Payment
             </Button>
@@ -366,12 +366,12 @@ export default function SubscriptionPage() {
               {plans.map((plan) => (
                 <Card 
                   key={plan.id} 
-                  className={`relative ${plan.is_popular ? 'border-blue-500 shadow-lg' : 'border-gray-200'}`}
+                  className={`relative card-hover ${plan.is_popular ? 'border-2 border-blue-500 shadow-2xl scale-105' : 'border border-gray-200'}`}
                 >
                   {plan.is_popular && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <Badge className="bg-blue-600 text-white">
-                        <Star className="w-3 h-3 mr-1" />
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                      <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1.5 shadow-lg">
+                        <Star className="w-3 h-3 mr-1 fill-white" />
                         Most Popular
                       </Badge>
                     </div>

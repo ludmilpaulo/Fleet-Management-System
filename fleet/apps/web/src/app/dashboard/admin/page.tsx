@@ -148,19 +148,19 @@ export default function AdminDashboard() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between slide-up">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-2">
               Admin Dashboard
             </h1>
-            <p className="text-gray-600">Welcome back, {user?.full_name || 'Admin'}</p>
+            <p className="text-gray-600 text-lg">Welcome back, <span className="font-semibold text-gray-900">{user?.full_name || 'Admin'}</span></p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button variant="outline" className="hover:border-blue-600 hover:text-blue-600 transition-all duration-300">
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
-            <Button>
+            <Button className="btn-gradient">
               <Plus className="w-4 h-4 mr-2" />
               Add User
             </Button>
@@ -197,11 +197,13 @@ export default function AdminDashboard() {
 
         {/* Key Metrics */}
         {stats && (
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card className="hover:shadow-lg transition-shadow">
+          <div className="grid gap-4 md:grid-cols-4 fade-in">
+            <Card className="card-hover border-t-4 border-t-blue-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-gray-700">Total Users</CardTitle>
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.total_users}</div>
@@ -216,10 +218,12 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow">
+            <Card className="card-hover border-t-4 border-t-green-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Fleet Size</CardTitle>
-                <Truck className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-gray-700">Fleet Size</CardTitle>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Truck className="h-5 w-5 text-green-600" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.total_vehicles}</div>
@@ -234,10 +238,12 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow">
+            <Card className="card-hover border-t-4 border-t-purple-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Inspections</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-gray-700">Inspections</CardTitle>
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-purple-600" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.completed_inspections}</div>
@@ -252,10 +258,12 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow">
+            <Card className="card-hover border-t-4 border-t-yellow-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-gray-700">Monthly Revenue</CardTitle>
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-yellow-600" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString()}</div>

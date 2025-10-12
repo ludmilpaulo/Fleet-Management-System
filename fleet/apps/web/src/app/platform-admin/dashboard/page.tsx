@@ -216,19 +216,19 @@ export default function PlatformAdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between slide-up">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-2">
             Platform Administration
           </h1>
-          <p className="text-gray-600">Complete system management and oversight</p>
+          <p className="text-gray-600 text-lg">Complete system management and oversight</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" className="hover:border-blue-600 hover:text-blue-600 transition-all duration-300">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button>
+          <Button className="btn-gradient">
             <Plus className="w-4 h-4 mr-2" />
             Add Entity
           </Button>
@@ -266,11 +266,13 @@ export default function PlatformAdminDashboard() {
 
       {/* Key Metrics */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="hover:shadow-lg transition-shadow">
+        <div className="grid gap-4 md:grid-cols-4 fade-in">
+          <Card className="card-hover border-t-4 border-t-blue-500">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Companies</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-gray-700">Total Companies</CardTitle>
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Building2 className="h-5 w-5 text-blue-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.total_companies}</div>

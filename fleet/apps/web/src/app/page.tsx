@@ -105,10 +105,16 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-8 sm:py-12">
-        <div className="text-center mb-12 sm:mb-16">
-          <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold text-gray-900 mb-4 sm:mb-6">
+        <div className="text-center mb-12 sm:mb-16 slide-up">
+          <div className="mb-4">
+            <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800">
+              <span className="w-2 h-2 bg-blue-600 rounded-full mr-2 animate-pulse"></span>
+              14-Day Free Trial • No Credit Card Required
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-gray-900 mb-4 sm:mb-6">
             Modern Fleet
-            <span className="text-blue-600"> Management</span>
+            <span className="gradient-text block mt-2">Management System</span>
           </h1>
           <p className="text-base sm:text-xl text-gray-600 mb-6 sm:mb-8 max-w-3xl mx-auto px-4">
             Streamline your fleet operations with our comprehensive management system. 
@@ -119,19 +125,22 @@ export default function Home() {
             <Button 
               size="lg" 
               onClick={() => router.push('/auth/signup')}
-              className="bg-blue-600 hover:bg-blue-700 text-sm sm:text-lg px-6 sm:px-8 py-2 sm:py-3"
+              className="btn-gradient text-sm sm:text-lg px-8 sm:px-10 py-3 sm:py-4 font-semibold scale-in"
             >
-              Start Free Trial
+              Start Free Trial →
             </Button>
             <Button 
               size="lg" 
               variant="outline"
               onClick={() => router.push('/auth/signin')}
-              className="text-sm sm:text-lg px-6 sm:px-8 py-2 sm:py-3"
+              className="text-sm sm:text-lg px-8 sm:px-10 py-3 sm:py-4 border-2 hover:border-blue-600 hover:text-blue-600 transition-all duration-300"
             >
               Sign In
             </Button>
           </div>
+          <p className="mt-4 text-sm text-gray-500 fade-in">
+            ✨ No credit card required • Cancel anytime
+          </p>
         </div>
 
         {/* Features Grid */}
