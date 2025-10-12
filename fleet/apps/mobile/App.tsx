@@ -1,81 +1,155 @@
-import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { Button, Image, Platform, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { api, tokenStore } from './src/api/client';
+import React, { useEffect } from 'react'
+import { StatusBar } from 'expo-status-bar'
+import { NavigationContainer } from '@react-navigation/native'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { createStackNavigator } from '@react-navigation/stack'
+import { Ionicons } from '@expo/vector-icons'
+import { Provider } from 'react-redux'
+import { store } from './src/store/store'
+import * as Notifications from 'expo-notifications'
+
+// Import screens
+import DashboardScreen from './src/screens/dashboard/DashboardScreen'
+import InspectionsScreen from './src/screens/inspections/InspectionsScreen'
+import CameraScreen from './src/screens/camera/CameraScreen'
+import KeyTrackerScreen from './src/screens/ble/KeyTrackerScreen'
+import LocationScreen from './src/screens/location/LocationScreen'
+import NotificationsScreen from './src/screens/notifications/NotificationsScreen'
+import SettingsScreen from './src/screens/settings/SettingsScreen'
+
+// Import inspection screens
+import InspectionDetailScreen from './src/screens/inspections/InspectionDetailScreen'
+import InspectionFormScreen from './src/screens/inspections/InspectionFormScreen'
+
+// Configure notifications
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+})
+
+const Tab = createBottomTabNavigator()
+const Stack = createStackNavigator()
+
+// Stack navigator for inspections
+function InspectionsStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="InspectionsList" component={InspectionsScreen} />
+      <Stack.Screen name="InspectionDetail" component={InspectionDetailScreen} />
+      <Stack.Screen name="InspectionForm" component={InspectionFormScreen} />
+    </Stack.Navigator>
+  )
+}
+
+// Main tab navigator
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap
+
+          if (route.name === 'Dashboard') {
+            iconName = focused ? 'home' : 'home-outline'
+          } else if (route.name === 'Inspections') {
+            iconName = focused ? 'checkmark-circle' : 'checkmark-circle-outline'
+          } else if (route.name === 'Camera') {
+            iconName = focused ? 'camera' : 'camera-outline'
+          } else if (route.name === 'Keys') {
+            iconName = focused ? 'key' : 'key-outline'
+          } else if (route.name === 'Location') {
+            iconName = focused ? 'location' : 'location-outline'
+          } else if (route.name === 'Notifications') {
+            iconName = focused ? 'notifications' : 'notifications-outline'
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'settings' : 'settings-outline'
+          } else {
+            iconName = 'help-outline'
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />
+        },
+        tabBarActiveTintColor: '#4ade80',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.6)',
+        tabBarStyle: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          borderTopWidth: 0,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen 
+        name="Dashboard" 
+        component={DashboardScreen}
+        options={{ tabBarLabel: 'Home' }}
+      />
+      <Tab.Screen 
+        name="Inspections" 
+        component={InspectionsStack}
+        options={{ tabBarLabel: 'Inspections' }}
+      />
+      <Tab.Screen 
+        name="Camera" 
+        component={CameraScreen}
+        options={{ tabBarLabel: 'Camera' }}
+      />
+      <Tab.Screen 
+        name="Keys" 
+        component={KeyTrackerScreen}
+        options={{ tabBarLabel: 'Keys' }}
+      />
+      <Tab.Screen 
+        name="Location" 
+        component={LocationScreen}
+        options={{ tabBarLabel: 'Location' }}
+      />
+      <Tab.Screen 
+        name="Notifications" 
+        component={NotificationsScreen}
+        options={{ tabBarLabel: 'Alerts' }}
+      />
+      <Tab.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{ tabBarLabel: 'Settings' }}
+      />
+    </Tab.Navigator>
+  )
+}
 
 export default function App() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [picked, setPicked] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  const [inspectionId, setInspectionId] = useState<number | null>(null);
+  useEffect(() => {
+    // Request notification permissions on app start
+    const requestPermissions = async () => {
+      const { status } = await Notifications.requestPermissionsAsync()
+      if (status !== 'granted') {
+        console.log('Notification permission not granted')
+      }
+    }
 
-  const login = async () => {
-    const resp = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/accounts/auth/login`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password })
-    });
-    const j = await resp.json();
-    tokenStore.setAccess(j.access); tokenStore.setRefresh(j.refresh);
-  };
-
-  const loadVehicles = async () => {
-    const r = await api('/fleet/vehicles');
-    const j = await r.json();
-    setVehicles(j.results ?? j);
-  };
-
-  const pickImage = async () => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (perm.status !== 'granted') return;
-    const res = await ImagePicker.launchCameraAsync({ quality: 0.6 });
-    if (!res.canceled) setPicked(res.assets[0]);
-  };
-
-  const upload = async () => {
-    if (!picked || !inspectionId) return;
-    const contentType = picked.mimeType || 'image/jpeg';
-    const sign = await api('/uploads/sign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentType }) }).then(r=>r.json());
-    const body = new FormData();
-    Object.entries(sign.fields).forEach(([k, v]) => body.append(k, String(v)));
-    body.append('file', { uri: picked.uri, name: 'photo.jpg', type: contentType } as any);
-    await fetch(sign.url, { method: 'POST', body });
-    await api('/uploads/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inspection_id: inspectionId, file_key: sign.key, part: 'FRONT', angle: 'WIDE', width: picked.width, height: picked.height, taken_at: new Date().toISOString() }) });
-  };
-
-  const startShift = async (vehicleId: number) => {
-    const r = await api('/inspections/shifts/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vehicle_id: vehicleId }) });
-    const j = await r.json();
-    setInspectionId(j.id || j.shift_id || 1);
-  };
+    requestPermissions()
+  }, [])
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <StatusBar style="auto" />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <Text style={{ fontSize: 20, fontWeight: '600' }}>Login</Text>
-        <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={{ borderWidth: 1, padding: 8 }} />
-        <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry style={{ borderWidth: 1, padding: 8 }} />
-        <Button title="Sign in" onPress={login} />
-
-        <View style={{ height: 1, backgroundColor: '#ddd', marginVertical: 16 }} />
-        <Button title="Load vehicles" onPress={loadVehicles} />
-        {vehicles.map(v => (
-          <View key={v.id || v.reg_number} style={{ paddingVertical: 6 }}>
-            <Text>{v.reg_number} — {v.make} {v.model}</Text>
-            <Button title="Start shift" onPress={() => startShift(v.id)} />
-          </View>
-        ))}
-
-        <View style={{ height: 1, backgroundColor: '#ddd', marginVertical: 16 }} />
-        <Button title="Capture photo" onPress={pickImage} />
-        {picked && (
-          <>
-            <Image source={{ uri: picked.uri }} style={{ width: 200, height: 120, marginTop: 8 }} />
-            <Button title="Upload to S3 and confirm" onPress={upload} />
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
-  );
+    <Provider store={store}>
+      <NavigationContainer>
+        <StatusBar style="light" />
+        <MainTabs />
+      </NavigationContainer>
+    </Provider>
+  )
 }
