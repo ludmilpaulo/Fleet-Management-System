@@ -291,6 +291,52 @@ When running on a **device**, ensure the API URL is reachable from your phone (u
 
 ---
 
+## Getting Started (Monorepo)
+
+1) Infra
+
+```bash
+docker compose up -d
+```
+
+2) Backend (Django)
+
+```bash
+cd fleet/apps/backend
+python -m venv .venv && .venv/Scripts/activate  # Windows PowerShell use .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env  # if needed; file exists with defaults
+make migrate
+make run
+```
+
+Open `http://localhost:8000/api/docs/`.
+
+3) Web (Next.js)
+
+```bash
+cd fleet/apps/web
+pnpm install
+pnpm dev
+```
+
+4) Mobile (Expo)
+
+```bash
+cd fleet/apps/mobile
+pnpm install
+pnpm start
+```
+
+Troubleshooting
+
+- CORS: ensure `CORS_ALLOWED_ORIGINS` includes `http://localhost:3000` in `fleet/apps/backend/.env`.
+- Mobile on device: set `EXPO_PUBLIC_API_URL` to your LAN IP, e.g. `http://192.168.0.12:8000/api`.
+- MinIO Console: `http://localhost:9001` (user/pass `minioadmin`). Bucket `fleet-photos` is auto-created.
+
+
+---
+
 ## 10) OpenAPI → TypeScript Types (optional)
 
 You can generate API types for web/mobile into `packages/types`.
