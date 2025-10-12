@@ -202,6 +202,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://192.168.1.110:3000",
+    "https://fleet-management-system-sooty.vercel.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
