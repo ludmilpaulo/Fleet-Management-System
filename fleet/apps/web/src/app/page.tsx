@@ -73,13 +73,20 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
+      {/* Animated background blobs */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-gradient-to-br from-blue-300 to-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+      
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="relative bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
                 <Truck className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
               </div>
               <span className="text-lg sm:text-xl font-bold text-gray-900 truncate">Fleet Management</span>
@@ -88,13 +95,13 @@ export default function Home() {
               <Button 
                 variant="outline" 
                 onClick={() => router.push('/auth/signin')}
-                className="text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
+                className="text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 border-2 hover:border-blue-600 hover:text-blue-600 transition-all duration-300"
               >
                 Sign In
               </Button>
               <Button 
                 onClick={() => router.push('/auth/signup')}
-                className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
+                className="btn-gradient text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 Get Started
               </Button>
@@ -104,28 +111,28 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-8 sm:py-12">
+      <main className="relative max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-8 sm:py-12">
         <div className="text-center mb-12 sm:mb-16 slide-up">
-          <div className="mb-4">
-            <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800">
-              <span className="w-2 h-2 bg-blue-600 rounded-full mr-2 animate-pulse"></span>
+          <div className="mb-6">
+            <span className="inline-flex items-center px-6 py-3 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 shadow-lg border border-blue-200">
+              <span className="w-2 h-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mr-3 animate-pulse"></span>
               14-Day Free Trial • No Credit Card Required
             </span>
           </div>
-          <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-gray-900 mb-4 sm:mb-6">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-bold text-gray-900 mb-6 sm:mb-8 leading-tight">
             Modern Fleet
-            <span className="gradient-text block mt-2">Management System</span>
+            <span className="gradient-text block mt-2 animate-gradient">Management System</span>
           </h1>
-          <p className="text-base sm:text-xl text-gray-600 mb-6 sm:mb-8 max-w-3xl mx-auto px-4">
+          <p className="text-lg sm:text-xl text-gray-600 mb-8 sm:mb-10 max-w-4xl mx-auto px-4 leading-relaxed">
             Streamline your fleet operations with our comprehensive management system. 
             Track vehicles, manage drivers, schedule maintenance, and ensure compliance 
             all in one platform.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center px-4 mb-6">
             <Button 
               size="lg" 
               onClick={() => router.push('/auth/signup')}
-              className="btn-gradient text-sm sm:text-lg px-8 sm:px-10 py-3 sm:py-4 font-semibold scale-in"
+              className="btn-gradient text-base sm:text-xl px-10 sm:px-12 py-4 sm:py-5 font-semibold scale-in shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
               Start Free Trial →
             </Button>
@@ -133,30 +140,31 @@ export default function Home() {
               size="lg" 
               variant="outline"
               onClick={() => router.push('/auth/signin')}
-              className="text-sm sm:text-lg px-8 sm:px-10 py-3 sm:py-4 border-2 hover:border-blue-600 hover:text-blue-600 transition-all duration-300"
+              className="text-base sm:text-xl px-10 sm:px-12 py-4 sm:py-5 border-2 hover:border-blue-600 hover:text-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
               Sign In
             </Button>
           </div>
-          <p className="mt-4 text-sm text-gray-500 fade-in">
-            ✨ No credit card required • Cancel anytime
+          <p className="text-sm sm:text-base text-gray-500 fade-in flex items-center justify-center">
+            <span className="text-yellow-500 mr-2">✨</span>
+            No credit card required • Cancel anytime
           </p>
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-16 sm:mb-20">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                <CardHeader className="px-3 sm:px-6 pt-3 sm:pt-6">
-                  <div className={`w-12 h-12 sm:w-16 sm:h-16 mx-auto rounded-full ${feature.bgColor} flex items-center justify-center mb-3 sm:mb-4`}>
-                    <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${feature.color}`} />
+              <Card key={index} className="text-center card-hover glass border-0 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 fade-in" style={{animationDelay: `${index * 100}ms`}}>
+                <CardHeader className="px-6 pt-8 pb-4">
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full ${feature.bgColor} flex items-center justify-center mb-6 shadow-lg border-2 border-white`}>
+                    <Icon className={`w-8 h-8 sm:w-10 sm:h-10 ${feature.color}`} />
                   </div>
-                  <CardTitle className="text-sm sm:text-lg">{feature.title}</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl font-bold gradient-text-blue">{feature.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                  <CardDescription className="text-xs sm:text-sm">
+                <CardContent className="px-6 pb-8">
+                  <CardDescription className="text-sm sm:text-base leading-relaxed">
                     {feature.description}
                   </CardDescription>
                 </CardContent>
@@ -166,48 +174,49 @@ export default function Home() {
         </div>
 
         {/* Demo Section */}
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+        <div className="glass rounded-2xl shadow-2xl p-6 sm:p-8 lg:p-12 text-center fade-in">
+          <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-6 sm:mb-8">
             Try Our Demo
           </h2>
-          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-4">
+          <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-10 px-4 max-w-2xl mx-auto">
             Experience the power of our fleet management system with pre-configured demo accounts
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
-            <div className="p-3 sm:p-4 border border-gray-200 rounded-lg">
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1 sm:mb-2">Admin</h3>
-              <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Full system access</p>
-              <p className="text-xs text-gray-500 break-all">admin / admin123</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
+            <div className="p-4 sm:p-6 border-2 border-gray-200 rounded-xl card-hover bg-white/50 backdrop-blur-sm">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">Admin</h3>
+              <p className="text-sm text-gray-600 mb-3">Full system access</p>
+              <p className="text-xs text-gray-500 break-all font-mono bg-gray-100 p-2 rounded">admin / admin123</p>
             </div>
-            <div className="p-3 sm:p-4 border border-gray-200 rounded-lg">
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1 sm:mb-2">Staff</h3>
-              <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Operations management</p>
-              <p className="text-xs text-gray-500 break-all">staff1 / staff123</p>
+            <div className="p-4 sm:p-6 border-2 border-gray-200 rounded-xl card-hover bg-white/50 backdrop-blur-sm">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">Staff</h3>
+              <p className="text-sm text-gray-600 mb-3">Operations management</p>
+              <p className="text-xs text-gray-500 break-all font-mono bg-gray-100 p-2 rounded">staff1 / staff123</p>
             </div>
-            <div className="p-3 sm:p-4 border border-gray-200 rounded-lg">
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1 sm:mb-2">Driver</h3>
-              <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Route management</p>
-              <p className="text-xs text-gray-500 break-all">driver1 / driver123</p>
+            <div className="p-4 sm:p-6 border-2 border-gray-200 rounded-xl card-hover bg-white/50 backdrop-blur-sm">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">Driver</h3>
+              <p className="text-sm text-gray-600 mb-3">Route management</p>
+              <p className="text-xs text-gray-500 break-all font-mono bg-gray-100 p-2 rounded">driver1 / driver123</p>
             </div>
-            <div className="p-3 sm:p-4 border border-gray-200 rounded-lg">
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1 sm:mb-2">Inspector</h3>
-              <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Vehicle inspections</p>
-              <p className="text-xs text-gray-500 break-all">inspector1 / inspector123</p>
+            <div className="p-4 sm:p-6 border-2 border-gray-200 rounded-xl card-hover bg-white/50 backdrop-blur-sm">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">Inspector</h3>
+              <p className="text-sm text-gray-600 mb-3">Vehicle inspections</p>
+              <p className="text-xs text-gray-500 break-all font-mono bg-gray-100 p-2 rounded">inspector1 / inspector123</p>
             </div>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
-              <Truck className="w-4 h-4 text-white" />
+      <footer className="relative bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 text-white py-12 mt-20">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="flex items-center justify-center space-x-3 mb-6">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow-lg">
+              <Truck className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-bold">Fleet Management System</span>
+            <span className="text-xl font-bold">Fleet Management System</span>
           </div>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-300 text-sm">
             © 2025 Fleet Management System. All rights reserved.
           </p>
         </div>
