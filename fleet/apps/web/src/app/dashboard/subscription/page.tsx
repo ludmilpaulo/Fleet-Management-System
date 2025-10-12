@@ -25,6 +25,8 @@ import {
 } from 'lucide-react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { format } from 'date-fns'
+import { analytics } from '@/lib/mixpanel'
+import { useAppSelector } from '@/store/hooks'
 
 interface SubscriptionPlan {
   id: string
@@ -56,9 +58,18 @@ export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState<CompanySubscription | null>(null)
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [loading, setLoading] = useState(true)
+  const { user } = useAppSelector((state) => state.auth)
 
   useEffect(() => {
     fetchSubscriptionData()
+    
+    // Track subscription page view
+    if (user) {
+      analytics.trackSubscriptionView(
+        user.company?.subscription_plan || 'trial',
+        user.company?.is_trial_active ? 14 : 0
+      );
+    }
   }, [])
 
   const fetchSubscriptionData = async () => {
@@ -409,6 +420,14 @@ export default function SubscriptionPage() {
                         <Button 
                           className={`w-full ${plan.is_popular ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                           variant={plan.is_popular ? 'default' : 'outline'}
+                          onClick={() => {
+                            analytics.trackButtonClick(`upgrade_to_${plan.name}`, 'subscription_page');
+                            analytics.trackPlanUpgrade(
+                              subscription?.plan || 'trial',
+                              plan.name,
+                              'monthly'
+                            );
+                          }}
                         >
                           {subscription?.plan === 'trial' ? 'Upgrade Now' : 'Switch Plan'}
                           <ArrowRight className="w-4 h-4 ml-2" />

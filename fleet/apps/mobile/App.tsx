@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { Provider } from 'react-redux'
 import { store } from './src/store/store'
 import * as Notifications from 'expo-notifications'
+import { analytics } from './src/services/mixpanel'
 
 // Import screens
 import DashboardScreen from './src/screens/dashboard/DashboardScreen'
@@ -133,15 +134,27 @@ function MainTabs() {
 
 export default function App() {
   useEffect(() => {
-    // Request notification permissions on app start
-    const requestPermissions = async () => {
+    // Initialize Mixpanel
+    const initializeApp = async () => {
+      await analytics.initialize();
+      
+      // Request notification permissions
       const { status } = await Notifications.requestPermissionsAsync()
       if (status !== 'granted') {
         console.log('Notification permission not granted')
+        analytics.track('Notification Permission Denied', { platform: 'mobile' });
+      } else {
+        analytics.track('Notification Permission Granted', { platform: 'mobile' });
       }
+      
+      // Track app launch
+      analytics.track('App Launched', {
+        platform: 'mobile',
+        launch_time: new Date().toISOString(),
+      });
     }
 
-    requestPermissions()
+    initializeApp()
   }, [])
 
   return (

@@ -24,6 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { analytics } from '@/lib/mixpanel'
 
 export default function VehiclesPage() {
   const dispatch = useDispatch<AppDispatch>()
@@ -31,6 +32,11 @@ export default function VehiclesPage() {
 
   useEffect(() => {
     dispatch(fetchVehicles())
+    
+    // Track vehicles page view
+    analytics.trackPageView('/dashboard/vehicles', {
+      context: 'vehicles_page',
+    });
   }, [dispatch])
 
   const getStatusBadge = (status: string) => {
@@ -146,7 +152,10 @@ export default function VehiclesPage() {
                 Edit Vehicle
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => dispatch(deleteVehicle(vehicle.id))}
+                onClick={() => {
+                  analytics.trackVehicleDelete(vehicle.id.toString());
+                  dispatch(deleteVehicle(vehicle.id));
+                }}
                 className="text-red-600"
               >
                 <Trash2 className="mr-2 h-4 w-4" />

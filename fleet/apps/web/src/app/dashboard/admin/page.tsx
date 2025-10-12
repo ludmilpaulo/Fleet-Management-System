@@ -27,6 +27,7 @@ import {
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchUserProfile } from '@/store/slices/authSlice'
+import { analytics } from '@/lib/mixpanel'
 
 interface DashboardStats {
   company_name: string
@@ -54,6 +55,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (user) {
       fetchStats()
+      // Track admin dashboard view
+      analytics.trackDashboardView('admin', user.id.toString(), user.company?.name || 'Unknown')
     } else {
       dispatch(fetchUserProfile())
     }

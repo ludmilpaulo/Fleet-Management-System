@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authAPI, User, LoginData, RegisterData } from '@/lib/auth';
+import { analytics } from '@/lib/mixpanel';
 
 interface AuthState {
   user: User | null;
@@ -150,6 +151,13 @@ const authSlice = createSlice({
         // Store in localStorage
         localStorage.setItem('auth_token', action.payload.token);
         localStorage.setItem('current_user', JSON.stringify(action.payload.user));
+        
+        // Track login event
+        analytics.trackLogin(
+          action.payload.user.id.toString(),
+          action.payload.user.role,
+          action.payload.user.company?.name || 'Unknown'
+        );
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -172,6 +180,13 @@ const authSlice = createSlice({
         // Store in localStorage
         localStorage.setItem('auth_token', action.payload.token);
         localStorage.setItem('current_user', JSON.stringify(action.payload.user));
+        
+        // Track signup event
+        analytics.trackSignup(
+          action.payload.user.id.toString(),
+          action.payload.user.role,
+          action.payload.user.company?.name || 'Unknown'
+        );
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -184,6 +199,8 @@ const authSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(logoutUser.fulfilled, (state) => {
+        const userId = state.user?.id.toString() || 'unknown';
+        
         state.isLoading = false;
         state.user = null;
         state.token = null;
@@ -193,6 +210,10 @@ const authSlice = createSlice({
         // Clear localStorage
         localStorage.removeItem('auth_token');
         localStorage.removeItem('current_user');
+        
+        // Track logout event
+        analytics.trackLogout(userId);
+        analytics.reset();
       })
       .addCase(logoutUser.rejected, (state) => {
         state.isLoading = false;
