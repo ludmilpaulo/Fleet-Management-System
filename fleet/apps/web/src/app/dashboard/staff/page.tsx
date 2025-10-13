@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Users, 
   Truck, 
@@ -10,7 +11,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  MapPin
+  MapPin,
+  ArrowRight
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +21,7 @@ import DashboardLayout from '@/components/layout/dashboard-layout';
 import { getCurrentUser, User } from '@/lib/auth';
 
 export default function StaffDashboard() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -167,11 +170,11 @@ export default function StaffDashboard() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg p-6 text-white">
-          <h1 className="text-2xl font-bold mb-2">
-            Welcome back, {user?.first_name || user?.username}!
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl p-8 text-white shadow-xl">
+          <h1 className="text-3xl font-bold mb-2">
+            Welcome back, {user?.first_name || user?.username}! 👋
           </h1>
-          <p className="text-blue-100">
+          <p className="text-white/90 text-lg">
             Manage your fleet operations and keep everything running smoothly.
           </p>
         </div>
@@ -181,20 +184,22 @@ export default function StaffDashboard() {
           {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card key={index} className="border-l-4 border-blue-500 hover:shadow-xl transition-all hover:-translate-y-1">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-600">
                     {stat.title}
                   </CardTitle>
-                  <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                    <Icon className={`w-4 h-4 ${stat.color}`} />
+                  <div className={`p-3 rounded-full ${stat.bgColor} shadow-lg`}>
+                    <Icon className={`w-5 h-5 ${stat.color}`} />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                  <div className="flex items-center text-xs text-gray-500 mt-1">
-                    <TrendingUp className="w-3 h-3 mr-1 text-green-500" />
-                    <span className="text-green-500">{stat.change}</span>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    {stat.value}
+                  </div>
+                  <div className="flex items-center text-xs text-gray-600 mt-2">
+                    <TrendingUp className="w-4 h-4 mr-1 text-green-500" />
+                    <span className="text-green-600 font-semibold">{stat.change}</span>
                     <span className="ml-1">from last week</span>
                   </div>
                 </CardContent>
@@ -273,28 +278,47 @@ export default function StaffDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <Card>
+        <Card className="border-t-4 border-blue-500">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common staff operations</CardDescription>
+            <CardTitle className="text-xl">Quick Actions</CardTitle>
+            <CardDescription>Common staff operations and management tools</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Button className="h-20 flex flex-col items-center justify-center space-y-2">
-                <Users className="w-6 h-6" />
-                <span>Manage Users</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Button 
+                onClick={() => router.push('/dashboard/staff/users')}
+                className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all"
+              >
+                <Users className="w-8 h-8" />
+                <span className="font-semibold">Manage Users</span>
+                <ArrowRight className="w-4 h-4" />
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2">
-                <Truck className="w-6 h-6" />
-                <span>Vehicle Fleet</span>
+              <Button 
+                onClick={() => router.push('/dashboard/staff/vehicles')}
+                variant="outline" 
+                className="h-24 flex flex-col items-center justify-center space-y-2 border-2 hover:border-blue-600 hover:bg-blue-50 transition-all group"
+              >
+                <Truck className="w-8 h-8 text-blue-600 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold">Vehicle Fleet</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2">
-                <Wrench className="w-6 h-6" />
-                <span>Maintenance</span>
+              <Button 
+                onClick={() => router.push('/dashboard/staff/maintenance')}
+                variant="outline" 
+                className="h-24 flex flex-col items-center justify-center space-y-2 border-2 hover:border-purple-600 hover:bg-purple-50 transition-all group"
+              >
+                <Wrench className="w-8 h-8 text-purple-600 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold">Maintenance</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2">
-                <FileText className="w-6 h-6" />
-                <span>Reports</span>
+              <Button 
+                onClick={() => router.push('/dashboard/reports')}
+                variant="outline" 
+                className="h-24 flex flex-col items-center justify-center space-y-2 border-2 hover:border-green-600 hover:bg-green-50 transition-all group"
+              >
+                <FileText className="w-8 h-8 text-green-600 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold">Reports</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </CardContent>
