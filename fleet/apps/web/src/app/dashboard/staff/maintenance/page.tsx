@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Wrench, Search, Filter, Plus, Truck, Calendar, DollarSign, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Wrench, Search, Filter, Plus, Calendar, DollarSign, CheckCircle, Clock } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -39,6 +39,7 @@ export default function StaffMaintenancePage() {
 
   useEffect(() => {
     filterMaintenance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maintenance, searchTerm, statusFilter]);
 
   const fetchMaintenance = async () => {

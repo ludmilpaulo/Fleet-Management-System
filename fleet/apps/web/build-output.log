@@ -1,0 +1,47 @@
+yarn run v1.22.21
+$ next build
+   ▲ Next.js 15.5.4
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 54s
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./src/app/dashboard/staff/maintenance/page.tsx
+4:40  Warning: 'Truck' is defined but never used.  @typescript-eslint/no-unused-vars
+4:69  Warning: 'AlertTriangle' is defined but never used.  @typescript-eslint/no-unused-vars
+5:29  Warning: 'CardDescription' is defined but never used.  @typescript-eslint/no-unused-vars
+42:6  Warning: React Hook useEffect has a missing dependency: 'filterMaintenance'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/staff/users/page.tsx
+4:74  Warning: 'MoreVertical' is defined but never used.  @typescript-eslint/no-unused-vars
+5:29  Warning: 'CardDescription' is defined but never used.  @typescript-eslint/no-unused-vars
+37:6  Warning: React Hook useEffect has a missing dependency: 'filterUsers'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+201:16  Error: 'Truck' is not defined.  react/jsx-no-undef
+295:32  Error: 'Clock' is not defined.  react/jsx-no-undef
+
+./src/app/dashboard/staff/vehicles/page.tsx
+4:78  Warning: 'MoreVertical' is defined but never used.  @typescript-eslint/no-unused-vars
+40:6  Warning: React Hook useEffect has a missing dependency: 'filterVehicles'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+141:9  Warning: 'getFuelLevelColor' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/subscription/page.tsx
+73:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/common/charts/barchart.tsx
+18:7  Warning: 'chartConfig' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/store/slices/uiSlice.ts
+157:15  Warning: 'state' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/types/pages/dashboard.ts
+1:6  Warning: 'InspectionType' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/types/vehicles/index.ts
+1:6  Warning: 'VehicleType' is defined but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
