@@ -51,9 +51,27 @@
   * {
     border-color: hsl(var(--border));
   }
+  
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  
+  /* Improve touch targets for mobile */
+  button, 
+  a, 
+  input, 
+  select, 
+  textarea {
+    @apply touch-manipulation;
   }
 }
 
@@ -194,4 +212,121 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply from-blue-500 to-purple-600;
+}
+
+/* Mobile-first responsive utilities */
+@layer utilities {
+  /* Safe area insets for mobile */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Mobile touch targets (minimum 44x44px) */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Smooth scroll for mobile */
+  .scroll-smooth-mobile {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Hide scrollbar on mobile */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Full viewport height accounting for mobile browsers */
+  .min-h-screen-mobile {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  /* Prevent zoom on input focus (mobile) */
+  .no-zoom {
+    font-size: 16px;
+  }
+}
+
+/* Responsive text sizing */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1025px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Mobile-specific fixes */
+@media (max-width: 768px) {
+  /* Ensure full-width on mobile */
+  .container {
+    @apply px-4;
+  }
+  
+  /* Stack columns on mobile */
+  .grid-cols-auto-mobile {
+    @apply grid-cols-1;
+  }
+  
+  /* Reduce padding on mobile */
+  .mobile-compact {
+    @apply p-3;
+  }
+  
+  /* Hide elements on mobile */
+  .hidden-mobile {
+    @apply hidden;
+  }
+  
+  /* Show only on mobile */
+  .show-mobile {
+    @apply block;
+  }
+}
+
+/* Tablet and up */
+@media (min-width: 769px) {
+  .show-mobile {
+    @apply hidden;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    @apply bg-white text-black;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
 }
