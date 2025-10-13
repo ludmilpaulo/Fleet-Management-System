@@ -1,149 +1,182 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+@theme {
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.3174 0.0149 269.22);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.3174 0.0149 269.22);
+  --color-primary: oklch(0.6918 0.1956 27);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-secondary: oklch(0.6318 0.1957 20.36);
+  --color-secondary-foreground: oklch(0.205 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-accent: oklch(0.97 0 0);
+  --color-accent-foreground: oklch(0.205 0 0);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-destructive-foreground: oklch(0.985 0 0);
+  --color-border: oklch(0.922 0 0);
+  --color-input: oklch(0.922 0 0);
+  --color-ring: oklch(0.708 0 0);
   --radius: 0.5rem;
+  
+  /* Custom animations */
+  --animate-blob: blob 7s infinite;
+  --animate-gradient: gradient 8s linear infinite;
 }
 
-.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
-  
-  html {
-    -webkit-text-size-adjust: 100%;
-    -webkit-tap-highlight-color: transparent;
-  }
-  
-  body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    min-height: 100vh;
-    min-height: 100dvh;
-    overflow-x: hidden;
-  }
-  
-  /* Improve touch targets for mobile */
-  button, 
-  a, 
-  input, 
-  select, 
-  textarea {
-    @apply touch-manipulation;
-  }
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
-@layer utilities {
-  /* Gradient text utilities */
-  .gradient-text {
-    @apply bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent;
-  }
-  
-  .gradient-text-blue {
-    @apply bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent;
-  }
-  
-  .gradient-text-purple {
-    @apply bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent;
-  }
-  
-  /* Gradient background utilities */
-  .gradient-bg-blue {
-    @apply bg-gradient-to-br from-blue-50 via-white to-purple-50;
-  }
-  
-  .gradient-bg-purple {
-    @apply bg-gradient-to-br from-purple-50 via-white to-pink-50;
-  }
-  
-  .gradient-bg-green {
-    @apply bg-gradient-to-br from-green-50 via-white to-emerald-50;
-  }
-  
-  /* Card enhancements */
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
-  }
-  
-  .card-gradient {
-    @apply bg-gradient-to-br from-white to-gray-50 border border-gray-100;
-  }
-  
-  /* Button enhancements */
-  .btn-gradient {
-    @apply bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300;
-  }
-  
-  .btn-gradient-success {
-    @apply bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300;
-  }
-  
-  /* Animated gradients */
-  .animated-gradient {
-    @apply bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-[length:200%_auto] animate-gradient;
-  }
-  
-  /* Glassmorphism effect */
-  .glass {
-    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
-  }
-  
-  /* Smooth animations */
-  .fade-in {
-    animation: fadeIn 0.5s ease-in;
-  }
-  
-  .slide-up {
-    animation: slideUp 0.5s ease-out;
-  }
-  
-  .scale-in {
-    animation: scaleIn 0.3s ease-out;
-  }
+/* Custom utility classes */
+.gradient-text {
+  background: linear-gradient(to right, #2563eb, #9333ea, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
+.gradient-text-blue {
+  background: linear-gradient(to right, #3b82f6, #06b6d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gradient-text-purple {
+  background: linear-gradient(to right, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-gradient {
+  background: linear-gradient(to right, #2563eb, #9333ea);
+  color: white;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(to right, #1d4ed8, #7e22ce);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.btn-gradient-success {
+  background: linear-gradient(to right, #16a34a, #059669);
+  color: white;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  transition: all 0.3s ease;
+}
+
+.btn-gradient-success:hover {
+  background: linear-gradient(to right, #15803d, #047857);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.glass {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  transform: translateY(-0.25rem);
+}
+
+.card-gradient {
+  background: linear-gradient(to bottom right, #ffffff, #f9fafb);
+  border: 1px solid #f3f4f6;
+}
+
+.animated-gradient {
+  background: linear-gradient(to right, #2563eb, #9333ea, #ec4899);
+  background-size: 200% auto;
+  animation: gradient 8s linear infinite;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+.scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+.scroll-smooth-mobile {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.min-h-screen-mobile {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.no-zoom {
+  font-size: 16px;
+}
+
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -187,13 +220,19 @@
   }
 }
 
-/* Animation delays */
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
 }
 
 /* Custom scrollbar */
@@ -203,67 +242,17 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 rounded-full;
+  background-color: #f3f4f6;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gradient-to-b from-blue-400 to-purple-500 rounded-full;
+  background: linear-gradient(to bottom, #60a5fa, #a855f7);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply from-blue-500 to-purple-600;
-}
-
-/* Mobile-first responsive utilities */
-@layer utilities {
-  /* Safe area insets for mobile */
-  .safe-top {
-    padding-top: env(safe-area-inset-top);
-  }
-  
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  
-  .safe-left {
-    padding-left: env(safe-area-inset-left);
-  }
-  
-  .safe-right {
-    padding-right: env(safe-area-inset-right);
-  }
-  
-  /* Mobile touch targets (minimum 44x44px) */
-  .touch-target {
-    @apply min-h-[44px] min-w-[44px];
-  }
-  
-  /* Smooth scroll for mobile */
-  .scroll-smooth-mobile {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-  }
-  
-  /* Hide scrollbar on mobile */
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Full viewport height accounting for mobile browsers */
-  .min-h-screen-mobile {
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
-  
-  /* Prevent zoom on input focus (mobile) */
-  .no-zoom {
-    font-size: 16px;
-  }
+  background: linear-gradient(to bottom, #3b82f6, #9333ea);
 }
 
 /* Responsive text sizing */
@@ -287,46 +276,51 @@
 
 /* Mobile-specific fixes */
 @media (max-width: 768px) {
-  /* Ensure full-width on mobile */
   .container {
-    @apply px-4;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
   
-  /* Stack columns on mobile */
   .grid-cols-auto-mobile {
-    @apply grid-cols-1;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
   
-  /* Reduce padding on mobile */
   .mobile-compact {
-    @apply p-3;
+    padding: 0.75rem;
   }
   
-  /* Hide elements on mobile */
   .hidden-mobile {
-    @apply hidden;
+    display: none;
   }
   
-  /* Show only on mobile */
   .show-mobile {
-    @apply block;
+    display: block;
   }
 }
 
-/* Tablet and up */
 @media (min-width: 769px) {
   .show-mobile {
-    @apply hidden;
+    display: none;
   }
 }
 
 /* Print styles */
 @media print {
   body {
-    @apply bg-white text-black;
+    background-color: white;
+    color: black;
   }
   
   .no-print {
     display: none !important;
   }
+}
+
+/* Touch manipulation */
+button, 
+a, 
+input, 
+select, 
+textarea {
+  touch-action: manipulation;
 }
