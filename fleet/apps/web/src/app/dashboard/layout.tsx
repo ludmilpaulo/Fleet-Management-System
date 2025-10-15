@@ -14,7 +14,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  HelpCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,6 +27,7 @@ const navigation = [
   { name: 'Issues', href: '/dashboard/issues', icon: AlertTriangle },
   { name: 'Tickets', href: '/dashboard/tickets', icon: Ticket },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { name: 'Help', href: '/help', icon: HelpCircle },
 ]
 
 export default function DashboardLayout({
@@ -146,6 +148,14 @@ export default function DashboardLayout({
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1"></div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
+              {/* Help button */}
+              <Link href="/help">
+                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  <span className="hidden sm:inline">Help</span>
+                </Button>
+              </Link>
+              
               {/* User menu */}
               <div className="flex items-center space-x-4">
                 <div className="text-sm">
