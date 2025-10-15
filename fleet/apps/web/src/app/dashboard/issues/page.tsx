@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import HelpButton from '@/components/ui/help-button';
 
 interface Issue {
   id: number;
@@ -92,6 +93,7 @@ export default function IssuesPage() {
 
   return (
     <DashboardLayout>
+      <HelpButton role="staff" page="issues" />
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

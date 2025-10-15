@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import HelpButton from '@/components/ui/help-button';
 
 interface MaintenanceRecord {
   id: number;
@@ -150,6 +151,7 @@ export default function StaffMaintenancePage() {
 
   return (
     <DashboardLayout>
+      <HelpButton role="staff" page="maintenance" />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import HelpButton from '@/components/ui/help-button';
 import { getCurrentUser, User } from '@/lib/auth';
 
 export default function InspectorDashboard() {
@@ -190,6 +191,7 @@ export default function InspectorDashboard() {
 
   return (
     <DashboardLayout>
+      <HelpButton role="inspector" page="dashboard" />
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg p-6 text-white">

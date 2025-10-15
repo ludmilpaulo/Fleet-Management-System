@@ -25,6 +25,7 @@ import {
   Building2
 } from 'lucide-react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
+import HelpButton from '@/components/ui/help-button'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchUserProfile } from '@/store/slices/authSlice'
 import { analytics } from '@/lib/mixpanel'
@@ -146,6 +147,7 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout>
+      <HelpButton role="admin" page="dashboard" />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between slide-up">

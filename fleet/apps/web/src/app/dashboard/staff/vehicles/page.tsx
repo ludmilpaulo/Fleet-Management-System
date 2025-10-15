@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import HelpButton from '@/components/ui/help-button';
 
 interface VehicleData {
   id: number;
@@ -150,6 +151,7 @@ export default function StaffVehiclesPage() {
 
   return (
     <DashboardLayout>
+      <HelpButton role="staff" page="vehicles" />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

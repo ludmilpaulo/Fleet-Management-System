@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import BiometricSettings from '../../components/settings/BiometricSettings'
 
 interface SettingsScreenProps {
   navigation: any
@@ -260,6 +261,17 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
             />
           </View>
 
+          {/* Security */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Security</Text>
+            <BiometricSettings
+              onToggle={(enabled) => {
+                console.log('Biometric authentication toggled:', enabled);
+              }}
+              style={styles.biometricSettings}
+            />
+          </View>
+
           {/* Appearance */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Appearance</Text>
@@ -476,5 +488,8 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 16,
     fontWeight: '600',
+  },
+  biometricSettings: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
 })

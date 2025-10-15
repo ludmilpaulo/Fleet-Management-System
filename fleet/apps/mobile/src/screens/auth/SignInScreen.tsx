@@ -17,6 +17,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
+import BiometricAuth from '../../components/auth/BiometricAuth';
+import BiometricAuthService from '../../services/biometric';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { loginUser, clearError } from '../../store/slices/authSlice';
 import { addNotification } from '../../store/slices/uiSlice';
@@ -28,6 +30,7 @@ export const SignInScreen: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
   
   const navigation = useNavigation<SignInScreenNavigationProp>();
   const dispatch = useAppDispatch();
@@ -35,6 +38,7 @@ export const SignInScreen: React.FC = () => {
 
   useEffect(() => {
     dispatch(clearError());
+    checkBiometricStatus();
   }, [dispatch]);
 
   useEffect(() => {
@@ -42,6 +46,15 @@ export const SignInScreen: React.FC = () => {
       // Navigation will be handled by the main app
     }
   }, [isAuthenticated, user]);
+
+  const checkBiometricStatus = async () => {
+    try {
+      const enabled = await BiometricAuthService.isBiometricEnabled();
+      setBiometricEnabled(enabled);
+    } catch (error) {
+      console.error('Error checking biometric status:', error);
+    }
+  };
 
   const handleSignIn = async () => {
     if (!username.trim() || !password.trim()) {
@@ -51,6 +64,36 @@ export const SignInScreen: React.FC = () => {
 
     try {
       await dispatch(loginUser({ username, password })).unwrap();
+      
+      // Offer to enable biometric login after successful sign-in
+      if (!biometricEnabled) {
+        Alert.alert(
+          'Enable Biometric Login',
+          'Would you like to enable biometric authentication for faster future logins?',
+          [
+            {
+              text: 'Not Now',
+              style: 'cancel'
+            },
+            {
+              text: 'Enable',
+              onPress: async () => {
+                try {
+                  await BiometricAuthService.enableBiometricLogin(username, password);
+                  setBiometricEnabled(true);
+                  dispatch(addNotification({
+                    type: 'success',
+                    title: 'Biometric Login Enabled',
+                    message: 'You can now use biometric authentication for future logins.',
+                  }));
+                } catch (error) {
+                  console.error('Error enabling biometric login:', error);
+                }
+              }
+            }
+          ]
+        );
+      }
       
       dispatch(addNotification({
         type: 'success',
@@ -64,6 +107,32 @@ export const SignInScreen: React.FC = () => {
         message: err || 'Invalid credentials',
       }));
     }
+  };
+
+  const handleBiometricAuth = async (credentials: { username: string; password: string }) => {
+    try {
+      await dispatch(loginUser(credentials)).unwrap();
+      
+      dispatch(addNotification({
+        type: 'success',
+        title: 'Biometric Login Successful',
+        message: `Welcome back, ${user?.first_name || user?.username}!`,
+      }));
+    } catch (err: any) {
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Biometric Login Failed',
+        message: err || 'Authentication failed',
+      }));
+    }
+  };
+
+  const handleBiometricError = (error: string) => {
+    dispatch(addNotification({
+      type: 'error',
+      title: 'Biometric Authentication Failed',
+      message: error,
+    }));
   };
 
   const handleSignUp = () => {
@@ -151,6 +220,14 @@ export const SignInScreen: React.FC = () => {
                   size="sm"
                 />
               </View>
+
+              {/* Biometric Authentication */}
+              <BiometricAuth
+                onAuthenticate={handleBiometricAuth}
+                onError={handleBiometricError}
+                disabled={isLoading}
+                style={styles.biometricContainer}
+              />
             </Card>
 
             {/* Demo Credentials */}
@@ -268,6 +345,12 @@ const styles = StyleSheet.create({
   signUpText: {
     fontSize: 14,
     color: '#6b7280',
+  },
+  biometricContainer: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
   },
   demoCard: {
     backgroundColor: '#f9fafb',

@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import HelpButton from '@/components/ui/help-button';
 import { getCurrentUser, User } from '@/lib/auth';
 
 export default function StaffDashboard() {
@@ -168,6 +169,7 @@ export default function StaffDashboard() {
 
   return (
     <DashboardLayout>
+      <HelpButton role="staff" page="dashboard" />
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl p-8 text-white shadow-xl">
