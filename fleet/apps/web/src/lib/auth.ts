@@ -1,7 +1,9 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/account` : 'https://taki.pythonanywhere.com/api/account';
+import { API_CONFIG } from '@/config/api';
+
+const API_BASE_URL = `${API_CONFIG.BASE_URL}/accounts`;
 
 export interface Company {
   id: number;
@@ -112,7 +114,7 @@ api.interceptors.response.use(
 export const authAPI = {
   // Login
   login: async (data: LoginData): Promise<LoginResponse> => {
-    const response = await api.post('/login/', data);
+    const response = await api.post(API_CONFIG.ENDPOINTS.AUTH.LOGIN, data);
     const { token } = response.data;
     
     // Store token in cookie
@@ -123,7 +125,7 @@ export const authAPI = {
 
   // Register
   register: async (data: RegisterData): Promise<LoginResponse> => {
-    const response = await api.post('/register/', data);
+    const response = await api.post(API_CONFIG.ENDPOINTS.AUTH.REGISTER, data);
     const { token } = response.data;
     
     // Store token in cookie
@@ -135,7 +137,7 @@ export const authAPI = {
   // Logout
   logout: async (): Promise<void> => {
     try {
-      await api.post('/logout/');
+      await api.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT);
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -145,13 +147,13 @@ export const authAPI = {
 
   // Get current user profile
   getProfile: async (): Promise<User> => {
-    const response = await api.get('/profile/');
+    const response = await api.get(API_CONFIG.ENDPOINTS.AUTH.ME);
     return response.data;
   },
 
   // Update profile
   updateProfile: async (data: Partial<User>): Promise<User> => {
-    const response = await api.patch('/profile/', data);
+    const response = await api.patch(API_CONFIG.ENDPOINTS.AUTH.ME, data);
     return response.data;
   },
 
@@ -216,13 +218,13 @@ export const companyAPI = {
   getCompanies: async (params?: {
     search?: string;
   }): Promise<Company[]> => {
-    const response = await axios.get('http://localhost:8000/api/companies/companies/', { params });
+    const response = await axios.get(`${API_CONFIG.BASE_URL}/companies/companies/`, { params });
     return response.data.results;
   },
 
   // Get company by slug
   getCompany: async (slug: string): Promise<Company> => {
-    const response = await axios.get(`http://localhost:8000/api/companies/companies/${slug}/`);
+    const response = await axios.get(`${API_CONFIG.BASE_URL}/companies/companies/${slug}/`);
     return response.data;
   },
 
@@ -233,7 +235,7 @@ export const companyAPI = {
     description?: string;
     subscription_plan?: string;
   }> => {
-    const response = await axios.get('http://localhost:8000/api/companies/companies/exists/', {
+    const response = await axios.get(`${API_CONFIG.BASE_URL}/companies/companies/exists/`, {
       params: { slug }
     });
     return response.data;
@@ -254,7 +256,7 @@ export const companyAPI = {
     users_by_role: Record<string, number>;
     recent_registrations: number;
   }> => {
-    const response = await api.get('http://localhost:8000/api/companies/companies/stats/');
+    const response = await api.get(`${API_CONFIG.BASE_URL}/companies/companies/stats/`);
     return response.data;
   },
 };
