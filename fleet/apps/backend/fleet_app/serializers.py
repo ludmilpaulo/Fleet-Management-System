@@ -34,7 +34,7 @@ class VehicleSerializer(serializers.ModelSerializer):
                 'last_rssi': tracker.last_rssi,
                 'is_active': tracker.is_active,
             }
-        except KeyTracker.DoesNotExist:
+        except:
             return None
     
     def get_current_shift(self, obj):
@@ -52,7 +52,7 @@ class VehicleSerializer(serializers.ModelSerializer):
                     'address': shift.start_address,
                 }
             }
-        except Shift.DoesNotExist:
+        except:
             return None
 
 

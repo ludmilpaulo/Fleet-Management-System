@@ -1,0 +1,154 @@
+{
+  "timestamp": "2025-10-16T12:39:52.050Z",
+  "summary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "companies": {
+    "Metro Transit Authority": {
+      "company": {
+        "name": "Metro Transit Authority",
+        "type": "Public Transportation",
+        "subscription": "Enterprise"
+      },
+      "testData": {
+        "company": {
+          "name": "Metro Transit Authority",
+          "type": "Public Transportation",
+          "subscription": "Enterprise"
+        },
+        "users": [
+          {
+            "username": "metro_admin",
+            "password": "MetroAdmin2024!",
+            "role": "admin"
+          },
+          {
+            "username": "metro_fleet_manager",
+            "password": "Staff2024!",
+            "role": "staff"
+          },
+          {
+            "username": "metro_driver_001",
+            "password": "Driver2024!",
+            "role": "driver"
+          },
+          {
+            "username": "metro_inspector_001",
+            "password": "Inspector2024!",
+            "role": "inspector"
+          }
+        ],
+        "vehicles": [
+          "MTA-001",
+          "MTA-002",
+          "MTA-003",
+          "MTA-R001"
+        ],
+        "expectedFeatures": [
+          "Bus Operations",
+          "Rail Operations",
+          "Electric Vehicles",
+          "Public Service"
+        ]
+      }
+    },
+    "Swift Delivery Services": {
+      "company": {
+        "name": "Swift Delivery Services",
+        "type": "Logistics & Delivery",
+        "subscription": "Professional"
+      },
+      "testData": {
+        "company": {
+          "name": "Swift Delivery Services",
+          "type": "Logistics & Delivery",
+          "subscription": "Professional"
+        },
+        "users": [
+          {
+            "username": "swift_admin",
+            "password": "SwiftAdmin2024!",
+            "role": "admin"
+          },
+          {
+            "username": "swift_operations",
+            "password": "Staff2024!",
+            "role": "staff"
+          },
+          {
+            "username": "swift_driver_001",
+            "password": "Driver2024!",
+            "role": "driver"
+          },
+          {
+            "username": "swift_inspector_001",
+            "password": "Inspector2024!",
+            "role": "inspector"
+          }
+        ],
+        "vehicles": [
+          "SDS-001",
+          "SDS-002",
+          "SDS-003"
+        ],
+        "expectedFeatures": [
+          "Delivery Tracking",
+          "Route Optimization",
+          "Fleet Management"
+        ]
+      }
+    },
+    "Green Earth Transportation": {
+      "company": {
+        "name": "Green Earth Transportation",
+        "type": "Eco-Friendly Transportation",
+        "subscription": "Professional"
+      },
+      "testData": {
+        "company": {
+          "name": "Green Earth Transportation",
+          "type": "Eco-Friendly Transportation",
+          "subscription": "Professional"
+        },
+        "users": [
+          {
+            "username": "green_admin",
+            "password": "GreenAdmin2024!",
+            "role": "admin"
+          },
+          {
+            "username": "green_fleet_coordinator",
+            "password": "Staff2024!",
+            "role": "staff"
+          },
+          {
+            "username": "green_driver_001",
+            "password": "Driver2024!",
+            "role": "driver"
+          },
+          {
+            "username": "green_inspector_001",
+            "password": "Inspector2024!",
+            "role": "inspector"
+          }
+        ],
+        "vehicles": [
+          "GET-001",
+          "GET-002",
+          "GET-003"
+        ],
+        "expectedFeatures": [
+          "Electric Vehicles",
+          "Hybrid Vehicles",
+          "Environmental Compliance"
+        ]
+      }
+    }
+  },
+  "roles": {},
+  "workflows": {},
+  "errors": []
+}
