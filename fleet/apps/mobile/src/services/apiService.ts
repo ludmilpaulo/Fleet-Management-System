@@ -2,7 +2,7 @@ import { authService, AuthUser } from './authService'
 import { analytics } from './mixpanel'
 
 // Base API configuration
-const BASE_URL = 'http://192.168.1.120:8000/api'
+const BASE_URL = 'https://www.fleetia.online/api'
 
 // Types for API responses
 export interface Vehicle {

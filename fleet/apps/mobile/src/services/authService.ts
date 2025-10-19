@@ -25,7 +25,7 @@ export interface AuthResponse {
 }
 
 class AuthService {
-  private baseURL = 'http://192.168.1.120:8000/api/account';
+  private baseURL = 'https://www.fleetia.online/api/account';
   private token: string | null = null;
   private user: AuthUser | null = null;
 
