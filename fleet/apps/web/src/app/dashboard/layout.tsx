@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import AuthWrapper from '@/components/auth/auth-wrapper'
 import { 
   LayoutDashboard, 
   Truck, 
@@ -39,7 +40,8 @@ export default function DashboardLayout({
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AuthWrapper>
+      <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <div className={cn(
         "fixed inset-0 z-50 lg:hidden",
@@ -178,5 +180,6 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+    </AuthWrapper>
   )
 }
