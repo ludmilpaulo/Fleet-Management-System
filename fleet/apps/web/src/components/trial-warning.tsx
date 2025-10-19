@@ -82,8 +82,8 @@ export default function TrialWarning({
   const warningLevel = getWarningLevel()
 
   return (
-    <Card className={`border-l-4 ${getWarningColor(warningLevel)} mb-6`}>
-      <CardContent className="p-4">
+    <Card className={`border-l-4 ${getWarningColor(warningLevel)} mb-6 shadow-sm`}>
+      <CardContent className="p-4 sm:p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-white rounded-full shadow-sm">
@@ -144,7 +144,7 @@ export default function TrialWarning({
         {/* Plan Comparison */}
         <div className="mt-4 pt-4 border-t border-gray-200">
           <h4 className="text-sm font-medium text-gray-900 mb-3">Choose your plan:</h4>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-3">
             <div className="p-3 bg-white rounded-lg border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-4 h-4 text-blue-600" />

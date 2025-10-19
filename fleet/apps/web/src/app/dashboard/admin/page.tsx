@@ -29,6 +29,7 @@ import HelpButton from '@/components/ui/help-button'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchUserProfile } from '@/store/slices/authSlice'
 import { analytics } from '@/lib/mixpanel'
+import { useRouter } from 'next/navigation'
 
 interface DashboardStats {
   company_name: string
@@ -48,6 +49,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const dispatch = useAppDispatch()
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   
@@ -374,19 +376,35 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col gap-2"
+                onClick={() => router.push('/dashboard/admin/users')}
+              >
                 <Users className="w-6 h-6" />
                 <span>Manage Users</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col gap-2"
+                onClick={() => router.push('/dashboard/admin/vehicles')}
+              >
                 <Truck className="w-6 h-6" />
                 <span>Add Vehicle</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col gap-2"
+                onClick={() => router.push('/dashboard/admin/reports')}
+              >
                 <BarChart3 className="w-6 h-6" />
                 <span>View Reports</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col gap-2"
+                onClick={() => router.push('/dashboard/admin/settings')}
+              >
                 <Settings className="w-6 h-6" />
                 <span>System Settings</span>
               </Button>

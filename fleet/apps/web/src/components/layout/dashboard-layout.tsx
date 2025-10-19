@@ -248,7 +248,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64 sm:lg:pl-72">
+      <div className="flex-1 lg:pl-64 sm:lg:pl-72 min-h-screen">
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 lg:px-6 lg:px-8">
@@ -306,7 +306,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Page content */}
-        <main className="p-3 sm:p-4 lg:p-6 xl:p-8">
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8">
           {/* Trial Warning */}
           {user && (
             <TrialWarning
