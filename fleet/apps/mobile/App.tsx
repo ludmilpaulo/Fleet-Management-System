@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
@@ -8,8 +8,10 @@ import { Provider } from 'react-redux'
 import { store } from './src/store/store'
 import * as Notifications from 'expo-notifications'
 import { analytics } from './src/services/mixpanel'
+import { authService, AuthUser } from './src/services/authService'
 
 // Import screens
+import AuthScreen from './src/screens/auth/AuthScreen'
 import DashboardScreen from './src/screens/dashboard/DashboardScreen'
 import InspectionsScreen from './src/screens/inspections/InspectionsScreen'
 import CameraScreen from './src/screens/camera/CameraScreen'
@@ -133,29 +135,90 @@ function MainTabs() {
 }
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<AuthUser | null>(null)
+
   useEffect(() => {
-    // Initialize Mixpanel
-    const initializeApp = async () => {
-      await analytics.initialize();
+    initializeApp()
+  }, [])
+
+  const initializeApp = async () => {
+    try {
+      // Initialize Mixpanel
+      await analytics.initialize()
+      
+      // Initialize authentication
+      await authService.initializeAuth()
+      
+      // Check if user is authenticated
+      const isAuth = await authService.isAuthenticated()
+      const userData = await authService.getCurrentUser()
+      
+      setIsAuthenticated(isAuth)
+      setUser(userData)
       
       // Request notification permissions
       const { status } = await Notifications.requestPermissionsAsync()
       if (status !== 'granted') {
         console.log('Notification permission not granted')
-        analytics.track('Notification Permission Denied', { platform: 'mobile' });
+        analytics.track('Notification Permission Denied', { platform: 'mobile' })
       } else {
-        analytics.track('Notification Permission Granted', { platform: 'mobile' });
+        analytics.track('Notification Permission Granted', { platform: 'mobile' })
       }
       
       // Track app launch
       analytics.track('App Launched', {
         platform: 'mobile',
         launch_time: new Date().toISOString(),
-      });
+        authenticated: isAuth,
+        user_role: userData?.role,
+      })
+    } catch (error) {
+      console.error('App initialization error:', error)
+      analytics.track('App Initialization Failed', {
+        error: error instanceof Error ? error.message : 'unknown'
+      })
+    } finally {
+      setIsLoading(false)
     }
+  }
 
-    initializeApp()
-  }, [])
+  const handleAuthSuccess = async () => {
+    const userData = await authService.getCurrentUser()
+    setIsAuthenticated(true)
+    setUser(userData)
+    
+    analytics.track('Authentication Success', {
+      user_id: userData?.id,
+      role: userData?.role
+    })
+  }
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+      setIsAuthenticated(false)
+      setUser(null)
+      
+      analytics.track('User Logout')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
+
+  if (isLoading) {
+    return null // Or a loading screen
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Provider store={store}>
+        <StatusBar style="light" />
+        <AuthScreen onAuthSuccess={handleAuthSuccess} />
+      </Provider>
+    )
+  }
 
   return (
     <Provider store={store}>

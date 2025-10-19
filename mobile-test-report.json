@@ -1,0 +1,228 @@
+{
+  "timestamp": "2025-10-19T17:37:32.914Z",
+  "summary": {
+    "mobile": {
+      "total": 7,
+      "passed": 3,
+      "failed": 4
+    }
+  },
+  "details": {
+    "timestamp": "2025-10-19T17:37:32.914Z",
+    "mobile": {
+      "Metro Bundler Status": {
+        "success": true,
+        "status": 200,
+        "data": {
+          "id": "1d447ca9-d90f-4919-ab54-ebc7ebf3a77a",
+          "createdAt": "2025-10-19T17:37:33.162Z",
+          "runtimeVersion": "exposdk:54.0.0",
+          "launchAsset": {
+            "key": "bundle",
+            "contentType": "application/javascript",
+            "url": "http://127.0.0.1:8081/index.ts.bundle?platform=ios&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable"
+          },
+          "assets": [],
+          "metadata": {},
+          "extra": {
+            "eas": {},
+            "expoClient": {
+              "name": "mobile",
+              "slug": "mobile",
+              "version": "1.0.0",
+              "orientation": "portrait",
+              "icon": "./assets/icon.png",
+              "userInterfaceStyle": "light",
+              "newArchEnabled": true,
+              "splash": {
+                "image": "./assets/splash-icon.png",
+                "resizeMode": "contain",
+                "backgroundColor": "#ffffff",
+                "imageUrl": "http://127.0.0.1:8081/assets/./assets/splash-icon.png"
+              },
+              "ios": {
+                "supportsTablet": true
+              },
+              "android": {
+                "adaptiveIcon": {
+                  "foregroundImage": "./assets/adaptive-icon.png",
+                  "backgroundColor": "#ffffff",
+                  "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/adaptive-icon.png"
+                },
+                "edgeToEdgeEnabled": true,
+                "predictiveBackGestureEnabled": false,
+                "permissions": [
+                  "android.permission.BLUETOOTH",
+                  "android.permission.BLUETOOTH_ADMIN",
+                  "android.permission.BLUETOOTH_CONNECT"
+                ]
+              },
+              "web": {
+                "favicon": "./assets/favicon.png"
+              },
+              "plugins": [
+                "react-native-ble-plx"
+              ],
+              "_internal": {
+                "isDebug": false,
+                "projectRoot": "C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile",
+                "dynamicConfigPath": {},
+                "staticConfigPath": "C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\app.json",
+                "packageJsonPath": "C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\package.json",
+                "pluginHistory": {
+                  "react-native-ble-plx": {
+                    "name": "react-native-ble-plx",
+                    "version": "UNVERSIONED"
+                  }
+                }
+              },
+              "sdkVersion": "54.0.0",
+              "platforms": [
+                "ios",
+                "android"
+              ],
+              "iconUrl": "http://127.0.0.1:8081/assets/./assets/icon.png",
+              "hostUri": "127.0.0.1:8081"
+            },
+            "expoGo": {
+              "debuggerHost": "127.0.0.1:8081",
+              "developer": {
+                "tool": "expo-cli",
+                "projectRoot": "C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile"
+              },
+              "packagerOpts": {
+                "dev": true
+              },
+              "mainModuleName": "index.ts"
+            },
+            "scopeKey": "@anonymous/mobile-a831240d-dc18-487d-a828-b9308b818489"
+          }
+        },
+        "error": null
+      },
+      "Bundle Status": {
+        "success": true,
+        "status": 200,
+        "data": "packager-status:running",
+        "error": null
+      },
+      "Metro Logs": {
+        "success": true,
+        "status": 200,
+        "data": {
+          "id": "bdb1a66b-0409-42f5-adca-e73249b0787b",
+          "createdAt": "2025-10-19T17:37:33.380Z",
+          "runtimeVersion": "exposdk:54.0.0",
+          "launchAsset": {
+            "key": "bundle",
+            "contentType": "application/javascript",
+            "url": "http://127.0.0.1:8081/index.ts.bundle?platform=ios&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable"
+          },
+          "assets": [],
+          "metadata": {},
+          "extra": {
+            "eas": {},
+            "expoClient": {
+              "name": "mobile",
+              "slug": "mobile",
+              "version": "1.0.0",
+              "orientation": "portrait",
+              "icon": "./assets/icon.png",
+              "userInterfaceStyle": "light",
+              "newArchEnabled": true,
+              "splash": {
+                "image": "./assets/splash-icon.png",
+                "resizeMode": "contain",
+                "backgroundColor": "#ffffff",
+                "imageUrl": "http://127.0.0.1:8081/assets/./assets/splash-icon.png"
+              },
+              "ios": {
+                "supportsTablet": true
+              },
+              "android": {
+                "adaptiveIcon": {
+                  "foregroundImage": "./assets/adaptive-icon.png",
+                  "backgroundColor": "#ffffff",
+                  "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/adaptive-icon.png"
+                },
+                "edgeToEdgeEnabled": true,
+                "predictiveBackGestureEnabled": false,
+                "permissions": [
+                  "android.permission.BLUETOOTH",
+                  "android.permission.BLUETOOTH_ADMIN",
+                  "android.permission.BLUETOOTH_CONNECT"
+                ]
+              },
+              "web": {
+                "favicon": "./assets/favicon.png"
+              },
+              "plugins": [
+                "react-native-ble-plx"
+              ],
+              "_internal": {
+                "isDebug": false,
+                "projectRoot": "C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile",
+                "dynamicConfigPath": {},
+                "staticConfigPath": "C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\app.json",
+                "packageJsonPath": "C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\package.json",
+                "pluginHistory": {
+                  "react-native-ble-plx": {
+                    "name": "react-native-ble-plx",
+                    "version": "UNVERSIONED"
+                  }
+                }
+              },
+              "sdkVersion": "54.0.0",
+              "platforms": [
+                "ios",
+                "android"
+              ],
+              "iconUrl": "http://127.0.0.1:8081/assets/./assets/icon.png",
+              "hostUri": "127.0.0.1:8081"
+            },
+            "expoGo": {
+              "debuggerHost": "127.0.0.1:8081",
+              "developer": {
+                "tool": "expo-cli",
+                "projectRoot": "C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile"
+              },
+              "packagerOpts": {
+                "dev": true
+              },
+              "mainModuleName": "index.ts"
+            },
+            "scopeKey": "@anonymous/mobile-a831240d-dc18-487d-a828-b9308b818489"
+          }
+        },
+        "error": null
+      },
+      "Symbolicate": {
+        "success": false,
+        "status": 500,
+        "data": {
+          "error": "Unexpected end of JSON input"
+        },
+        "error": null
+      },
+      "Mobile Bundle": {
+        "success": false,
+        "status": 0,
+        "data": null,
+        "error": "timeout of 5000ms exceeded"
+      },
+      "App Entry Point": {
+        "success": false,
+        "status": 0,
+        "data": null,
+        "error": "timeout of 5000ms exceeded"
+      },
+      "Asset Loading": {
+        "success": false,
+        "status": 500,
+        "data": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Error: Could not extract asset path from URL<br> &nbsp; &nbsp;at Server._processSingleAssetRequest (C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\node_modules\\metro\\src\\Server.js:363:13)<br> &nbsp; &nbsp;at Server._processRequest (C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\node_modules\\metro\\src\\Server.js:458:18)<br> &nbsp; &nbsp;at processRequest (C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\node_modules\\metro\\src\\Server.js:394:10)<br> &nbsp; &nbsp;at call (C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\node_modules\\connect\\index.js:239:7)<br> &nbsp; &nbsp;at next (C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\node_modules\\connect\\index.js:183:5)<br> &nbsp; &nbsp;at Immediate.next (C:\\Users\\ludmi\\OneDrive\\Desktop\\Codes\\Fleet-Management-System\\fleet\\apps\\mobile\\node_modules\\connect\\index.js:161:14)<br> &nbsp; &nbsp;at processImmediate (node:internal/timers:487:21)</pre>\n</body>\n</html>\n",
+        "error": null
+      }
+    },
+    "overall": "PENDING"
+  }
+}
