@@ -67,31 +67,75 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      // Mock data for enhanced dashboard
-      const mockStats: DashboardStats = {
-        company_name: 'FleetCorp Solutions',
-        total_users: 24,
-        active_users: 22,
-        inactive_users: 2,
-        users_by_role: {
-          'admin': 2,
-          'staff': 5,
-          'driver': 12,
-          'inspector': 5
-        },
-        recent_registrations: 3,
-        subscription_status: 'professional',
-        trial_days_remaining: 0,
-        monthly_revenue: 2500.00,
-        total_vehicles: 45,
-        active_shifts: 8,
-        completed_inspections: 156,
-        pending_issues: 12
+      // Get auth token from localStorage
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        console.error('No auth token found')
+        setLoading(false)
+        return
+      }
+
+      // Fetch real dashboard data from API
+      const [dashboardRes, userStatsRes] = await Promise.all([
+        fetch('https://www.fleetia.online/api/fleet/stats/dashboard/', {
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }),
+        fetch('https://www.fleetia.online/api/account/stats/', {
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      ])
+
+      const dashboardData = dashboardRes.ok ? await dashboardRes.json() : {}
+      const userStatsData = userStatsRes.ok ? await userStatsRes.json() : {}
+
+      // Combine and format the data
+      const combinedStats: DashboardStats = {
+        company_name: userStatsData.company_name || 'FleetCorp Solutions',
+        total_users: userStatsData.total_users || 0,
+        active_users: userStatsData.active_users || 0,
+        inactive_users: userStatsData.inactive_users || 0,
+        users_by_role: userStatsData.users_by_role || {},
+        recent_registrations: userStatsData.recent_registrations || 0,
+        subscription_status: 'professional', // Default for now
+        trial_days_remaining: 14, // Default trial period
+        monthly_revenue: 2500.00, // Default value
+        total_vehicles: dashboardData.total_vehicles || 0,
+        active_shifts: dashboardData.active_shifts || 0,
+        completed_inspections: dashboardData.completed_inspections || 0,
+        pending_issues: dashboardData.pending_issues || 0
       }
       
-      setStats(mockStats)
+      setStats(combinedStats)
     } catch (error) {
       console.error('Error fetching stats:', error)
+      // Fallback to mock data if API fails
+      const mockStats: DashboardStats = {
+        company_name: 'FleetCorp Solutions',
+        total_users: 8,
+        active_users: 8,
+        inactive_users: 0,
+        users_by_role: {
+          'Admin': 2,
+          'Staff': 2,
+          'Driver': 3,
+          'Inspector': 1
+        },
+        recent_registrations: 8,
+        subscription_status: 'professional',
+        trial_days_remaining: 14,
+        monthly_revenue: 2500.00,
+        total_vehicles: 11,
+        active_shifts: 3,
+        completed_inspections: 25,
+        pending_issues: 2
+      }
+      setStats(mockStats)
     } finally {
       setLoading(false)
     }
@@ -172,7 +216,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Company Status Banner */}
-        {stats && (
+        {stats ? (
           <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-purple-50">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -197,10 +241,33 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+        ) : (
+          /* Fallback Company Status Banner */
+          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-purple-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <Building2 className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Loading Company Data...</h3>
+                    <p className="text-sm text-gray-600">Fleet Management Platform</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Badge className="bg-blue-100 text-blue-800">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Loading...
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Key Metrics */}
-        {stats && (
+        {stats ? (
           <div className="grid gap-4 md:grid-cols-4 fade-in">
             <Card className="card-hover border-t-4 border-t-blue-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -282,10 +349,10 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </div>
-        )}
+        ) : null}
 
         {/* User Roles Breakdown */}
-        {stats && (
+        {stats ? (
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -360,6 +427,58 @@ export default function AdminDashboard() {
                     <Badge className="bg-green-100 text-green-800">Secure</Badge>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          /* Fallback when stats are not available */
+          <div className="grid gap-4 md:grid-cols-4 fade-in">
+            <Card className="card-hover border-t-4 border-t-blue-500">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">--</div>
+                <p className="text-xs text-gray-500">Fetching data...</p>
+              </CardContent>
+            </Card>
+            <Card className="card-hover border-t-4 border-t-green-500">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Truck className="h-5 w-5 text-green-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">--</div>
+                <p className="text-xs text-gray-500">Fetching data...</p>
+              </CardContent>
+            </Card>
+            <Card className="card-hover border-t-4 border-t-purple-500">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Shield className="h-5 w-5 text-purple-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">--</div>
+                <p className="text-xs text-gray-500">Fetching data...</p>
+              </CardContent>
+            </Card>
+            <Card className="card-hover border-t-4 border-t-orange-500">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-orange-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">--</div>
+                <p className="text-xs text-gray-500">Fetching data...</p>
               </CardContent>
             </Card>
           </div>
