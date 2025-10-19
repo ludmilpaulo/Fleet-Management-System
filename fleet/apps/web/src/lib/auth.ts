@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 
 import { API_CONFIG } from '@/config/api';
 
-const API_BASE_URL = `${API_CONFIG.BASE_URL}/account`;
+const API_BASE_URL = API_CONFIG.BASE_URL;
 
 export interface Company {
   id: number;

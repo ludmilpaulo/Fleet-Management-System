@@ -195,12 +195,14 @@ export default function Home() {
             <div className="p-4 sm:p-6 border-2 border-gray-200 rounded-xl card-hover bg-white/50 backdrop-blur-sm">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">Driver</h3>
               <p className="text-sm text-gray-600 mb-3">Route management</p>
-              <p className="text-xs text-gray-500 break-all font-mono bg-gray-100 p-2 rounded">driver1 / driver123</p>
+              <p className="text-xs text-gray-500 break-all font-mono bg-gray-100 p-2 rounded">Coming Soon</p>
+              <p className="text-xs text-gray-400 mt-1">Demo account setup in progress</p>
             </div>
             <div className="p-4 sm:p-6 border-2 border-gray-200 rounded-xl card-hover bg-white/50 backdrop-blur-sm">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">Inspector</h3>
               <p className="text-sm text-gray-600 mb-3">Vehicle inspections</p>
-              <p className="text-xs text-gray-500 break-all font-mono bg-gray-100 p-2 rounded">inspector1 / inspector123</p>
+              <p className="text-xs text-gray-500 break-all font-mono bg-gray-100 p-2 rounded">Coming Soon</p>
+              <p className="text-xs text-gray-400 mt-1">Demo account setup in progress</p>
             </div>
           </div>
         </div>

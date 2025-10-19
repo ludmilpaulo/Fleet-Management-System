@@ -201,11 +201,12 @@ export default function SignInPage() {
         <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
           <h3 className="text-xs sm:text-sm font-medium text-gray-900 mb-2">Demo Credentials</h3>
           <div className="space-y-1 text-xs text-gray-600">
-            <div className="break-all"><strong>Admin:</strong> admin / admin123</div>
-            <div className="break-all"><strong>Staff:</strong> staff1 / staff123</div>
-            <div className="break-all"><strong>Driver:</strong> driver1 / driver123</div>
-            <div className="break-all"><strong>Inspector:</strong> inspector1 / inspector123</div>
+            <div className="break-all"><strong>Admin:</strong> admin / admin123 ✅</div>
+            <div className="break-all"><strong>Staff:</strong> staff1 / staff123 ✅</div>
+            <div className="break-all"><strong>Driver:</strong> Coming Soon</div>
+            <div className="break-all"><strong>Inspector:</strong> Coming Soon</div>
           </div>
+          <p className="text-xs text-gray-500 mt-2">✅ Verified working credentials</p>
         </div>
       </div>
     </div>

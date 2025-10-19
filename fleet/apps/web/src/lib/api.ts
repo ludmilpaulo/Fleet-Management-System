@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taki.pythonanywhere.com/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.fleetia.online/api'
 
 // Create axios instance
 export const api = axios.create({
