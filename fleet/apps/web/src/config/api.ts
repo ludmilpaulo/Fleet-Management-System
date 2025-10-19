@@ -13,11 +13,11 @@ export const API_CONFIG = {
   ENDPOINTS: {
     // Authentication
     AUTH: {
-      LOGIN: '/accounts/auth/login/',
-      REGISTER: '/accounts/auth/register/',
-      REFRESH: '/accounts/auth/refresh/',
-      LOGOUT: '/accounts/auth/logout/',
-      ME: '/accounts/auth/me/',
+      LOGIN: '/account/login/',
+      REGISTER: '/account/register/',
+      REFRESH: '/account/refresh/',
+      LOGOUT: '/account/logout/',
+      ME: '/account/profile/',
     },
     
     // Vehicles
