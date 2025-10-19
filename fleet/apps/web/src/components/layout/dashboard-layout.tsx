@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <span className="text-xs sm:text-sm font-medium text-gray-900">Company</span>
             </div>
             <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">{user.company.name}</p>
-            <p className="text-xs text-gray-600 truncate">{user.company.email}</p>
+            <p className="text-xs text-gray-600 truncate" key={`company-email-${user.company.id}`}>{user.company.email}</p>
             <Badge variant="outline" className="text-xs mt-1">
               {user.company.subscription_plan}
             </Badge>
