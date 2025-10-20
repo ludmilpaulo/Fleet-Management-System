@@ -150,7 +150,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -202,10 +201,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://192.168.1.110:3000",
-    "https://fleet-management-system-sooty.vercel.app",
+    "https://fleet-management-system.vercel.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF Trusted Origins for production deployments
+CSRF_TRUSTED_ORIGINS = [
+    "https://www.fleetia.online",
+    "https://fleet-management-system.vercel.app",
+]
 
 # Spectacular Settings
 SPECTACULAR_SETTINGS = {
