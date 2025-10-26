@@ -77,13 +77,13 @@ export default function AdminDashboard() {
 
       // Fetch real dashboard data from API
       const [dashboardRes, userStatsRes] = await Promise.all([
-        fetch('https://www.fleetia.online/api/fleet/stats/dashboard/', {
+        fetch('http://127.0.0.1:8000/api/fleet/stats/dashboard/', {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json'
           }
         }),
-        fetch('https://www.fleetia.online/api/account/stats/', {
+        fetch('http://127.0.0.1:8000/api/account/stats/', {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json'
