@@ -211,12 +211,20 @@ export default function PlatformAdminDashboard() {
         console.log('Company created:', data);
         alert(`Company "${data.name}" created successfully!`);
       } else if (entityType === 'user') {
-        // Create user
+        // Get company from select
+        const companySelect = document.getElementById('user-company-select') as HTMLSelectElement;
+        const company_slug = companySelect?.value;
+        
+        // Validate required fields
+        if (!company_slug) {
+          alert('Error: Company is required. Please select a company.');
+          return;
+        }
+        
         const first_name = (document.querySelector('input[placeholder="John"]') as HTMLInputElement)?.value?.trim();
         const last_name = (document.querySelector('input[placeholder="Doe"]') as HTMLInputElement)?.value?.trim();
         const email = (document.querySelector('input[placeholder="user@example.com"]') as HTMLInputElement)?.value?.trim();
         
-        // Validate required fields
         if (!first_name) {
           alert('Error: First name is required.');
           return;
@@ -231,7 +239,7 @@ export default function PlatformAdminDashboard() {
         }
         
         // Get role from select
-        const roleSelect = document.querySelectorAll('select')[1] as HTMLSelectElement;
+        const roleSelect = document.getElementById('user-role-select') as HTMLSelectElement;
         const role = roleSelect?.value || 'staff';
 
         const response = await fetch(`${API_BASE}/account/register/`, {
@@ -248,6 +256,7 @@ export default function PlatformAdminDashboard() {
             first_name,
             last_name,
             role,
+            company_slug: company_slug, // Add company_slug
           }),
         });
 
@@ -256,6 +265,9 @@ export default function PlatformAdminDashboard() {
           console.error('User creation error:', error);
           
           let errorMessage = 'Failed to create user:\n\n';
+          if (error.company_slug) {
+            errorMessage += `Company: ${error.company_slug[0]}\n`;
+          }
           if (error.email) {
             errorMessage += `Email: ${error.email[0]}\n`;
           }
@@ -1087,6 +1099,21 @@ export default function PlatformAdminDashboard() {
                   <p className="text-sm text-green-700">Create a new user account</p>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Company *</Label>
+                  <Select id="user-company-select" defaultValue="">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="test-fleet-company">Test Fleet Company</SelectItem>
+                      <SelectItem value="testcompany">Test Company</SelectItem>
+                      {/* More companies will be loaded dynamically */}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">Select the company this user will belong to</p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>First Name *</Label>
@@ -1117,7 +1144,7 @@ export default function PlatformAdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <Label>Role *</Label>
-                    <Select defaultValue="staff">
+                    <Select id="user-role-select" defaultValue="staff">
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
