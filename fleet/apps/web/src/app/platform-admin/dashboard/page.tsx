@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   Building2, 
@@ -90,6 +91,13 @@ interface PlatformStats {
   }>
 }
 
+interface Company {
+  id: number
+  name: string
+  slug: string
+  email: string
+}
+
 export default function PlatformAdminDashboard() {
   const router = useRouter()
   const dispatch = useAppDispatch()
@@ -98,10 +106,32 @@ export default function PlatformAdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   const [showAddEntityDialog, setShowAddEntityDialog] = useState(false)
   const [entityType, setEntityType] = useState<'company' | 'user' | 'vehicle' | ''>('')
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [companySearchTerm, setCompanySearchTerm] = useState('')
 
   useEffect(() => {
     fetchPlatformStats()
-  }, [])
+    if (showAddEntityDialog && entityType === 'user') {
+      fetchCompanies()
+    }
+  }, [showAddEntityDialog, entityType])
+  
+  const fetchCompanies = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/companies/', {
+        headers: {
+          'Authorization': `Token ${token}`,
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setCompanies(Array.isArray(data) ? data : data.results || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch companies:', error)
+    }
+  }
 
   const handleRefresh = async () => {
     setLoading(true);
@@ -1105,10 +1135,31 @@ export default function PlatformAdminDashboard() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select a company" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="test-fleet-company">Test Fleet Company</SelectItem>
-                      <SelectItem value="testcompany">Test Company</SelectItem>
-                      {/* More companies will be loaded dynamically */}
+                    <SelectContent className="max-h-[300px]">
+                      <div className="px-2 py-1.5 border-b">
+                        <Input
+                          placeholder="Search companies..."
+                          value={companySearchTerm}
+                          onChange={(e) => setCompanySearchTerm(e.target.value)}
+                          className="h-8"
+                        />
+                      </div>
+                      {companies
+                        .filter(company =>
+                          company.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                          company.email.toLowerCase().includes(companySearchTerm.toLowerCase())
+                        )
+                        .map((company) => (
+                          <SelectItem key={company.slug} value={company.slug}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{company.name}</span>
+                              <span className="text-xs text-gray-500">{company.email}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      {companies.length === 0 && (
+                        <SelectItem value="none" disabled>No companies found</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-gray-500">Select the company this user will belong to</p>
