@@ -717,18 +717,7 @@ export default function PlatformAdminDashboard() {
         const data = await response.json();
         console.log('Vehicle created:', data);
         alert(`Vehicle "${data.make} ${data.model}" created successfully!`);
-      }
-      
-      // Refresh data
-      handleRefresh();
-      
-      // Close dialog
-      handleCloseDialog();
-    } catch (error: any) {
-        console.error('Error creating entity:', error);
-        alert(`Error: ${error.message}`);
-      }
-    } else if (entityType === 'inspection') {
+      } else if (entityType === 'inspection') {
       // Get form values
       const shiftId = (document.querySelector('input[placeholder="Enter shift ID"]') as HTMLInputElement)?.value?.trim();
       const type = (document.querySelector('select') as HTMLSelectElement)?.value || 'START';
@@ -812,18 +801,18 @@ export default function PlatformAdminDashboard() {
       const data = await response.json();
       console.log('Issue created:', data);
       alert(`Issue "${data.title}" created successfully!`);
+      }
+      
+      // Refresh data
+      handleRefresh();
+      
+      // Close dialog
+      handleCloseDialog();
+    } catch (error: any) {
+      console.error('Error creating entity:', error);
+      alert(`Error: ${error.message}`);
     }
-
-    // Refresh data
-    handleRefresh();
-    
-    // Close dialog
-    handleCloseDialog();
-  } catch (error: any) {
-    console.error('Error creating entity:', error);
-    alert(`Error: ${error.message}`);
-  }
-};
+  };
 
   const fetchPlatformStats = async () => {
     try {
