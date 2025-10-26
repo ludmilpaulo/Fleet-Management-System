@@ -112,11 +112,21 @@ export default function SignInPage() {
           router.push('/dashboard');
       }
     } catch (err: unknown) {
+      // Extract detailed error message from API response
+      let errorMessage = 'An error occurred during login. Please try again.';
+      
+      if (err && typeof err === 'object' && 'error' in err) {
+        const errorObj = err as { error: string };
+        errorMessage = errorObj.error || errorMessage;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
       // Error is handled by Redux slice
       dispatch(addNotification({
         type: 'error',
         title: 'Login Failed',
-        message: err instanceof Error ? err.message : 'Invalid credentials',
+        message: errorMessage,
       }));
     }
   };
@@ -202,8 +212,14 @@ export default function SignInPage() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+            <div className="mt-6 space-y-3">
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium block text-center"
+              >
+                Forgot your password?
+              </Link>
+              <p className="text-sm text-gray-600 text-center">
                 Don&apos;t have an account?{' '}
                 <Link
                   href="/auth/signup"

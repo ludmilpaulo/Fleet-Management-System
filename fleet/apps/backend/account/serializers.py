@@ -52,7 +52,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class UserLoginSerializer(serializers.Serializer):
     """
-    Serializer for user login
+    Serializer for user login with detailed error messages
     """
     username = serializers.CharField()
     password = serializers.CharField()
@@ -62,14 +62,24 @@ class UserLoginSerializer(serializers.Serializer):
         password = attrs.get('password')
         
         if username and password:
-            user = authenticate(username=username, password=password)
-            if not user:
-                raise serializers.ValidationError('Invalid credentials.')
-            if not user.is_active:
-                raise serializers.ValidationError('User account is disabled.')
-            attrs['user'] = user
+            # Check if user exists first
+            try:
+                user = User.objects.get(username=username)
+                
+                # Check if password is correct
+                if not user.check_password(password):
+                    raise serializers.ValidationError('Incorrect password. Please try again or use Forgot Password.')
+                
+                # Check if account is active
+                if not user.is_active:
+                    raise serializers.ValidationError('Your account has been disabled. Please contact support.')
+                
+                attrs['user'] = user
+            except User.DoesNotExist:
+                raise serializers.ValidationError('Username or email does not exist. Please check and try again.')
+                
         else:
-            raise serializers.ValidationError('Must include username and password.')
+            raise serializers.ValidationError('Username and password are required.')
         
         return attrs
 
