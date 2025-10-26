@@ -108,6 +108,7 @@ export default function PlatformAdminDashboard() {
   const [entityType, setEntityType] = useState<'company' | 'user' | 'vehicle' | ''>('')
   const [companies, setCompanies] = useState<Company[]>([])
   const [companySearchTerm, setCompanySearchTerm] = useState('')
+  const [selectedCompany, setSelectedCompany] = useState('')
 
   useEffect(() => {
     fetchPlatformStats()
@@ -146,6 +147,8 @@ export default function PlatformAdminDashboard() {
   const handleCloseDialog = () => {
     setShowAddEntityDialog(false);
     setEntityType('');
+    setSelectedCompany('');
+    setCompanySearchTerm('');
   };
 
   const handleLogout = async () => {
@@ -241,12 +244,11 @@ export default function PlatformAdminDashboard() {
         console.log('Company created:', data);
         alert(`Company "${data.name}" created successfully!`);
       } else if (entityType === 'user') {
-        // Get company from select
-        const companySelect = document.getElementById('user-company-select') as HTMLSelectElement;
-        const company_slug = companySelect?.value;
+        // Get company from state
+        const company_slug = selectedCompany;
         
         // Validate required fields
-        if (!company_slug) {
+        if (!company_slug || company_slug.trim() === '') {
           alert('Error: Company is required. Please select a company.');
           return;
         }
@@ -1131,7 +1133,7 @@ export default function PlatformAdminDashboard() {
 
                 <div className="space-y-2">
                   <Label>Company *</Label>
-                  <Select id="user-company-select" defaultValue="">
+                  <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a company" />
                     </SelectTrigger>
