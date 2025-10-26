@@ -85,7 +85,12 @@ class AuditLogSerializer(serializers.ModelSerializer):
     """Serializer for AuditLog model"""
     
     company_name = serializers.CharField(source='company.name', read_only=True)
-    user_name = serializers.CharField(source='user.full_name', read_only=True)
+    user_name = serializers.SerializerMethodField()
+    
+    def get_user_name(self, obj):
+        if obj.user:
+            return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+        return 'Unknown'
     
     class Meta:
         model = AuditLog
@@ -131,7 +136,11 @@ class PlatformAdminSerializer(serializers.ModelSerializer):
     
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
-    full_name = serializers.CharField(source='user.full_name', read_only=True)
+    full_name = serializers.SerializerMethodField()
+    
+    def get_full_name(self, obj):
+        user = obj.user
+        return f"{user.first_name} {user.last_name}".strip() or user.username
     
     class Meta:
         model = PlatformAdmin
@@ -146,7 +155,11 @@ class AdminActionSerializer(serializers.ModelSerializer):
     """Serializer for AdminAction model"""
     
     admin_username = serializers.CharField(source='admin.user.username', read_only=True)
-    admin_full_name = serializers.CharField(source='admin.user.full_name', read_only=True)
+    admin_full_name = serializers.SerializerMethodField()
+    
+    def get_admin_full_name(self, obj):
+        user = obj.admin.user
+        return f"{user.first_name} {user.last_name}".strip() or user.username
     
     class Meta:
         model = AdminAction
@@ -243,18 +256,22 @@ class UserManagementSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='company.name', read_only=True)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
     is_active_display = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'full_name', 'role', 'role_display',
-            'company', 'company_name', 'is_active', 'is_active_display',
-            'is_staff', 'is_superuser', 'date_joined', 'last_login'
+            'id', 'username', 'email', 'first_name', 'last_name', 'full_name', 
+            'role', 'role_display', 'company', 'company_name', 'is_active', 
+            'is_active_display', 'is_staff', 'is_superuser', 'date_joined', 'last_login'
         ]
         read_only_fields = ['id', 'date_joined', 'last_login']
     
     def get_is_active_display(self, obj):
         return 'Active' if obj.is_active else 'Inactive'
+    
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip() or obj.username
 
 
 class VehicleManagementSerializer(serializers.ModelSerializer):
@@ -280,7 +297,12 @@ class VehicleManagementSerializer(serializers.ModelSerializer):
 class ShiftManagementSerializer(serializers.ModelSerializer):
     """Comprehensive shift management serializer"""
     
-    driver_name = serializers.CharField(source='driver.full_name', read_only=True)
+    driver_name = serializers.SerializerMethodField()
+    
+    def get_driver_name(self, obj):
+        if obj.driver:
+            return f"{obj.driver.first_name} {obj.driver.last_name}".strip() or obj.driver.username
+        return 'Unknown'
     vehicle_info = serializers.CharField(source='vehicle.license_plate', read_only=True)
     company_name = serializers.CharField(source='driver.company.name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -299,7 +321,12 @@ class ShiftManagementSerializer(serializers.ModelSerializer):
 class InspectionManagementSerializer(serializers.ModelSerializer):
     """Comprehensive inspection management serializer"""
     
-    inspector_name = serializers.CharField(source='inspector.full_name', read_only=True)
+    inspector_name = serializers.SerializerMethodField()
+    
+    def get_inspector_name(self, obj):
+        if obj.inspector:
+            return f"{obj.inspector.first_name} {obj.inspector.last_name}".strip() or obj.inspector.username
+        return 'Unknown'
     vehicle_info = serializers.CharField(source='vehicle.license_plate', read_only=True)
     company_name = serializers.CharField(source='inspector.company.name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -317,8 +344,18 @@ class InspectionManagementSerializer(serializers.ModelSerializer):
 class IssueManagementSerializer(serializers.ModelSerializer):
     """Comprehensive issue management serializer"""
     
-    reporter_name = serializers.CharField(source='reporter.full_name', read_only=True)
-    assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True)
+    reporter_name = serializers.SerializerMethodField()
+    assigned_to_name = serializers.SerializerMethodField()
+    
+    def get_reporter_name(self, obj):
+        if obj.reporter:
+            return f"{obj.reporter.first_name} {obj.reporter.last_name}".strip() or obj.reporter.username
+        return 'Unknown'
+    
+    def get_assigned_to_name(self, obj):
+        if obj.assigned_to:
+            return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip() or obj.assigned_to.username
+        return 'Unassigned'
     vehicle_info = serializers.CharField(source='vehicle.license_plate', read_only=True)
     company_name = serializers.CharField(source='reporter.company.name', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
@@ -338,8 +375,18 @@ class IssueManagementSerializer(serializers.ModelSerializer):
 class TicketManagementSerializer(serializers.ModelSerializer):
     """Comprehensive ticket management serializer"""
     
-    requester_name = serializers.CharField(source='requester.full_name', read_only=True)
-    assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True)
+    requester_name = serializers.SerializerMethodField()
+    assigned_to_name = serializers.SerializerMethodField()
+    
+    def get_requester_name(self, obj):
+        if obj.requester:
+            return f"{obj.requester.first_name} {obj.requester.last_name}".strip() or obj.requester.username
+        return 'Unknown'
+    
+    def get_assigned_to_name(self, obj):
+        if obj.assigned_to:
+            return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip() or obj.assigned_to.username
+        return 'Unassigned'
     vehicle_info = serializers.CharField(source='vehicle.license_plate', read_only=True)
     company_name = serializers.CharField(source='requester.company.name', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
