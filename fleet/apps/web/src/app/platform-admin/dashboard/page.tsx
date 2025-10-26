@@ -115,6 +115,15 @@ export default function PlatformAdminDashboard() {
   const [allUsers, setAllUsers] = useState<any[]>([])
   const [showCompaniesModal, setShowCompaniesModal] = useState(false)
   const [showUsersModal, setShowUsersModal] = useState(false)
+  const [entityLoading, setEntityLoading] = useState(false)
+  const [entitiesData, setEntitiesData] = useState<any>({
+    companies: [],
+    users: [],
+    vehicles: [],
+    shifts: [],
+    inspections: [],
+    issues: []
+  })
 
   useEffect(() => {
     fetchPlatformStats()
@@ -130,7 +139,10 @@ export default function PlatformAdminDashboard() {
     if (showUsersModal) {
       fetchAllUsers()
     }
-  }, [showCompaniesModal, showUsersModal])
+    if (activeTab === 'entities') {
+      fetchAllEntities()
+    }
+  }, [showCompaniesModal, showUsersModal, activeTab])
   
   const fetchCompanies = async () => {
     try {
@@ -166,6 +178,53 @@ export default function PlatformAdminDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch users:', error)
+    }
+  }
+
+  const fetchAllEntities = async () => {
+    setEntityLoading(true)
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      
+      const [companiesRes, usersRes, vehiclesRes] = await Promise.all([
+        fetch('http://127.0.0.1:8000/api/platform-admin/companies/', {
+          headers: { 'Authorization': `Token ${token}` },
+        }),
+        fetch('http://127.0.0.1:8000/api/platform-admin/users/', {
+          headers: { 'Authorization': `Token ${token}` },
+        }),
+        fetch('http://127.0.0.1:8000/api/platform-admin/vehicles/', {
+          headers: { 'Authorization': `Token ${token}` },
+        }),
+      ])
+      
+      if (companiesRes.ok) {
+        const companiesData = await companiesRes.json()
+        setEntitiesData((prev: any) => ({
+          ...prev,
+          companies: Array.isArray(companiesData) ? companiesData : companiesData.results || []
+        }))
+      }
+      
+      if (usersRes.ok) {
+        const usersData = await usersRes.json()
+        setEntitiesData((prev: any) => ({
+          ...prev,
+          users: Array.isArray(usersData) ? usersData : usersData.results || []
+        }))
+      }
+      
+      if (vehiclesRes.ok) {
+        const vehiclesData = await vehiclesRes.json()
+        setEntitiesData((prev: any) => ({
+          ...prev,
+          vehicles: Array.isArray(vehiclesData) ? vehiclesData : vehiclesData.results || []
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to fetch entities:', error)
+    } finally {
+      setEntityLoading(false)
     }
   }
 
@@ -484,21 +543,21 @@ export default function PlatformAdminDashboard() {
           total_admin_actions: backendStats.total_admin_actions || 0,
           recent_admin_actions: backendStats.recent_admin_actions || [],
           system_health: backendStats.system_health || {
-            database_status: 'healthy',
-            redis_status: 'healthy',
-            celery_status: 'healthy',
-            storage_status: 'healthy',
-            api_response_time: 0.15,
-            error_rate: 0.02,
+          database_status: 'healthy',
+          redis_status: 'healthy',
+          celery_status: 'healthy',
+          storage_status: 'healthy',
+          api_response_time: 0.15,
+          error_rate: 0.02,
             active_users: backendStats.total_users || 0,
-            system_load: 0.45,
-            memory_usage: 0.67,
-            disk_usage: 0.23,
+          system_load: 0.45,
+          memory_usage: 0.67,
+          disk_usage: 0.23,
             last_backup: new Date(),
             uptime: '30d 12h',
-          },
+        },
           active_maintenance: backendStats.active_maintenance || []
-        }
+      }
 
         setStats(stats)
       } else {
@@ -878,115 +937,134 @@ export default function PlatformAdminDashboard() {
               <CardDescription>Manage all platform entities</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Building2 className="w-6 h-6 text-blue-600" />
-                    <span className="font-medium">Companies</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">Manage company accounts and subscriptions</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button size="sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Manage
-                    </Button>
-                  </div>
+              {entityLoading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-400" />
+                  <p className="text-gray-500">Loading entities...</p>
                 </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Building2 className="w-6 h-6 text-blue-600" />
+                      <span className="font-medium">Companies</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Total: {entitiesData.companies.length} companies
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setShowCompaniesModal(true)}>
+                        <Eye className="w-4 h-4 mr-1" />
+                        View All
+                      </Button>
+                      <Button size="sm" onClick={() => { setEntityType('company'); setShowAddEntityDialog(true); }}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
+                  </div>
 
-                <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Users className="w-6 h-6 text-green-600" />
-                    <span className="font-medium">Users</span>
+                  <div className="p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Users className="w-6 h-6 text-green-600" />
+                      <span className="font-medium">Users</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Total: {entitiesData.users.length} users
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setShowUsersModal(true)}>
+                        <Eye className="w-4 h-4 mr-1" />
+                        View All
+                      </Button>
+                      <Button size="sm" onClick={() => { setEntityType('user'); setShowAddEntityDialog(true); }}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">Manage user accounts and permissions</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button size="sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Manage
-                    </Button>
-                  </div>
-                </div>
 
-                <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Truck className="w-6 h-6 text-purple-600" />
-                    <span className="font-medium">Vehicles</span>
+                  <div className="p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Truck className="w-6 h-6 text-purple-600" />
+                      <span className="font-medium">Vehicles</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Total: {entitiesData.vehicles.length} vehicles
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => alert('View all vehicles (coming soon)')}>
+                        <Eye className="w-4 h-4 mr-1" />
+                        View All
+                      </Button>
+                      <Button size="sm" onClick={() => { setEntityType('vehicle'); setShowAddEntityDialog(true); }}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">Manage fleet vehicles and assignments</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button size="sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Manage
-                    </Button>
-                  </div>
-                </div>
 
-                <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Clock className="w-6 h-6 text-orange-600" />
-                    <span className="font-medium">Shifts</span>
+                  <div className="p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Clock className="w-6 h-6 text-orange-600" />
+                      <span className="font-medium">Shifts</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Total: {stats?.total_shifts || 0} shifts
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => alert('View all shifts (coming soon)')}>
+                        <Eye className="w-4 h-4 mr-1" />
+                        View All
+                      </Button>
+                      <Button size="sm" onClick={() => alert('Add shift (coming soon)')}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">Manage driver shifts and schedules</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button size="sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Manage
-                    </Button>
-                  </div>
-                </div>
 
-                <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <CheckCircle className="w-6 h-6 text-indigo-600" />
-                    <span className="font-medium">Inspections</span>
+                  <div className="p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <CheckCircle className="w-6 h-6 text-indigo-600" />
+                      <span className="font-medium">Inspections</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Total: {stats?.total_inspections || 0} inspections
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => alert('View all inspections (coming soon)')}>
+                        <Eye className="w-4 h-4 mr-1" />
+                        View All
+                      </Button>
+                      <Button size="sm" onClick={() => alert('Add inspection (coming soon)')}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">Manage vehicle inspections and reports</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button size="sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Manage
-                    </Button>
-                  </div>
-                </div>
 
-                <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <AlertTriangle className="w-6 h-6 text-red-600" />
-                    <span className="font-medium">Issues</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">Manage reported issues and resolutions</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button size="sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Manage
-                    </Button>
+                  <div className="p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <AlertTriangle className="w-6 h-6 text-red-600" />
+                      <span className="font-medium">Issues</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Total: {stats?.total_issues || 0} issues
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => alert('View all issues (coming soon)')}>
+                        <Eye className="w-4 h-4 mr-1" />
+                        View All
+                      </Button>
+                      <Button size="sm" onClick={() => alert('Add issue (coming soon)')}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -995,38 +1073,141 @@ export default function PlatformAdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                System Management
+                <Server className="w-5 h-5" />
+                System Health & Configuration
               </CardTitle>
-              <CardDescription>System configuration and maintenance</CardDescription>
+              <CardDescription>Real-time system status and configuration</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <Server className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">System Management</h3>
-                <p className="text-gray-500">Configure system settings and perform maintenance tasks</p>
-              </div>
+              {stats && (
+                <div className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Database Status</span>
+                        <Badge className={getStatusColor(stats.system_health.database_status)}>
+                          {stats.system_health.database_status}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Redis Cache</span>
+                        <Badge className={getStatusColor(stats.system_health.redis_status)}>
+                          {stats.system_health.redis_status}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Celery Workers</span>
+                        <Badge className={getStatusColor(stats.system_health.celery_status)}>
+                          {stats.system_health.celery_status}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Storage</span>
+                        <Badge className={getStatusColor(stats.system_health.storage_status)}>
+                          {stats.system_health.storage_status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">API Response Time</span>
+                        <span className="text-sm">{stats.system_health.api_response_time}s</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Error Rate</span>
+                        <span className="text-sm">{(stats.system_health.error_rate * 100).toFixed(2)}%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">System Load</span>
+                        <span className="text-sm">{(stats.system_health.system_load * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Memory Usage</span>
+                        <span className="text-sm">{(stats.system_health.memory_usage * 100).toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Button variant="outline" className="w-full">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Configure System Settings
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Analytics & Reports
-              </CardTitle>
-              <CardDescription>Platform analytics and reporting</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Analytics Dashboard</h3>
-                <p className="text-gray-500">View detailed analytics and generate reports</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Revenue Analytics
+                </CardTitle>
+                <CardDescription>Monthly revenue breakdown</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {stats && (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-medium">Monthly</span>
+                        <span className="text-sm font-bold">{formatCurrency(stats.monthly_revenue)}</span>
+                      </div>
+                      <Progress value={75} className="h-2" />
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-medium">Yearly</span>
+                        <span className="text-sm font-bold">{formatCurrency(stats.yearly_revenue)}</span>
+                      </div>
+                      <Progress value={82} className="h-2" />
+                    </div>
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-gray-600">
+                        Based on {stats.total_companies} active companies
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Growth Metrics
+                </CardTitle>
+                <CardDescription>Platform growth indicators</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {stats && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Total Companies</span>
+                      <span className="text-xl font-bold">{stats.total_companies}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Active Users</span>
+                      <span className="text-xl font-bold">{stats.system_health.active_users}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Fleet Size</span>
+                      <span className="text-xl font-bold">{stats.total_vehicles}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Total Inspections</span>
+                      <span className="text-xl font-bold">{stats.total_inspections}</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-4">
@@ -1034,15 +1215,41 @@ export default function PlatformAdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Wrench className="w-5 h-5" />
-                Maintenance & Updates
+                Maintenance Schedule
               </CardTitle>
-              <CardDescription>Schedule and manage system maintenance</CardDescription>
+              <CardDescription>Scheduled system maintenance and updates</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <RefreshCw className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Maintenance Center</h3>
-                <p className="text-gray-500">Schedule maintenance windows and system updates</p>
+              {stats && stats.active_maintenance && stats.active_maintenance.length > 0 ? (
+                <div className="space-y-4">
+                  {stats.active_maintenance.map((item: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium">{item.title}</h4>
+                        <Badge variant={item.status === 'in_progress' ? 'default' : 'outline'}>
+                          {item.status}
+                        </Badge>
+                      </div>
+                      {item.scheduled_start && (
+                        <p className="text-sm text-gray-600">
+                          Scheduled: {format(new Date(item.scheduled_start), 'MMM dd, yyyy HH:mm')}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Maintenance</h3>
+                  <p className="text-gray-500">All systems operational</p>
+                </div>
+              )}
+              <div className="mt-4">
+                <Button className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Schedule Maintenance
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1053,15 +1260,44 @@ export default function PlatformAdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5" />
-                Platform Settings
+                Platform Configuration
               </CardTitle>
-              <CardDescription>Configure platform-wide settings</CardDescription>
+              <CardDescription>Manage platform-wide settings</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Platform Configuration</h3>
-                <p className="text-gray-500">Manage platform settings and configurations</p>
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Button variant="outline" className="justify-start h-auto p-4">
+                    <div className="text-left">
+                      <div className="font-medium">Trial Settings</div>
+                      <div className="text-sm text-gray-600">Configure trial duration and limits</div>
+                    </div>
+                  </Button>
+                  <Button variant="outline" className="justify-start h-auto p-4">
+                    <div className="text-left">
+                      <div className="font-medium">Billing Configuration</div>
+                      <div className="text-sm text-gray-600">Set up payment methods and plans</div>
+                    </div>
+                  </Button>
+                  <Button variant="outline" className="justify-start h-auto p-4">
+                    <div className="text-left">
+                      <div className="font-medium">Feature Flags</div>
+                      <div className="text-sm text-gray-600">Enable or disable platform features</div>
+                    </div>
+                  </Button>
+                  <Button variant="outline" className="justify-start h-auto p-4">
+                    <div className="text-left">
+                      <div className="font-medium">Integration Settings</div>
+                      <div className="text-sm text-gray-600">Configure third-party integrations</div>
+                    </div>
+                  </Button>
+                </div>
+                <div className="pt-4 border-t">
+                  <Button className="w-full" variant="destructive">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Advanced Settings
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
