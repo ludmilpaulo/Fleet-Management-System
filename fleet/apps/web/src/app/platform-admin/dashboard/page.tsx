@@ -46,7 +46,8 @@ import {
   CreditCard,
   ToggleLeft,
   Link,
-  Package
+  Package,
+  Calendar
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -3273,63 +3274,176 @@ export default function PlatformAdminDashboard() {
 
       {/* Assign Plan to Company Modal */}
       <Dialog open={showAssignPlanModal} onOpenChange={setShowAssignPlanModal}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Crown className="w-5 h-5" />
-              Assign Plan to Company
+            <DialogTitle className="flex items-center gap-2 text-2xl">
+              <Crown className="w-6 h-6 text-yellow-600" />
+              Assign Subscription Plan
             </DialogTitle>
-            <DialogDescription>
-              Select a company and assign a subscription plan
+            <DialogDescription className="text-base">
+              Create a new subscription for a company by selecting a plan and configuring billing details
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Company *</Label>
+          <div className="space-y-6 py-4">
+            {/* Company Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Select Company *</Label>
               <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a company" />
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Choose a company" />
                 </SelectTrigger>
-                <SelectContent className="max-h-[200px]">
+                <SelectContent className="max-h-[250px]">
                   {companies
                     .filter(company => company.slug && company.slug.trim() !== '')
                     .map((company) => (
                       <SelectItem key={company.slug} value={company.slug}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{company.name}</span>
-                          <span className="text-xs text-gray-500">{company.email}</span>
+                        <div className="flex items-center gap-3 py-1">
+                          <Building2 className="w-5 h-5 text-blue-600" />
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-sm">{company.name}</span>
+                            <span className="text-xs text-gray-500">{company.email}</span>
+                          </div>
                         </div>
                       </SelectItem>
                     ))}
                 </SelectContent>
               </Select>
+              {selectedCompany && (
+                <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded">
+                  <CheckCircle className="w-4 h-4" />
+                  Company selected
+                </div>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Subscription Plan *</Label>
+            <div className="border-t pt-4"></div>
+
+            {/* Plan Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Subscription Plan *</Label>
               <Select 
-                value={editingEntity?.plan_id?.toString() || ''} 
-                onValueChange={(value) => setEditingEntity({...editingEntity, plan_id: parseInt(value)})}
+                value={editFormData.plan_id?.toString() || ''} 
+                onValueChange={(value) => setEditFormData({...editFormData, plan_id: parseInt(value)})}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a plan" />
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Choose a subscription plan" />
                 </SelectTrigger>
-                <SelectContent className="max-h-[200px]">
-                  {subscriptionPlans
-                    .filter(plan => plan.is_active)
-                    .map((plan) => (
-                      <SelectItem key={plan.id} value={plan.id.toString()}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{plan.display_name || plan.name}</span>
-                          <span className="text-xs text-gray-500">
-                            ${plan.monthly_price}/mo or ${plan.yearly_price}/yr
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                <SelectContent className="max-h-[250px]">
+                  {subscriptionPlans.length > 0 ? (
+                    subscriptionPlans
+                      .filter(plan => plan.is_active)
+                      .map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id.toString()}>
+                          <div className="flex items-center justify-between w-full py-1">
+                            <div className="flex items-center gap-3">
+                              <Package className="w-5 h-5 text-purple-600" />
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-sm">{plan.display_name || plan.name}</span>
+                                  {plan.is_popular && (
+                                    <Badge className="bg-yellow-100 text-yellow-800 text-xs">Popular</Badge>
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  ${parseFloat(plan.monthly_price)?.toFixed(2) || '0.00'}/mo • 
+                                  ${parseFloat(plan.yearly_price)?.toFixed(2) || '0.00'}/yr
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))
+                  ) : (
+                    <div className="px-2 py-6 text-center text-sm text-gray-500">
+                      No active plans available
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
+              {editFormData.plan_id && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="w-4 h-4 text-blue-600 mt-0.5" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium">Plan Details:</p>
+                      {(() => {
+                        const plan = subscriptionPlans.find(p => p.id === editFormData.plan_id)
+                        return plan ? (
+                          <ul className="list-disc list-inside mt-1 space-y-1">
+                            <li>Max Users: {plan.max_users || 'Unlimited'}</li>
+                            <li>Max Vehicles: {plan.max_vehicles || 'Unlimited'}</li>
+                            {plan.description && <li className="text-xs">{plan.description}</li>}
+                          </ul>
+                        ) : null
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t pt-4"></div>
+
+            {/* Status and Billing */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Subscription Status *</Label>
+                <Select 
+                  value={editFormData.status || 'trial'} 
+                  onValueChange={(value) => setEditFormData({...editFormData, status: value})}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="trial">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>Trial (14 days)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="active">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Active</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="suspended">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>Suspended</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Billing Cycle *</Label>
+                <Select 
+                  value={editFormData.billing_cycle || 'monthly'} 
+                  onValueChange={(value) => setEditFormData({...editFormData, billing_cycle: value})}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>Monthly</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="yearly">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>Yearly (Save 20%)</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -3368,11 +3482,20 @@ export default function PlatformAdminDashboard() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowAssignPlanModal(false)}>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowAssignPlanModal(false)
+                setSelectedCompany('')
+                setEditFormData({})
+              }}
+              className="px-6"
+            >
               Cancel
             </Button>
-            <Button onClick={async () => {
+            <Button 
+              onClick={async () => {
               if (!selectedCompany) {
                 alert('Please select a company')
                 return
@@ -3427,9 +3550,12 @@ export default function PlatformAdminDashboard() {
                 console.error('Error assigning plan:', error)
                 alert('Failed to assign plan')
               }
-            }}>
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Assign Plan
+            }}
+            className="px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+            disabled={!selectedCompany || !editFormData.plan_id}
+          >
+              <CheckCircle className="w-5 h-5 mr-2" />
+              Assign Plan to Company
             </Button>
           </div>
         </DialogContent>
