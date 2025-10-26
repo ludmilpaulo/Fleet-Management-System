@@ -277,19 +277,18 @@ class UserManagementSerializer(serializers.ModelSerializer):
 class VehicleManagementSerializer(serializers.ModelSerializer):
     """Comprehensive vehicle management serializer"""
     
-    company_name = serializers.CharField(source='company.name', read_only=True)
+    company_name = serializers.CharField(source='org.name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     fuel_type_display = serializers.CharField(source='get_fuel_type_display', read_only=True)
+    license_plate = serializers.CharField(source='reg_number', read_only=True)
     
     class Meta:
         model = Vehicle
         fields = [
-            'id', 'company', 'company_name', 'vin', 'make', 'model', 'year',
-            'license_plate', 'status', 'status_display', 'fuel_type',
-            'fuel_type_display', 'mileage', 'last_service_date',
-            'next_service_date', 'purchase_date', 'purchase_price',
-            'current_value', 'insurance_expiry', 'registration_expiry',
-            'is_active', 'created_at', 'updated_at'
+            'id', 'org', 'company_name', 'vin', 'make', 'model', 'year',
+            'reg_number', 'license_plate', 'status', 'status_display', 'fuel_type',
+            'fuel_type_display', 'mileage', 'color', 'engine_size', 'transmission',
+            'created_at', 'updated_at', 'created_by'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
