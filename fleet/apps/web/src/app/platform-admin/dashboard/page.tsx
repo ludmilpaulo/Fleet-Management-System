@@ -500,8 +500,12 @@ export default function PlatformAdminDashboard() {
         }
 
         setStats(stats)
+      } else {
+        throw new Error('Failed to fetch platform stats')
+      }
     } catch (error) {
       console.error('Error fetching platform stats:', error)
+      setLoading(false)
     } finally {
       setLoading(false)
     }
