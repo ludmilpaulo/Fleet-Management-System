@@ -110,7 +110,7 @@ export default function PlatformAdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [showAddEntityDialog, setShowAddEntityDialog] = useState(false)
-  const [entityType, setEntityType] = useState<'company' | 'user' | 'vehicle' | 'shift' | 'inspection' | 'issue' | ''>('')
+  const [entityType, setEntityType] = useState<'company' | 'user' | 'vehicle' | 'shift' | 'inspection' | 'issue' | 'subscription' | ''>('')
   const [companies, setCompanies] = useState<Company[]>([])
   const [companySearchTerm, setCompanySearchTerm] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
@@ -293,7 +293,7 @@ export default function PlatformAdminDashboard() {
   const fetchSubscriptions = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/subscriptions/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/subscriptions/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -308,7 +308,7 @@ export default function PlatformAdminDashboard() {
   const fetchSubscriptionPlans = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/plans/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/plans/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -616,7 +616,7 @@ export default function PlatformAdminDashboard() {
           fetchInspections()
         } else if (type === 'issues') {
           fetchIssues()
-        } else if (type === 'subscriptions') {
+        } else if (type === 'subscriptions' || type === 'subscription') {
           fetchSubscriptions()
         }
       } else {
@@ -1037,6 +1037,78 @@ export default function PlatformAdminDashboard() {
       const data = await response.json();
       console.log('Issue created:', data);
       alert(`Issue "${data.title}" created successfully!`);
+      } else if (entityType === 'subscription') {
+        // Get company from state
+        const company_slug = selectedCompany;
+        
+        // Validate required fields
+        if (!company_slug || company_slug.trim() === '') {
+          alert('Error: Company is required. Please select a company.');
+          return;
+        }
+        
+        const statusSelect = document.querySelector('select') as HTMLSelectElement;
+        const billingCycleSelect = document.querySelectorAll('select')[1] as HTMLSelectElement;
+        const amountInput = document.querySelector('input[type="number"]') as HTMLInputElement;
+        const currencyInput = document.querySelector('input[placeholder="USD"]') as HTMLInputElement;
+        
+        const status = statusSelect?.value || 'trial';
+        const billing_cycle = billingCycleSelect?.value || 'monthly';
+        const amount = parseFloat(amountInput?.value || '0');
+        const currency = currencyInput?.value || 'USD';
+        
+        if (!amount || amount <= 0) {
+          alert('Error: Amount is required and must be greater than 0.');
+          return;
+        }
+        
+        // Get company ID from slug
+        const company = companies.find(c => c.slug === company_slug);
+        if (!company) {
+          alert('Error: Selected company not found.');
+          return;
+        }
+        
+        const response = await fetch(`${API_BASE}/platform-admin/subscriptions/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`,
+          },
+          body: JSON.stringify({
+            company: company.id,
+            status: status,
+            billing_cycle: billing_cycle,
+            amount: amount,
+            currency: currency,
+          }),
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('Subscription creation error:', error);
+          
+          let errorMessage = 'Failed to create subscription:\n\n';
+          if (error.company) {
+            errorMessage += `Company: ${error.company[0]}\n`;
+          }
+          if (error.amount) {
+            errorMessage += `Amount: ${error.amount[0]}\n`;
+          }
+          if (error.status) {
+            errorMessage += `Status: ${error.status[0]}\n`;
+          }
+          if (error.detail) {
+            errorMessage += `Detail: ${error.detail}\n`;
+          }
+          
+          alert(errorMessage || 'An error occurred while creating the subscription.');
+          return;
+        }
+        
+        const data = await response.json();
+        console.log('Subscription created:', data);
+        alert(`Subscription created successfully!`);
       }
       
       // Refresh data
@@ -2248,6 +2320,12 @@ export default function PlatformAdminDashboard() {
                       Issue
                     </div>
                   </SelectItem>
+                  <SelectItem value="subscription">
+                    <div className="flex items-center gap-2">
+                      <Crown className="w-4 h-4" />
+                      Subscription
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -2659,6 +2737,77 @@ export default function PlatformAdminDashboard() {
                       <SelectItem value="resolved">Resolved</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Subscription Form */}
+            {entityType === 'subscription' && (
+              <div className="space-y-4 animate-in fade-in-50 slide-in-from-top-4">
+                <div className="p-4 bg-yellow-50 rounded-lg mb-4">
+                  <p className="text-sm text-yellow-700">Create a new subscription for a company</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Company *</Label>
+                  <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a company" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {companies
+                        .filter(company => company.slug && company.slug.trim() !== '')
+                        .map((company) => (
+                          <SelectItem key={company.slug} value={company.slug}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{company.name}</span>
+                              <span className="text-xs text-gray-500">{company.email}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">Select the company for this subscription</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Status *</Label>
+                    <Select defaultValue="trial">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="trial">Trial</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="expired">Expired</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Billing Cycle *</Label>
+                    <Select defaultValue="monthly">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Amount *</Label>
+                  <Input type="number" step="0.01" placeholder="0.00" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Currency *</Label>
+                  <Input placeholder="USD" defaultValue="USD" />
                 </div>
               </div>
             )}
