@@ -1,6 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAppDispatch } from '@/store/hooks'
+import { logoutUser } from '@/store/slices/authSlice'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -35,7 +38,8 @@ import {
   Info,
   ArrowUpRight,
   Wrench,
-  X
+  X,
+  LogOut
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -87,6 +91,8 @@ interface PlatformStats {
 }
 
 export default function PlatformAdminDashboard() {
+  const router = useRouter()
+  const dispatch = useAppDispatch()
   const [stats, setStats] = useState<PlatformStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
@@ -111,6 +117,21 @@ export default function PlatformAdminDashboard() {
     setShowAddEntityDialog(false);
     setEntityType('');
   };
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser()).unwrap()
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('current_user')
+      router.push('/auth/signin')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Force logout even if API call fails
+      localStorage.clear()
+      router.push('/auth/signin')
+    }
+  }
 
   const handleCreateEntity = async () => {
     try {
@@ -379,6 +400,14 @@ export default function PlatformAdminDashboard() {
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Entity
+          </Button>
+          <Button 
+            variant="outline" 
+            className="hover:border-red-600 hover:text-red-600 transition-all duration-300"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
           </Button>
         </div>
       </div>
