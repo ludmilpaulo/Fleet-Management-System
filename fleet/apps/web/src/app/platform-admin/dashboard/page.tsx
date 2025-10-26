@@ -169,7 +169,8 @@ export default function PlatformAdminDashboard() {
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.detail || 'Failed to create company');
+          console.error('Company creation error:', error);
+          throw new Error(error.detail || error.message || 'Failed to create company');
         }
 
         const data = await response.json();

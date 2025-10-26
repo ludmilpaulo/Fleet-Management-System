@@ -37,6 +37,10 @@ class IsPlatformAdmin(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
         
+        # If user is superuser, allow access
+        if request.user.is_superuser:
+            return True
+        
         # Check if user is a platform admin
         try:
             platform_admin = request.user.platform_admin
