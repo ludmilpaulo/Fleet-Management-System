@@ -88,9 +88,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name',
             'full_name', 'role', 'role_display', 'phone_number',
             'employee_id', 'department', 'hire_date', 'is_active',
-            'date_joined', 'last_login', 'created_at', 'updated_at', 'company'
+            'is_superuser', 'is_staff', 'date_joined', 'last_login', 
+            'created_at', 'updated_at', 'company'
         )
-        read_only_fields = ('id', 'username', 'date_joined', 'last_login', 'created_at', 'updated_at', 'company')
+        read_only_fields = ('id', 'username', 'is_superuser', 'is_staff', 'date_joined', 'last_login', 'created_at', 'updated_at', 'company')
     
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip()
