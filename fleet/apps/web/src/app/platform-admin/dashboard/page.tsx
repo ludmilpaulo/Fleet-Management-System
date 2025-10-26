@@ -106,7 +106,7 @@ export default function PlatformAdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [showAddEntityDialog, setShowAddEntityDialog] = useState(false)
-  const [entityType, setEntityType] = useState<'company' | 'user' | 'vehicle' | ''>('')
+  const [entityType, setEntityType] = useState<'company' | 'user' | 'vehicle' | 'inspection' | 'issue' | ''>('')
   const [companies, setCompanies] = useState<Company[]>([])
   const [companySearchTerm, setCompanySearchTerm] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
@@ -725,10 +725,105 @@ export default function PlatformAdminDashboard() {
       // Close dialog
       handleCloseDialog();
     } catch (error: any) {
-      console.error('Error creating entity:', error);
-      alert(`Error: ${error.message}`);
+        console.error('Error creating entity:', error);
+        alert(`Error: ${error.message}`);
+      }
+    } else if (entityType === 'inspection') {
+      // Get form values
+      const shiftId = (document.querySelector('input[placeholder="Enter shift ID"]') as HTMLInputElement)?.value?.trim();
+      const type = (document.querySelector('select') as HTMLSelectElement)?.value || 'START';
+      const weather_conditions = (document.querySelector('input[placeholder="e.g., Sunny, Rainy, Cloudy"]') as HTMLInputElement)?.value?.trim();
+      const temperature = (document.querySelector('input[placeholder="25"]') as HTMLInputElement)?.value?.trim();
+      const notes = (document.querySelector('textarea') as HTMLTextAreaElement)?.value?.trim();
+
+      if (!shiftId) {
+        alert('Error: Shift ID is required.');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/platform-admin/inspections/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`,
+        },
+        body: JSON.stringify({
+          shift: parseInt(shiftId),
+          type: type,
+          weather_conditions: weather_conditions || '',
+          temperature: temperature ? parseFloat(temperature) : null,
+          notes: notes || '',
+          status: 'IN_PROGRESS',
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Failed to create inspection: ${error.detail || JSON.stringify(error)}`);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Inspection created:', data);
+      alert(`Inspection created successfully!`);
+    } else if (entityType === 'issue') {
+      // Get form values
+      const title = (document.querySelector('input[placeholder="e.g., Engine overheating"]') as HTMLInputElement)?.value?.trim();
+      const description = (document.querySelector('textarea[placeholder="Describe the issue in detail..."]') as HTMLTextAreaElement)?.value?.trim();
+      const vehicleId = (document.querySelector('input[placeholder="Vehicle ID (optional)"]') as HTMLInputElement)?.value?.trim();
+      const priority = (document.querySelector('select') as HTMLSelectElement)?.value || 'medium';
+      const status = (document.querySelectorAll('select')[1] as HTMLSelectElement)?.value || 'open';
+
+      if (!title) {
+        alert('Error: Title is required.');
+        return;
+      }
+      if (!description) {
+        alert('Error: Description is required.');
+        return;
+      }
+
+      const payload: any = {
+        title,
+        description,
+        priority,
+        status,
+      };
+
+      if (vehicleId && vehicleId !== '') {
+        payload.vehicle = parseInt(vehicleId);
+      }
+
+      const response = await fetch(`${API_BASE}/platform-admin/issues/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Failed to create issue: ${error.detail || JSON.stringify(error)}`);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Issue created:', data);
+      alert(`Issue "${data.title}" created successfully!`);
     }
-  };
+
+    // Refresh data
+    handleRefresh();
+    
+    // Close dialog
+    handleCloseDialog();
+  } catch (error: any) {
+    console.error('Error creating entity:', error);
+    alert(`Error: ${error.message}`);
+  }
+};
 
   const fetchPlatformStats = async () => {
     try {
@@ -1256,7 +1351,7 @@ export default function PlatformAdminDashboard() {
                         <Eye className="w-4 h-4 mr-1" />
                         View All
                       </Button>
-                      <Button size="sm" onClick={() => alert('Add inspection (API endpoint needed)')}>
+                      <Button size="sm" onClick={() => { setEntityType('inspection'); setShowAddEntityDialog(true); }}>
                         <Plus className="w-4 h-4 mr-1" />
                         Add
                       </Button>
@@ -1276,7 +1371,7 @@ export default function PlatformAdminDashboard() {
                         <Eye className="w-4 h-4 mr-1" />
                         View All
                       </Button>
-                      <Button size="sm" onClick={() => alert('Add issue (API endpoint needed)')}>
+                      <Button size="sm" onClick={() => { setEntityType('issue'); setShowAddEntityDialog(true); }}>
                         <Plus className="w-4 h-4 mr-1" />
                         Add
                       </Button>
@@ -1563,6 +1658,18 @@ export default function PlatformAdminDashboard() {
                       Vehicle
                     </div>
                   </SelectItem>
+                  <SelectItem value="inspection">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Inspection
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="issue">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      Issue
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1787,6 +1894,119 @@ export default function PlatformAdminDashboard() {
                       <SelectItem value="ACTIVE">Active</SelectItem>
                       <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
                       <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Inspection Form */}
+            {entityType === 'inspection' && (
+              <div className="space-y-4 animate-in fade-in-50 slide-in-from-top-4">
+                <div className="p-4 bg-indigo-50 rounded-lg mb-4">
+                  <p className="text-sm text-indigo-700">Create a new vehicle inspection</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Shift ID *</Label>
+                  <Input
+                    type="number"
+                    placeholder="Enter shift ID"
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500">ID of the shift to inspect</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Type *</Label>
+                  <Select defaultValue="START">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="START">Start of Shift</SelectItem>
+                      <SelectItem value="END">End of Shift</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Weather Conditions</Label>
+                  <Input placeholder="e.g., Sunny, Rainy, Cloudy" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Temperature (Celsius)</Label>
+                  <Input type="number" placeholder="25" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <textarea
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    rows={3}
+                    placeholder="Additional inspection notes..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Issue Form */}
+            {entityType === 'issue' && (
+              <div className="space-y-4 animate-in fade-in-50 slide-in-from-top-4">
+                <div className="p-4 bg-red-50 rounded-lg mb-4">
+                  <p className="text-sm text-red-700">Report a new issue</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Title *</Label>
+                  <Input
+                    placeholder="e.g., Engine overheating"
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Description *</Label>
+                  <textarea
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    rows={4}
+                    placeholder="Describe the issue in detail..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Vehicle ID</Label>
+                    <Input type="number" placeholder="Vehicle ID (optional)" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Priority *</Label>
+                    <Select defaultValue="medium">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select defaultValue="open">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
