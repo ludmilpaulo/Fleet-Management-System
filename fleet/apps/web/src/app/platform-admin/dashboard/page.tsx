@@ -246,10 +246,9 @@ export default function PlatformAdminDashboard() {
       
       if (vehiclesRes.ok) {
         const vehiclesData = await vehiclesRes.json()
-        setEntitiesData((prev: any) => ({
-          ...prev,
-          vehicles: Array.isArray(vehiclesData) ? vehiclesData : vehiclesData.results || []
-        }))
+        const vehiclesList = Array.isArray(vehiclesData) ? vehiclesData : vehiclesData.results || []
+        setEntitiesData((prev: any) => ({ ...prev, vehicles: vehiclesList }))
+        setVehicles(vehiclesList)
       }
     } catch (error) {
       console.error('Failed to fetch entities:', error)
@@ -296,7 +295,12 @@ export default function PlatformAdminDashboard() {
       })
       if (response.ok) {
         const data = await response.json()
-        setVehicles(Array.isArray(data) ? data : data.results || [])
+        const vehiclesList = Array.isArray(data) ? data : data.results || []
+        setVehicles(vehiclesList)
+        // Also update entitiesData for the Entities tab display
+        setEntitiesData((prev: any) => ({ ...prev, vehicles: vehiclesList }))
+      } else {
+        console.error('Failed to fetch vehicles:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Failed to fetch vehicles:', error)
@@ -1922,9 +1926,12 @@ export default function PlatformAdminDashboard() {
                 {shifts.map((shift: any) => (
                   <div key={shift.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                     <div className="flex-1">
-                      <h3 className="font-semibold">Shift #{shift.id}</h3>
-                      <p className="text-sm text-gray-600">{shift.driver_name || 'Driver'}</p>
-                      <Badge variant="outline">{shift.status || 'Active'}</Badge>
+                      <h3 className="font-semibold">{shift.driver_name || `Shift #${shift.id}`}</h3>
+                      <p className="text-sm text-gray-600">{shift.vehicle_info || 'Vehicle Assignment'}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline">{shift.status_display || shift.status || 'Active'}</Badge>
+                        {shift.total_distance && <Badge variant="outline">{shift.total_distance} km</Badge>}
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => handleEditEntity(shift, 'shifts')}>
@@ -1965,9 +1972,12 @@ export default function PlatformAdminDashboard() {
                 {inspections.map((inspection: any) => (
                   <div key={inspection.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                     <div className="flex-1">
-                      <h3 className="font-semibold">Inspection #{inspection.id}</h3>
-                      <p className="text-sm text-gray-600">{inspection.vehicle_info || 'Vehicle'}</p>
-                      <Badge variant="outline">{inspection.status_display || inspection.status || 'Pending'}</Badge>
+                      <h3 className="font-semibold">Inspection by {inspection.inspector_name || 'Inspector'}</h3>
+                      <p className="text-sm text-gray-600">Vehicle: {inspection.vehicle_info || 'N/A'}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline">{inspection.status_display || inspection.status || 'Pending'}</Badge>
+                        {inspection.overall_condition && <Badge variant="outline">{inspection.overall_condition}</Badge>}
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => handleEditEntity(inspection, 'inspections')}>
@@ -2008,13 +2018,14 @@ export default function PlatformAdminDashboard() {
                 {issues.map((issue: any) => (
                   <div key={issue.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                     <div className="flex-1">
-                      <h3 className="font-semibold">{issue.title}</h3>
-                      <p className="text-sm text-gray-600">{issue.description?.substring(0, 50)}...</p>
+                      <h3 className="font-semibold">{issue.title || `Issue #${issue.id}`}</h3>
+                      <p className="text-sm text-gray-600">{issue.description?.substring(0, 60) || 'No description'}</p>
                       <div className="flex gap-2 mt-2">
                         <Badge variant="outline">{issue.priority_display || issue.priority || 'Medium'}</Badge>
-                        <Badge className={issue.status_display === 'Resolved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                        <Badge className={issue.status_display === 'Resolved' || issue.status === 'resolved' ? 'bg-green-100 text-green-800' : issue.status === 'closed' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}>
                           {issue.status_display || issue.status || 'Open'}
                         </Badge>
+                        {issue.reporter_name && <Badge variant="outline">by {issue.reporter_name}</Badge>}
                       </div>
                     </div>
                     <div className="flex gap-2">
