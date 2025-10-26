@@ -150,15 +150,26 @@ export default function PlatformAdminDashboard() {
   const [showPlatformSettingsModal, setShowPlatformSettingsModal] = useState(false)
   const [showEditConfigModal, setShowEditConfigModal] = useState(false)
   const [configFormData, setConfigFormData] = useState<any>({})
+  const [showTrialSettingsModal, setShowTrialSettingsModal] = useState(false)
+  const [showBillingConfigModal, setShowBillingConfigModal] = useState(false)
+  const [showFeatureFlagsModal, setShowFeatureFlagsModal] = useState(false)
+  const [platformSettingsData, setPlatformSettingsData] = useState<any>({})
 
   useEffect(() => {
     fetchPlatformStats()
     fetchSystemConfigs()
     fetchAllMaintenances()
+    fetchPlatformSettings()
     if (showAddEntityDialog && (entityType === 'user' || entityType === 'vehicle')) {
       fetchCompanies()
     }
   }, [showAddEntityDialog, entityType])
+
+  useEffect(() => {
+    if (showTrialSettingsModal || showBillingConfigModal || showFeatureFlagsModal) {
+      fetchPlatformSettings()
+    }
+  }, [showTrialSettingsModal, showBillingConfigModal, showFeatureFlagsModal])
   
   useEffect(() => {
     if (showCompaniesModal) {
@@ -396,6 +407,46 @@ export default function PlatformAdminDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch maintenances:', error)
+    }
+  }
+
+  const fetchPlatformSettings = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/settings/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setPlatformSettingsData(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch platform settings:', error)
+    }
+  }
+
+  const handleSavePlatformSettings = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/settings/', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(platformSettingsData),
+      })
+
+      if (response.ok) {
+        alert('Platform settings updated successfully')
+        fetchPlatformSettings()
+      } else {
+        const error = await response.json()
+        alert(`Failed to update: ${error.detail || JSON.stringify(error)}`)
+      }
+    } catch (error) {
+      console.error('Error saving platform settings:', error)
+      alert('Error saving platform settings')
     }
   }
 
@@ -1864,7 +1915,7 @@ export default function PlatformAdminDashboard() {
             <div className="p-4 border rounded-lg">
               <h3 className="font-semibold mb-3">Trial Settings</h3>
               <p className="text-sm text-gray-600 mb-4">Configure trial duration and user limits for new companies</p>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outline" className="w-full justify-start" onClick={() => setShowTrialSettingsModal(true)}>
                 <Settings className="w-4 h-4 mr-2" />
                 Configure Trial Settings
               </Button>
@@ -1873,7 +1924,7 @@ export default function PlatformAdminDashboard() {
             <div className="p-4 border rounded-lg">
               <h3 className="font-semibold mb-3">Billing Configuration</h3>
               <p className="text-sm text-gray-600 mb-4">Set up payment methods and subscription plans</p>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outline" className="w-full justify-start" onClick={() => setShowBillingConfigModal(true)}>
                 <CreditCard className="w-4 h-4 mr-2" />
                 Configure Billing
               </Button>
@@ -1882,7 +1933,7 @@ export default function PlatformAdminDashboard() {
             <div className="p-4 border rounded-lg">
               <h3 className="font-semibold mb-3">Feature Flags</h3>
               <p className="text-sm text-gray-600 mb-4">Enable or disable platform features for companies</p>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outline" className="w-full justify-start" onClick={() => setShowFeatureFlagsModal(true)}>
                 <ToggleLeft className="w-4 h-4 mr-2" />
                 Manage Feature Flags
               </Button>
@@ -1901,6 +1952,208 @@ export default function PlatformAdminDashboard() {
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setShowPlatformSettingsModal(false)}>
               Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Trial Settings Modal */}
+      <Dialog open={showTrialSettingsModal} onOpenChange={setShowTrialSettingsModal}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Trial Settings Configuration
+            </DialogTitle>
+            <DialogDescription>
+              Configure trial duration and limits for new companies
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Trial Duration (Days) *</Label>
+              <Input 
+                type="number"
+                value={platformSettingsData.trial_duration_days || 14} 
+                onChange={(e) => setPlatformSettingsData({...platformSettingsData, trial_duration_days: parseInt(e.target.value)})}
+                placeholder="14"
+              />
+              <p className="text-xs text-gray-500">Number of days the trial period lasts</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Max Users in Trial *</Label>
+              <Input 
+                type="number"
+                value={platformSettingsData.trial_max_users || 5} 
+                onChange={(e) => setPlatformSettingsData({...platformSettingsData, trial_max_users: parseInt(e.target.value)})}
+                placeholder="5"
+              />
+              <p className="text-xs text-gray-500">Maximum number of users allowed during trial</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Max Vehicles in Trial *</Label>
+              <Input 
+                type="number"
+                value={platformSettingsData.trial_max_vehicles || 10} 
+                onChange={(e) => setPlatformSettingsData({...platformSettingsData, trial_max_vehicles: parseInt(e.target.value)})}
+                placeholder="10"
+              />
+              <p className="text-xs text-gray-500">Maximum number of vehicles allowed during trial</p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowTrialSettingsModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              handleSavePlatformSettings()
+              setShowTrialSettingsModal(false)
+            }}>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Save Trial Settings
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Billing Configuration Modal */}
+      <Dialog open={showBillingConfigModal} onOpenChange={setShowBillingConfigModal}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              Billing Configuration
+            </DialogTitle>
+            <DialogDescription>
+              Configure billing and payment settings
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Default Currency *</Label>
+              <Input 
+                value={platformSettingsData.default_currency || 'USD'} 
+                onChange={(e) => setPlatformSettingsData({...platformSettingsData, default_currency: e.target.value})}
+                placeholder="USD"
+              />
+              <p className="text-xs text-gray-500">Default currency for billing</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tax Rate (%) *</Label>
+              <Input 
+                type="number"
+                step="0.01"
+                value={platformSettingsData.tax_rate || 0} 
+                onChange={(e) => setPlatformSettingsData({...platformSettingsData, tax_rate: parseFloat(e.target.value)})}
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500">Default tax rate for billing</p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowBillingConfigModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              handleSavePlatformSettings()
+              setShowBillingConfigModal(false)
+            }}>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Save Billing Configuration
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Feature Flags Modal */}
+      <Dialog open={showFeatureFlagsModal} onOpenChange={setShowFeatureFlagsModal}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ToggleLeft className="w-5 h-5" />
+              Feature Flags
+            </DialogTitle>
+            <DialogDescription>
+              Enable or disable platform features
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label className="font-semibold">Allow Registration</Label>
+                <p className="text-sm text-gray-600">Allow new companies to register</p>
+              </div>
+              <Select 
+                value={platformSettingsData.allow_registration ? 'true' : 'false'}
+                onValueChange={(value) => setPlatformSettingsData({...platformSettingsData, allow_registration: value === 'true'})}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Enabled</SelectItem>
+                  <SelectItem value="false">Disabled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label className="font-semibold">Require Email Verification</Label>
+                <p className="text-sm text-gray-600">Users must verify their email</p>
+              </div>
+              <Select 
+                value={platformSettingsData.require_email_verification ? 'true' : 'false'}
+                onValueChange={(value) => setPlatformSettingsData({...platformSettingsData, require_email_verification: value === 'true'})}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Enabled</SelectItem>
+                  <SelectItem value="false">Disabled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label className="font-semibold">Maintenance Mode</Label>
+                <p className="text-sm text-gray-600">Put the platform in maintenance mode</p>
+              </div>
+              <Select 
+                value={platformSettingsData.maintenance_mode ? 'true' : 'false'}
+                onValueChange={(value) => setPlatformSettingsData({...platformSettingsData, maintenance_mode: value === 'true'})}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Enabled</SelectItem>
+                  <SelectItem value="false">Disabled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowFeatureFlagsModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              handleSavePlatformSettings()
+              setShowFeatureFlagsModal(false)
+            }}>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Save Feature Flags
             </Button>
           </div>
         </DialogContent>
