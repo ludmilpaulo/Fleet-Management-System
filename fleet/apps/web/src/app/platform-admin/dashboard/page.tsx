@@ -2591,6 +2591,113 @@ export default function PlatformAdminDashboard() {
               </div>
             )}
 
+            {editingEntityType === 'shifts' && editingEntity && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Start Date & Time</Label>
+                  <Input 
+                    type="datetime-local"
+                    value={editFormData.start_at ? new Date(editFormData.start_at).toISOString().slice(0, 16) : ''} 
+                    onChange={(e) => setEditFormData({...editFormData, start_at: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date & Time</Label>
+                  <Input 
+                    type="datetime-local"
+                    value={editFormData.end_at ? new Date(editFormData.end_at).toISOString().slice(0, 16) : ''} 
+                    onChange={(e) => setEditFormData({...editFormData, end_at: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={editFormData.status || ''} 
+                    onValueChange={(value) => setEditFormData({...editFormData, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <textarea 
+                    className="w-full p-2 border rounded"
+                    rows={3}
+                    value={editFormData.notes || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                  />
+                </div>
+              </div>
+            )}
+
+            {editingEntityType === 'inspections' && editingEntity && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select 
+                    value={editFormData.type || ''} 
+                    onValueChange={(value) => setEditFormData({...editFormData, type: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="START">Start of Shift</SelectItem>
+                      <SelectItem value="END">End of Shift</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={editFormData.status || ''} 
+                    onValueChange={(value) => setEditFormData({...editFormData, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                      <SelectItem value="PASS">Pass</SelectItem>
+                      <SelectItem value="FAIL">Fail</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Weather Conditions</Label>
+                  <Input 
+                    value={editFormData.weather_conditions || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, weather_conditions: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Temperature (Celsius)</Label>
+                  <Input 
+                    type="number"
+                    value={editFormData.temperature || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, temperature: parseFloat(e.target.value)})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <textarea 
+                    className="w-full p-2 border rounded"
+                    rows={3}
+                    value={editFormData.notes || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                  />
+                </div>
+              </div>
+            )}
+
             {editingEntityType === 'issues' && editingEntity && (
               <div className="space-y-4">
                 <div className="space-y-2">
