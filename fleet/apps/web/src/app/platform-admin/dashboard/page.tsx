@@ -139,9 +139,13 @@ export default function PlatformAdminDashboard() {
     inspections: [],
     issues: []
   })
+  const [showConfigModal, setShowConfigModal] = useState(false)
+  const [systemConfigs, setSystemConfigs] = useState<any[]>([])
+  const [editingConfig, setEditingConfig] = useState<any>(null)
 
   useEffect(() => {
     fetchPlatformStats()
+    fetchSystemConfigs()
     if (showAddEntityDialog && (entityType === 'user' || entityType === 'vehicle')) {
       fetchCompanies()
     }
@@ -350,6 +354,21 @@ export default function PlatformAdminDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch issues:', error)
+    }
+  }
+
+  const fetchSystemConfigs = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/configurations/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSystemConfigs(Array.isArray(data) ? data : data.results || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch system configs:', error)
     }
   }
 
@@ -1485,10 +1504,10 @@ export default function PlatformAdminDashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <Button variant="outline" className="w-full">
+                  <div className="mt-4 space-y-2">
+                    <Button variant="outline" className="w-full" onClick={() => setShowConfigModal(true)}>
                       <Settings className="w-4 h-4 mr-2" />
-                      Configure System Settings
+                      Manage System Configuration
                     </Button>
                   </div>
                 </div>
@@ -2440,6 +2459,80 @@ export default function PlatformAdminDashboard() {
               <div className="text-center py-8">
                 <p className="text-gray-500">No issues found</p>
               </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* System Configuration Modal */}
+      <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              System Configuration
+            </DialogTitle>
+            <DialogDescription>
+              Manage platform-wide system settings and configurations
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid gap-4">
+              {systemConfigs.length > 0 ? (
+                systemConfigs.map((config: any, index: number) => (
+                  <div key={config.id || index} className="p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h3 className="font-semibold">{config.key || config.name}</h3>
+                        <p className="text-sm text-gray-600">{config.description || 'No description'}</p>
+                      </div>
+                      <Badge variant="outline">{config.category || 'general'}</Badge>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm">
+                        <span className="font-medium">Value:</span> {String(config.value || 'Not set')}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Type: {config.value_type || 'string'} | 
+                        Updated: {config.updated_at ? new Date(config.updated_at).toLocaleString() : 'Never'}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditingConfig(config)
+                        }}
+                      >
+                        <Edit className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No system configurations found</p>
+                  <Button variant="outline" className="mt-4" onClick={() => setEditingConfig({})}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Configuration
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {systemConfigs.length > 0 && (
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setEditingConfig({})}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Configuration
+              </Button>
             )}
           </div>
         </DialogContent>
