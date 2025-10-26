@@ -123,17 +123,22 @@ export default function PlatformAdminDashboard() {
       }
 
       if (entityType === 'company') {
-        // Create company
-        const response = await fetch(`${API_BASE}/companies/`, {
+        // Create company via platform-admin endpoint
+        const companyName = (document.querySelector('input[placeholder="Enter company name"]') as HTMLInputElement)?.value;
+        const email = (document.querySelector('input[placeholder="company@example.com"]') as HTMLInputElement)?.value;
+        const planElement = document.querySelector('[role="combobox"]') as any;
+        const subscription_plan = planElement?.textContent?.trim().toLowerCase() || 'trial';
+        
+        const response = await fetch(`${API_BASE}/platform-admin/companies/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Token ${token}`,
           },
           body: JSON.stringify({
-            name: (document.querySelector('input[placeholder="Enter company name"]') as HTMLInputElement)?.value,
-            email: (document.querySelector('input[placeholder="company@example.com"]') as HTMLInputElement)?.value,
-            subscription_plan: (document.querySelector('[role="combobox"]') as any)?.textContent || 'trial',
+            name: companyName,
+            email: email,
+            subscription_plan: subscription_plan,
             is_active: true,
             subscription_status: 'active',
             max_users: 10,
