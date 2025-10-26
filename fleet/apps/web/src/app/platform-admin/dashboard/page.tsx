@@ -130,6 +130,7 @@ export default function PlatformAdminDashboard() {
   const [editingEntity, setEditingEntity] = useState<any | null>(null)
   const [editingEntityType, setEditingEntityType] = useState<string>('')
   const [showEditModal, setShowEditModal] = useState(false)
+  const [editFormData, setEditFormData] = useState<any>({})
   const [entitiesData, setEntitiesData] = useState<any>({
     companies: [],
     users: [],
@@ -355,7 +356,55 @@ export default function PlatformAdminDashboard() {
   const handleEditEntity = (entity: any, type: string) => {
     setEditingEntity(entity)
     setEditingEntityType(type)
+    setEditFormData(entity)
     setShowEditModal(true)
+  }
+
+  const handleUpdateEntity = async () => {
+    if (!editingEntity || !editingEntityType) return
+
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const endpoint = `http://127.0.0.1:8000/api/platform-admin/${editingEntityType}/${editingEntity.id}/`
+      
+      const response = await fetch(endpoint, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editFormData),
+      })
+
+      if (response.ok) {
+        alert(`${editingEntityType} updated successfully`)
+        setShowEditModal(false)
+        setEditingEntity(null)
+        setEditingEntityType('')
+        
+        // Refresh the appropriate list
+        if (editingEntityType === 'companies') {
+          fetchCompanies()
+          fetchAllEntities()
+        } else if (editingEntityType === 'users') {
+          fetchAllUsers()
+        } else if (editingEntityType === 'vehicles') {
+          fetchVehicles()
+        } else if (editingEntityType === 'shifts') {
+          fetchShifts()
+        } else if (editingEntityType === 'inspections') {
+          fetchInspections()
+        } else if (editingEntityType === 'issues') {
+          fetchIssues()
+        }
+      } else {
+        const error = await response.json()
+        alert(`Failed to update: ${error.detail || error.message || JSON.stringify(error)}`)
+      }
+    } catch (error) {
+      console.error(`Error updating ${editingEntityType}:`, error)
+      alert(`Error updating ${editingEntityType}`)
+    }
   }
 
   const handleDeleteEntity = async (entityId: number, type: string) => {
@@ -2044,6 +2093,203 @@ export default function PlatformAdminDashboard() {
                 <p className="text-gray-500">No issues found</p>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Entity Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              Edit {editingEntityType.charAt(0).toUpperCase() + editingEntityType.slice(1)}
+            </DialogTitle>
+            <DialogDescription>
+              Update the information below
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {editingEntityType === 'users' && editingEntity && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>First Name</Label>
+                  <Input 
+                    value={editFormData.first_name || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, first_name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Last Name</Label>
+                  <Input 
+                    value={editFormData.last_name || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, last_name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input 
+                    type="email"
+                    value={editFormData.email || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <Select 
+                    value={editFormData.role || ''} 
+                    onValueChange={(value) => setEditFormData({...editFormData, role: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="driver">Driver</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="inspector">Inspector</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {editingEntityType === 'vehicles' && editingEntity && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Make</Label>
+                  <Input 
+                    value={editFormData.make || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, make: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Model</Label>
+                  <Input 
+                    value={editFormData.model || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, model: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Registration Number</Label>
+                  <Input 
+                    value={editFormData.reg_number || editFormData.license_plate || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, reg_number: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Year</Label>
+                  <Input 
+                    type="number"
+                    value={editFormData.year || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, year: parseInt(e.target.value)})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={editFormData.status || ''} 
+                    onValueChange={(value) => setEditFormData({...editFormData, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="INACTIVE">Inactive</SelectItem>
+                      <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+                      <SelectItem value="RETIRED">Retired</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {editingEntityType === 'companies' && editingEntity && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Company Name</Label>
+                  <Input 
+                    value={editFormData.name || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input 
+                    type="email"
+                    value={editFormData.email || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Subscription Plan</Label>
+                  <Select 
+                    value={editFormData.subscription_plan || ''} 
+                    onValueChange={(value) => setEditFormData({...editFormData, subscription_plan: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trial">Trial</SelectItem>
+                      <SelectItem value="basic">Basic</SelectItem>
+                      <SelectItem value="professional">Professional</SelectItem>
+                      <SelectItem value="enterprise">Enterprise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {editingEntityType === 'issues' && editingEntity && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input 
+                    value={editFormData.title || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, title: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <textarea 
+                    className="w-full p-2 border rounded"
+                    rows={4}
+                    value={editFormData.description || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={editFormData.status || ''} 
+                    onValueChange={(value) => setEditFormData({...editFormData, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateEntity}>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Save Changes
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
