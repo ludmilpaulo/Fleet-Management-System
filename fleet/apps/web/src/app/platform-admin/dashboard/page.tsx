@@ -45,7 +45,8 @@ import {
   LogOut,
   CreditCard,
   ToggleLeft,
-  Link
+  Link,
+  Package
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -127,6 +128,7 @@ export default function PlatformAdminDashboard() {
   const [entityLoading, setEntityLoading] = useState(false)
   const [subscriptions, setSubscriptions] = useState<any[]>([])
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([])
+  const [showPlansModal, setShowPlansModal] = useState(false)
   const [vehicles, setVehicles] = useState<any[]>([])
   const [shifts, setShifts] = useState<any[]>([])
   const [inspections, setInspections] = useState<any[]>([])
@@ -500,6 +502,8 @@ export default function PlatformAdminDashboard() {
           fetchIssues()
         } else if (editingEntityType === 'subscriptions') {
           fetchSubscriptions()
+        } else if (editingEntityType === 'plans') {
+          fetchSubscriptionPlans()
         }
       } else {
         const error = await response.json()
@@ -618,6 +622,8 @@ export default function PlatformAdminDashboard() {
           fetchIssues()
         } else if (type === 'subscriptions' || type === 'subscription') {
           fetchSubscriptions()
+        } else if (type === 'plans') {
+          fetchSubscriptionPlans()
         }
       } else {
         alert(`Failed to delete ${type}`)
@@ -3130,6 +3136,13 @@ export default function PlatformAdminDashboard() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-gray-600">Manage company subscription assignments</p>
+              <Button size="sm" variant="outline" onClick={() => setShowPlansModal(true)}>
+                <Settings className="w-4 h-4 mr-2" />
+                Manage Plans
+              </Button>
+            </div>
             {subscriptions.length > 0 ? (
               <div className="space-y-2">
                 {subscriptions.map((subscription: any) => (
@@ -3163,6 +3176,88 @@ export default function PlatformAdminDashboard() {
               <div className="text-center py-8">
                 <Crown className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">No subscriptions found</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Subscription Plans Modal */}
+      <Dialog open={showPlansModal} onOpenChange={setShowPlansModal}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Subscription Plans ({subscriptionPlans.length})
+            </DialogTitle>
+            <DialogDescription>
+              Manage subscription plan templates
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <Button 
+              className="w-full" 
+              onClick={() => {
+                setEditingEntity(null)
+                setEditingEntityType('plan')
+                setEditFormData({})
+                setShowEditModal(true)
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Plan
+            </Button>
+
+            {subscriptionPlans.length > 0 ? (
+              <div className="space-y-2">
+                {subscriptionPlans.map((plan: any) => (
+                  <div key={plan.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold">{plan.display_name || plan.name}</h3>
+                        {plan.is_popular && <Badge variant="default">Popular</Badge>}
+                        <Badge variant={plan.is_active ? 'default' : 'outline'}>
+                          {plan.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{plan.description || 'No description'}</p>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Monthly:</span> ${plan.monthly_price || '0.00'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Yearly:</span> ${plan.yearly_price || '0.00'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Max Users:</span> {plan.max_users || 'Unlimited'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Max Vehicles:</span> {plan.max_vehicles || 'Unlimited'}
+                        </div>
+                      </div>
+                      {plan.features && plan.features.length > 0 && (
+                        <div className="mt-2">
+                          <span className="text-xs font-medium text-gray-600">Features: </span>
+                          <span className="text-xs text-gray-600">{plan.features.join(', ')}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditEntity(plan, 'plans')}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteEntity(plan.id, 'plans')}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No subscription plans found</p>
               </div>
             )}
           </div>
@@ -3651,6 +3746,94 @@ export default function PlatformAdminDashboard() {
                     onChange={(e) => setEditFormData({...editFormData, currency: e.target.value})}
                     placeholder="USD"
                   />
+                </div>
+              </div>
+            )}
+
+            {editingEntityType === 'plans' && editingEntity && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Name *</Label>
+                  <Input 
+                    value={editFormData.name || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                    placeholder="e.g., basic"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Display Name *</Label>
+                  <Input 
+                    value={editFormData.display_name || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, display_name: e.target.value})}
+                    placeholder="e.g., Basic Plan"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <textarea 
+                    className="w-full p-2 border rounded"
+                    rows={3}
+                    value={editFormData.description || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                    placeholder="Plan description..."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Monthly Price *</Label>
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      value={editFormData.monthly_price || ''} 
+                      onChange={(e) => setEditFormData({...editFormData, monthly_price: parseFloat(e.target.value)})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Yearly Price *</Label>
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      value={editFormData.yearly_price || ''} 
+                      onChange={(e) => setEditFormData({...editFormData, yearly_price: parseFloat(e.target.value)})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Max Users</Label>
+                    <Input 
+                      type="number"
+                      value={editFormData.max_users || ''} 
+                      onChange={(e) => setEditFormData({...editFormData, max_users: parseInt(e.target.value)})}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Max Vehicles</Label>
+                    <Input 
+                      type="number"
+                      value={editFormData.max_vehicles || ''} 
+                      onChange={(e) => setEditFormData({...editFormData, max_vehicles: parseInt(e.target.value)})}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={editFormData.is_active ? 'true' : 'false'} 
+                    onValueChange={(value) => setEditFormData({...editFormData, is_active: value === 'true'})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Active</SelectItem>
+                      <SelectItem value="false">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
