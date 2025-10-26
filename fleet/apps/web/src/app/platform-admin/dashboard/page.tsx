@@ -116,9 +116,20 @@ export default function PlatformAdminDashboard() {
   const [showCompaniesModal, setShowCompaniesModal] = useState(false)
   const [showUsersModal, setShowUsersModal] = useState(false)
   const [showSubscriptionsModal, setShowSubscriptionsModal] = useState(false)
+  const [showVehiclesModal, setShowVehiclesModal] = useState(false)
+  const [showShiftsModal, setShowShiftsModal] = useState(false)
+  const [showInspectionsModal, setShowInspectionsModal] = useState(false)
+  const [showIssuesModal, setShowIssuesModal] = useState(false)
   const [entityLoading, setEntityLoading] = useState(false)
   const [subscriptions, setSubscriptions] = useState<any[]>([])
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([])
+  const [vehicles, setVehicles] = useState<any[]>([])
+  const [shifts, setShifts] = useState<any[]>([])
+  const [inspections, setInspections] = useState<any[]>([])
+  const [issues, setIssues] = useState<any[]>([])
+  const [editingEntity, setEditingEntity] = useState<any | null>(null)
+  const [editingEntityType, setEditingEntityType] = useState<string>('')
+  const [showEditModal, setShowEditModal] = useState(false)
   const [entitiesData, setEntitiesData] = useState<any>({
     companies: [],
     users: [],
@@ -146,10 +157,22 @@ export default function PlatformAdminDashboard() {
       fetchSubscriptions()
       fetchSubscriptionPlans()
     }
+    if (showVehiclesModal) {
+      fetchVehicles()
+    }
+    if (showShiftsModal) {
+      fetchShifts()
+    }
+    if (showInspectionsModal) {
+      fetchInspections()
+    }
+    if (showIssuesModal) {
+      fetchIssues()
+    }
     if (activeTab === 'entities') {
       fetchAllEntities()
     }
-  }, [showCompaniesModal, showUsersModal, showSubscriptionsModal, activeTab])
+  }, [showCompaniesModal, showUsersModal, showSubscriptionsModal, showVehiclesModal, showShiftsModal, showInspectionsModal, showIssuesModal, activeTab])
   
   const fetchCompanies = async () => {
     try {
@@ -262,6 +285,112 @@ export default function PlatformAdminDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch subscription plans:', error)
+    }
+  }
+
+  const fetchVehicles = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/vehicles/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setVehicles(Array.isArray(data) ? data : data.results || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch vehicles:', error)
+    }
+  }
+
+  const fetchShifts = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/shifts/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setShifts(Array.isArray(data) ? data : data.results || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch shifts:', error)
+    }
+  }
+
+  const fetchInspections = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/inspections/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setInspections(Array.isArray(data) ? data : data.results || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch inspections:', error)
+    }
+  }
+
+  const fetchIssues = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/issues/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setIssues(Array.isArray(data) ? data : data.results || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch issues:', error)
+    }
+  }
+
+  const handleEditEntity = (entity: any, type: string) => {
+    setEditingEntity(entity)
+    setEditingEntityType(type)
+    setShowEditModal(true)
+  }
+
+  const handleDeleteEntity = async (entityId: number, type: string) => {
+    if (!confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const endpoint = `http://127.0.0.1:8000/api/platform-admin/${type}/${entityId}/`
+      
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Token ${token}` },
+      })
+
+      if (response.ok) {
+        alert(`${type} deleted successfully`)
+        // Refresh the appropriate list
+        if (type === 'companies') {
+          fetchCompanies()
+          fetchAllEntities()
+        } else if (type === 'users') {
+          fetchAllUsers()
+        } else if (type === 'vehicles') {
+          fetchVehicles()
+        } else if (type === 'shifts') {
+          fetchShifts()
+        } else if (type === 'inspections') {
+          fetchInspections()
+        } else if (type === 'issues') {
+          fetchIssues()
+        }
+      } else {
+        alert(`Failed to delete ${type}`)
+      }
+    } catch (error) {
+      console.error(`Error deleting ${type}:`, error)
+      alert(`Error deleting ${type}`)
     }
   }
 
@@ -1030,7 +1159,7 @@ export default function PlatformAdminDashboard() {
                       Total: {entitiesData.vehicles.length} vehicles
                     </p>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => alert('View all vehicles (coming soon)')}>
+                      <Button size="sm" variant="outline" onClick={() => setShowVehiclesModal(true)}>
                         <Eye className="w-4 h-4 mr-1" />
                         View All
                       </Button>
@@ -1050,11 +1179,11 @@ export default function PlatformAdminDashboard() {
                       Total: {stats?.total_shifts || 0} shifts
                     </p>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => alert('View all shifts (coming soon)')}>
+                      <Button size="sm" variant="outline" onClick={() => setShowShiftsModal(true)}>
                         <Eye className="w-4 h-4 mr-1" />
                         View All
                       </Button>
-                      <Button size="sm" onClick={() => alert('Add shift (coming soon)')}>
+                      <Button size="sm" onClick={() => alert('Add shift (API endpoint needed)')}>
                         <Plus className="w-4 h-4 mr-1" />
                         Add
                       </Button>
@@ -1070,11 +1199,11 @@ export default function PlatformAdminDashboard() {
                       Total: {stats?.total_inspections || 0} inspections
                     </p>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => alert('View all inspections (coming soon)')}>
+                      <Button size="sm" variant="outline" onClick={() => setShowInspectionsModal(true)}>
                         <Eye className="w-4 h-4 mr-1" />
                         View All
                       </Button>
-                      <Button size="sm" onClick={() => alert('Add inspection (coming soon)')}>
+                      <Button size="sm" onClick={() => alert('Add inspection (API endpoint needed)')}>
                         <Plus className="w-4 h-4 mr-1" />
                         Add
                       </Button>
@@ -1090,11 +1219,11 @@ export default function PlatformAdminDashboard() {
                       Total: {stats?.total_issues || 0} issues
                     </p>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => alert('View all issues (coming soon)')}>
+                      <Button size="sm" variant="outline" onClick={() => setShowIssuesModal(true)}>
                         <Eye className="w-4 h-4 mr-1" />
                         View All
                       </Button>
-                      <Button size="sm" onClick={() => alert('Add issue (coming soon)')}>
+                      <Button size="sm" onClick={() => alert('Add issue (API endpoint needed)')}>
                         <Plus className="w-4 h-4 mr-1" />
                         Add
                       </Button>
@@ -1634,14 +1763,14 @@ export default function PlatformAdminDashboard() {
 
       {/* Companies List Modal */}
       <Dialog open={showCompaniesModal} onOpenChange={setShowCompaniesModal}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5" />
-              All Companies
+              All Companies ({allCompanies.length})
             </DialogTitle>
             <DialogDescription>
-              Complete list of all companies on the platform
+              Manage all companies - Click Edit or Delete to modify
             </DialogDescription>
           </DialogHeader>
 
@@ -1660,6 +1789,14 @@ export default function PlatformAdminDashboard() {
                         </Badge>
                       </div>
                     </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditEntity(company, 'companies')}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteEntity(company.id, 'companies')}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1674,14 +1811,14 @@ export default function PlatformAdminDashboard() {
 
       {/* Users List Modal */}
       <Dialog open={showUsersModal} onOpenChange={setShowUsersModal}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              All Users
+              All Users ({allUsers.length})
             </DialogTitle>
             <DialogDescription>
-              Complete list of all users on the platform
+              Manage all users on the platform - Click Edit or Delete to modify
             </DialogDescription>
           </DialogHeader>
 
@@ -1700,12 +1837,200 @@ export default function PlatformAdminDashboard() {
                         </Badge>
                       </div>
                     </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditEntity(user, 'users')}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteEntity(user.id, 'users')}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-500">No users found</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Vehicles List Modal */}
+      <Dialog open={showVehiclesModal} onOpenChange={setShowVehiclesModal}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="w-5 h-5" />
+              All Vehicles ({vehicles.length})
+            </DialogTitle>
+            <DialogDescription>
+              Manage all vehicles on the platform
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {vehicles.length > 0 ? (
+              <div className="space-y-2">
+                {vehicles.map((vehicle: any) => (
+                  <div key={vehicle.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{vehicle.make} {vehicle.model}</h3>
+                      <p className="text-sm text-gray-600">Plate: {vehicle.license_plate || vehicle.reg_number}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline">{vehicle.status || 'Active'}</Badge>
+                        <Badge variant="outline">{vehicle.year}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditEntity(vehicle, 'vehicles')}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteEntity(vehicle.id, 'vehicles')}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No vehicles found</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Shifts List Modal */}
+      <Dialog open={showShiftsModal} onOpenChange={setShowShiftsModal}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              All Shifts ({shifts.length})
+            </DialogTitle>
+            <DialogDescription>
+              View and manage all shifts on the platform
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {shifts.length > 0 ? (
+              <div className="space-y-2">
+                {shifts.map((shift: any) => (
+                  <div key={shift.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">Shift #{shift.id}</h3>
+                      <p className="text-sm text-gray-600">{shift.driver_name || 'Driver'}</p>
+                      <Badge variant="outline">{shift.status || 'Active'}</Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditEntity(shift, 'shifts')}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteEntity(shift.id, 'shifts')}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No shifts found</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inspections List Modal */}
+      <Dialog open={showInspectionsModal} onOpenChange={setShowInspectionsModal}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              All Inspections ({inspections.length})
+            </DialogTitle>
+            <DialogDescription>
+              View and manage all vehicle inspections
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {inspections.length > 0 ? (
+              <div className="space-y-2">
+                {inspections.map((inspection: any) => (
+                  <div key={inspection.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">Inspection #{inspection.id}</h3>
+                      <p className="text-sm text-gray-600">{inspection.vehicle_info || 'Vehicle'}</p>
+                      <Badge variant="outline">{inspection.status_display || inspection.status || 'Pending'}</Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditEntity(inspection, 'inspections')}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteEntity(inspection.id, 'inspections')}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No inspections found</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Issues List Modal */}
+      <Dialog open={showIssuesModal} onOpenChange={setShowIssuesModal}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              All Issues ({issues.length})
+            </DialogTitle>
+            <DialogDescription>
+              View and manage all reported issues
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {issues.length > 0 ? (
+              <div className="space-y-2">
+                {issues.map((issue: any) => (
+                  <div key={issue.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{issue.title}</h3>
+                      <p className="text-sm text-gray-600">{issue.description?.substring(0, 50)}...</p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline">{issue.priority_display || issue.priority || 'Medium'}</Badge>
+                        <Badge className={issue.status_display === 'Resolved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                          {issue.status_display || issue.status || 'Open'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditEntity(issue, 'issues')}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteEntity(issue.id, 'issues')}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No issues found</p>
               </div>
             )}
           </div>
