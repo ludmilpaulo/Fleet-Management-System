@@ -41,7 +41,10 @@ import {
   ArrowUpRight,
   Wrench,
   X,
-  LogOut
+  LogOut,
+  CreditCard,
+  ToggleLeft,
+  Link
 } from 'lucide-react'
 import { format } from 'date-fns'
 
