@@ -1146,8 +1146,9 @@ export default function PlatformAdminDashboard() {
                       </div>
                       {companies
                         .filter(company =>
-                          company.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
-                          company.email.toLowerCase().includes(companySearchTerm.toLowerCase())
+                          company.slug && company.slug.trim() !== '' &&
+                          (company.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                           company.email.toLowerCase().includes(companySearchTerm.toLowerCase()))
                         )
                         .map((company) => (
                           <SelectItem key={company.slug} value={company.slug}>
@@ -1157,8 +1158,18 @@ export default function PlatformAdminDashboard() {
                             </div>
                           </SelectItem>
                         ))}
-                      {companies.length === 0 && (
-                        <SelectItem value="none" disabled>No companies found</SelectItem>
+                      {companies.length === 0 && companySearchTerm === '' && (
+                        <div className="px-2 py-6 text-center text-sm text-gray-500">
+                          No companies available
+                        </div>
+                      )}
+                      {companies.length > 0 && companies.filter(company => 
+                        company.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                        company.email.toLowerCase().includes(companySearchTerm.toLowerCase())
+                      ).length === 0 && companySearchTerm !== '' && (
+                        <div className="px-2 py-6 text-center text-sm text-gray-500">
+                          No companies match "{companySearchTerm}"
+                        </div>
                       )}
                     </SelectContent>
                   </Select>
