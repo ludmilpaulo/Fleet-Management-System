@@ -13,10 +13,10 @@ export const api = axios.create({
 // Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+      const token = localStorage.getItem('access_token') || localStorage.getItem('auth_token')
+      if (token) {
+        config.headers.Authorization = `Token ${token}`
+      }
     return config
   },
   (error) => {
@@ -40,10 +40,10 @@ api.interceptors.response.use(
             refresh: refreshToken,
           })
 
-          const { access } = response.data
-          localStorage.setItem('access_token', access)
+          const { token } = response.data
+          localStorage.setItem('auth_token', token)
           
-          originalRequest.headers.Authorization = `Bearer ${access}`
+          originalRequest.headers.Authorization = `Token ${token}`
           return api(originalRequest)
         }
       } catch {
