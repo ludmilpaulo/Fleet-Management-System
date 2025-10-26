@@ -45,6 +45,12 @@ export default function SignInPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
+      // Check if user is a superuser/platform admin
+      if (user.is_superuser || user.company?.slug === 'system') {
+        router.push('/platform-admin/dashboard');
+        return;
+      }
+      
       switch (user.role) {
         case 'admin':
           router.push('/dashboard/admin');
@@ -76,6 +82,12 @@ export default function SignInPage() {
       }));
       
       // Redirect based on role
+      // Check if user is a superuser/platform admin
+      if (result.user.is_superuser || result.user.company?.slug === 'system') {
+        router.push('/platform-admin/dashboard');
+        return;
+      }
+      
       switch (result.user.role) {
         case 'admin':
           router.push('/dashboard/admin');

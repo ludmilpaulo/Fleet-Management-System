@@ -49,6 +49,8 @@ export interface User {
   department?: string;
   hire_date?: string;
   is_active: boolean;
+  is_superuser?: boolean;
+  is_staff?: boolean;
   date_joined: string;
   last_login?: string;
   created_at: string;
