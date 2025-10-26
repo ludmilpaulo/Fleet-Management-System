@@ -110,6 +110,10 @@ export default function PlatformAdminDashboard() {
   const [companySearchTerm, setCompanySearchTerm] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
   const [vehicleCompanyId, setVehicleCompanyId] = useState<number | null>(null)
+  const [allCompanies, setAllCompanies] = useState<any[]>([])
+  const [allUsers, setAllUsers] = useState<any[]>([])
+  const [showCompaniesModal, setShowCompaniesModal] = useState(false)
+  const [showUsersModal, setShowUsersModal] = useState(false)
 
   useEffect(() => {
     fetchPlatformStats()
@@ -117,6 +121,15 @@ export default function PlatformAdminDashboard() {
       fetchCompanies()
     }
   }, [showAddEntityDialog, entityType])
+  
+  useEffect(() => {
+    if (showCompaniesModal) {
+      fetchCompanies()
+    }
+    if (showUsersModal) {
+      fetchAllUsers()
+    }
+  }, [showCompaniesModal, showUsersModal])
   
   const fetchCompanies = async () => {
     try {
@@ -128,10 +141,30 @@ export default function PlatformAdminDashboard() {
       })
       if (response.ok) {
         const data = await response.json()
-        setCompanies(Array.isArray(data) ? data : data.results || [])
+        const companiesList = Array.isArray(data) ? data : data.results || []
+        setCompanies(companiesList)
+        setAllCompanies(companiesList)
       }
     } catch (error) {
       console.error('Failed to fetch companies:', error)
+    }
+  }
+  
+  const fetchAllUsers = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/users/', {
+        headers: {
+          'Authorization': `Token ${token}`,
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        const usersList = Array.isArray(data) ? data : data.results || []
+        setAllUsers(usersList)
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error)
     }
   }
 
@@ -420,21 +453,43 @@ export default function PlatformAdminDashboard() {
 
   const fetchPlatformStats = async () => {
     try {
-      // Mock comprehensive platform statistics
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      
+      // Fetch real stats from backend
+      const [companiesRes, usersRes] = await Promise.all([
+        fetch('http://127.0.0.1:8000/api/platform-admin/companies/', {
+          headers: { 'Authorization': `Token ${token}` },
+        }),
+        fetch('http://127.0.0.1:8000/api/platform-admin/users/', {
+          headers: { 'Authorization': `Token ${token}` },
+        }),
+      ])
+      
+      const companies = await companiesRes.json()
+      const users = await usersRes.json()
+      const companiesList = Array.isArray(companies) ? companies : companies.results || []
+      const usersList = Array.isArray(users) ? users : users.results || []
+      
+      // Calculate stats from real data
+      const totalCompanies = companiesList.length
+      const activeCompanies = companiesList.filter((c: any) => c.is_active).length
+      const trialCompanies = companiesList.filter((c: any) => c.subscription_plan === 'trial').length
+      const expiredCompanies = companiesList.filter((c: any) => !c.is_active).length
+      
       const mockStats: PlatformStats = {
-        total_companies: 156,
-        active_companies: 142,
-        trial_companies: 23,
-        expired_companies: 8,
-        suspended_companies: 3,
-        total_users: 1247,
-        total_vehicles: 3421,
-        total_shifts: 15678,
-        total_inspections: 8934,
+        total_companies: totalCompanies,
+        active_companies: activeCompanies,
+        trial_companies: trialCompanies,
+        expired_companies: expiredCompanies,
+        suspended_companies: 0,
+        total_users: usersList.length,
+        total_vehicles: 0, // Will be calculated separately
+        total_shifts: 0,
+        total_inspections: 0,
         total_issues: 456,
         total_tickets: 234,
-        monthly_revenue: 125000.00,
-        yearly_revenue: 1500000.00,
+        monthly_revenue: totalCompanies * 299.00, // Estimate
+        yearly_revenue: totalCompanies * 3588.00, // Estimate
         companies_by_plan: {
           'trial': 23,
           'basic': 45,
@@ -610,7 +665,7 @@ export default function PlatformAdminDashboard() {
       {/* Key Metrics */}
       {stats && (
         <div className="grid gap-4 md:grid-cols-4 fade-in">
-          <Card className="card-hover border-t-4 border-t-blue-500">
+          <Card className="card-hover border-t-4 border-t-blue-500 cursor-pointer" onClick={() => setShowCompaniesModal(true)}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">Total Companies</CardTitle>
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -627,10 +682,11 @@ export default function PlatformAdminDashboard() {
               <p className="text-xs text-muted-foreground mt-1">
                 {stats.trial_companies} trials, {stats.expired_companies} expired
               </p>
+              <p className="text-xs text-blue-600 mt-2 font-medium">Click to view all</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowUsersModal(true)}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -639,12 +695,13 @@ export default function PlatformAdminDashboard() {
               <div className="text-2xl font-bold">{stats.total_users}</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 <Activity className="w-3 h-3 text-blue-500 mr-1" />
-                <span className="text-blue-500">{stats.system_health.active_users} online</span>
+                <span className="text-blue-500">Active users</span>
               </div>
               <Progress value={75} className="mt-2" />
               <p className="text-xs text-muted-foreground mt-1">
                 75% active rate
               </p>
+              <p className="text-xs text-blue-600 mt-2 font-medium">Click to view all</p>
             </CardContent>
           </Card>
 
@@ -675,11 +732,11 @@ export default function PlatformAdminDashboard() {
               <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString()}</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 <ArrowUpRight className="w-3 h-3 text-green-500 mr-1" />
-                <span className="text-green-500">+8% from last month</span>
+                <span className="text-green-500">Estimated from {stats.total_companies} companies</span>
               </div>
               <Progress value={80} className="mt-2" />
               <p className="text-xs text-muted-foreground mt-1">
-                ${stats.yearly_revenue.toLocaleString()} yearly
+                ${stats.yearly_revenue.toLocaleString()} yearly (est.)
               </p>
             </CardContent>
           </Card>
@@ -1332,6 +1389,86 @@ export default function PlatformAdminDashboard() {
                 Create {entityType.charAt(0).toUpperCase() + entityType.slice(1)}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Companies List Modal */}
+      <Dialog open={showCompaniesModal} onOpenChange={setShowCompaniesModal}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5" />
+              All Companies
+            </DialogTitle>
+            <DialogDescription>
+              Complete list of all companies on the platform
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {allCompanies.length > 0 ? (
+              <div className="space-y-2">
+                {allCompanies.map((company: any) => (
+                  <div key={company.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{company.name}</h3>
+                      <p className="text-sm text-gray-600">{company.email}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline">{company.subscription_plan}</Badge>
+                        <Badge className={company.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                          {company.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No companies found</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Users List Modal */}
+      <Dialog open={showUsersModal} onOpenChange={setShowUsersModal}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              All Users
+            </DialogTitle>
+            <DialogDescription>
+              Complete list of all users on the platform
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {allUsers.length > 0 ? (
+              <div className="space-y-2">
+                {allUsers.map((user: any) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{user.full_name || `${user.first_name} ${user.last_name}`}</h3>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline">{user.role}</Badge>
+                        <Badge className={user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No users found</p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
