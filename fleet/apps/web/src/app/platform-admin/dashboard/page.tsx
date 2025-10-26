@@ -142,10 +142,14 @@ export default function PlatformAdminDashboard() {
   const [showConfigModal, setShowConfigModal] = useState(false)
   const [systemConfigs, setSystemConfigs] = useState<any[]>([])
   const [editingConfig, setEditingConfig] = useState<any>(null)
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false)
+  const [allMaintenances, setAllMaintenances] = useState<any[]>([])
+  const [showPlatformSettingsModal, setShowPlatformSettingsModal] = useState(false)
 
   useEffect(() => {
     fetchPlatformStats()
     fetchSystemConfigs()
+    fetchAllMaintenances()
     if (showAddEntityDialog && (entityType === 'user' || entityType === 'vehicle')) {
       fetchCompanies()
     }
@@ -154,6 +158,9 @@ export default function PlatformAdminDashboard() {
   useEffect(() => {
     if (showCompaniesModal) {
       fetchCompanies()
+    }
+    if (showMaintenanceModal) {
+      fetchAllMaintenances()
     }
     if (showUsersModal) {
       fetchAllUsers()
@@ -369,6 +376,21 @@ export default function PlatformAdminDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch system configs:', error)
+    }
+  }
+
+  const fetchAllMaintenances = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/maintenance/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAllMaintenances(Array.isArray(data) ? data : data.results || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch maintenances:', error)
     }
   }
 
@@ -1622,10 +1644,14 @@ export default function PlatformAdminDashboard() {
                   <p className="text-gray-500">All systems operational</p>
                 </div>
               )}
-              <div className="mt-4">
-                <Button className="w-full">
+              <div className="mt-4 space-y-2">
+                <Button className="w-full" onClick={() => setShowMaintenanceModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Schedule Maintenance
+                </Button>
+                <Button variant="outline" className="w-full" onClick={() => setShowMaintenanceModal(true)}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  View All Maintenance
                 </Button>
               </div>
             </CardContent>
@@ -1644,35 +1670,35 @@ export default function PlatformAdminDashboard() {
             <CardContent>
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Button variant="outline" className="justify-start h-auto p-4">
+                  <Button variant="outline" className="justify-start h-auto p-4" onClick={() => setShowPlatformSettingsModal(true)}>
                     <div className="text-left">
                       <div className="font-medium">Trial Settings</div>
                       <div className="text-sm text-gray-600">Configure trial duration and limits</div>
                     </div>
                   </Button>
-                  <Button variant="outline" className="justify-start h-auto p-4">
+                  <Button variant="outline" className="justify-start h-auto p-4" onClick={() => setShowPlatformSettingsModal(true)}>
                     <div className="text-left">
                       <div className="font-medium">Billing Configuration</div>
                       <div className="text-sm text-gray-600">Set up payment methods and plans</div>
                     </div>
                   </Button>
-                  <Button variant="outline" className="justify-start h-auto p-4">
+                  <Button variant="outline" className="justify-start h-auto p-4" onClick={() => setShowPlatformSettingsModal(true)}>
                     <div className="text-left">
                       <div className="font-medium">Feature Flags</div>
                       <div className="text-sm text-gray-600">Enable or disable platform features</div>
                     </div>
                   </Button>
-                  <Button variant="outline" className="justify-start h-auto p-4">
+                  <Button variant="outline" className="justify-start h-auto p-4" onClick={() => setShowConfigModal(true)}>
                     <div className="text-left">
-                      <div className="font-medium">Integration Settings</div>
-                      <div className="text-sm text-gray-600">Configure third-party integrations</div>
+                      <div className="font-medium">System Configuration</div>
+                      <div className="text-sm text-gray-600">Manage system configurations</div>
                     </div>
                   </Button>
                 </div>
                 <div className="pt-4 border-t">
-                  <Button className="w-full" variant="destructive">
-                    <AlertCircle className="w-4 h-4 mr-2" />
-                    Advanced Settings
+                  <Button className="w-full" onClick={() => setShowPlatformSettingsModal(true)}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Open All Settings
                   </Button>
                 </div>
               </div>
@@ -1680,6 +1706,125 @@ export default function PlatformAdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Maintenance Modal */}
+      <Dialog open={showMaintenanceModal} onOpenChange={setShowMaintenanceModal}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="w-5 h-5" />
+              Maintenance Schedule ({allMaintenances.length})
+            </DialogTitle>
+            <DialogDescription>
+              Manage system maintenance schedules and updates
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {allMaintenances.length > 0 ? (
+              <div className="space-y-2">
+                {allMaintenances.map((maintenance: any) => (
+                  <div key={maintenance.id} className="p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{maintenance.title || maintenance.name || `Maintenance #${maintenance.id}`}</h3>
+                        <p className="text-sm text-gray-600">{maintenance.description || 'No description'}</p>
+                      </div>
+                      <Badge variant={maintenance.status === 'in_progress' ? 'default' : maintenance.status === 'scheduled' ? 'secondary' : 'outline'}>
+                        {maintenance.status || 'unknown'}
+                      </Badge>
+                    </div>
+                    {maintenance.scheduled_start && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <p><strong>Scheduled:</strong> {new Date(maintenance.scheduled_start).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {maintenance.scheduled_end && (
+                      <div className="text-sm text-gray-600">
+                        <p><strong>Expected End:</strong> {new Date(maintenance.scheduled_end).toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Wrench className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No maintenance schedules found</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowMaintenanceModal(false)}>
+              Close
+            </Button>
+            <Button onClick={() => { /* TODO: Create maintenance */ }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Schedule New Maintenance
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Platform Settings Modal */}
+      <Dialog open={showPlatformSettingsModal} onOpenChange={setShowPlatformSettingsModal}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Platform Settings
+            </DialogTitle>
+            <DialogDescription>
+              Configure platform-wide settings and preferences
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-semibold mb-3">Trial Settings</h3>
+              <p className="text-sm text-gray-600 mb-4">Configure trial duration and user limits for new companies</p>
+              <Button variant="outline" className="w-full justify-start">
+                <Settings className="w-4 h-4 mr-2" />
+                Configure Trial Settings
+              </Button>
+            </div>
+
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-semibold mb-3">Billing Configuration</h3>
+              <p className="text-sm text-gray-600 mb-4">Set up payment methods and subscription plans</p>
+              <Button variant="outline" className="w-full justify-start">
+                <CreditCard className="w-4 h-4 mr-2" />
+                Configure Billing
+              </Button>
+            </div>
+
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-semibold mb-3">Feature Flags</h3>
+              <p className="text-sm text-gray-600 mb-4">Enable or disable platform features for companies</p>
+              <Button variant="outline" className="w-full justify-start">
+                <ToggleLeft className="w-4 h-4 mr-2" />
+                Manage Feature Flags
+              </Button>
+            </div>
+
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-semibold mb-3">Integration Settings</h3>
+              <p className="text-sm text-gray-600 mb-4">Configure third-party integrations and APIs</p>
+              <Button variant="outline" className="w-full justify-start">
+                <Link className="w-4 h-4 mr-2" />
+                Manage Integrations
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowPlatformSettingsModal(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Entity Dialog */}
       <Dialog open={showAddEntityDialog} onOpenChange={setShowAddEntityDialog}>
