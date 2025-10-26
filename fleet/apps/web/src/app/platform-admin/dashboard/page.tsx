@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppDispatch } from '@/store/hooks'
 import { logoutUser } from '@/store/slices/authSlice'
+import { formatCurrency } from '@/utils/currency'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -694,14 +695,14 @@ export default function PlatformAdminDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{formatCurrency(stats.monthly_revenue)}</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 <ArrowUpRight className="w-3 h-3 text-green-500 mr-1" />
-                <span className="text-green-500">Estimated from {stats.total_companies} companies</span>
+                <span className="text-green-500">From {stats.total_companies} companies</span>
               </div>
               <Progress value={80} className="mt-2" />
               <p className="text-xs text-muted-foreground mt-1">
-                ${stats.yearly_revenue.toLocaleString()} yearly (est.)
+                {formatCurrency(stats.yearly_revenue)} yearly
               </p>
             </CardContent>
           </Card>
