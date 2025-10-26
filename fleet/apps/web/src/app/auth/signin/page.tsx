@@ -82,12 +82,19 @@ export default function SignInPage() {
       }));
       
       // Redirect based on role
-      // Check if user is a superuser/platform admin
-      if (result.user.is_superuser || result.user.company?.slug === 'system') {
+      // Check if user is a superuser/platform admin FIRST
+      if (result.user.is_superuser) {
         router.push('/platform-admin/dashboard');
         return;
       }
       
+      // Check if company is 'system' (platform admin)
+      if (result.user.company?.slug === 'system') {
+        router.push('/platform-admin/dashboard');
+        return;
+      }
+      
+      // Regular role-based redirects
       switch (result.user.role) {
         case 'admin':
           router.push('/dashboard/admin');
