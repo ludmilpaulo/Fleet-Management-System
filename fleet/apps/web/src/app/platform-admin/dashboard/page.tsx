@@ -91,6 +91,17 @@ export default function PlatformAdminDashboard() {
     fetchPlatformStats()
   }, [])
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    await fetchPlatformStats();
+    setLoading(false);
+  };
+
+  const handleAddEntity = () => {
+    // TODO: Implement modal or navigation to add entity
+    alert('Add Entity functionality coming soon!');
+  };
+
   const fetchPlatformStats = async () => {
     try {
       // Mock comprehensive platform statistics
@@ -224,11 +235,19 @@ export default function PlatformAdminDashboard() {
           <p className="text-gray-600 text-lg">Complete system management and oversight</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="hover:border-blue-600 hover:text-blue-600 transition-all duration-300">
-            <RefreshCw className="w-4 h-4 mr-2" />
+          <Button 
+            variant="outline" 
+            className="hover:border-blue-600 hover:text-blue-600 transition-all duration-300"
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button className="btn-gradient">
+          <Button 
+            className="btn-gradient"
+            onClick={handleAddEntity}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Entity
           </Button>
