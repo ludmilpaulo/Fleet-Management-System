@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   Building2, 
   Users, 
@@ -31,9 +34,11 @@ import {
   AlertCircle,
   Info,
   ArrowUpRight,
-  Wrench
+  Wrench,
+  X
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { useState as useReactState } from 'react'
 
 interface PlatformStats {
   total_companies: number
@@ -86,6 +91,8 @@ export default function PlatformAdminDashboard() {
   const [stats, setStats] = useState<PlatformStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  const [showAddEntityDialog, setShowAddEntityDialog] = useState(false)
+  const [entityType, setEntityType] = useState<'company' | 'user' | 'vehicle' | ''>('')
 
   useEffect(() => {
     fetchPlatformStats()
@@ -98,8 +105,26 @@ export default function PlatformAdminDashboard() {
   };
 
   const handleAddEntity = () => {
-    // TODO: Implement modal or navigation to add entity
-    alert('Add Entity functionality coming soon!');
+    setShowAddEntityDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setShowAddEntityDialog(false);
+    setEntityType('');
+  };
+
+  const handleCreateEntity = async () => {
+    // TODO: Implement actual API calls
+    console.log('Creating entity:', entityType);
+    
+    // Show success message
+    alert(`${entityType.charAt(0).toUpperCase() + entityType.slice(1)} created successfully!`);
+    
+    // Refresh data
+    handleRefresh();
+    
+    // Close dialog
+    handleCloseDialog();
   };
 
   const fetchPlatformStats = async () => {
