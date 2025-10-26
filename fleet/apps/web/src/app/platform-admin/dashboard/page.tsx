@@ -744,6 +744,228 @@ export default function PlatformAdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Add Entity Dialog */}
+      <Dialog open={showAddEntityDialog} onOpenChange={setShowAddEntityDialog}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Add New Entity
+            </DialogTitle>
+            <DialogDescription>
+              Select the type of entity you want to create
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Entity Type Selection */}
+            <div className="space-y-2">
+              <Label>Entity Type</Label>
+              <Select value={entityType} onValueChange={(value: any) => setEntityType(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select entity type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="company">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      Company
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="user">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      User
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="vehicle">
+                    <div className="flex items-center gap-2">
+                      <Truck className="w-4 h-4" />
+                      Vehicle
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Company Form */}
+            {entityType === 'company' && (
+              <div className="space-y-4 animate-in fade-in-50 slide-in-from-top-4">
+                <div className="p-4 bg-blue-50 rounded-lg mb-4">
+                  <p className="text-sm text-blue-700">Create a new company account</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Company Name *</Label>
+                    <input
+                      type="text"
+                      placeholder="Enter company name"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <input
+                      type="email"
+                      placeholder="company@example.com"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Subscription Plan</Label>
+                  <Select defaultValue="trial">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trial">Trial (14 days)</SelectItem>
+                      <SelectItem value="basic">Basic Plan</SelectItem>
+                      <SelectItem value="professional">Professional Plan</SelectItem>
+                      <SelectItem value="enterprise">Enterprise Plan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* User Form */}
+            {entityType === 'user' && (
+              <div className="space-y-4 animate-in fade-in-50 slide-in-from-top-4">
+                <div className="p-4 bg-green-50 rounded-lg mb-4">
+                  <p className="text-sm text-green-700">Create a new user account</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>First Name *</Label>
+                    <input
+                      type="text"
+                      placeholder="John"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Last Name *</Label>
+                    <input
+                      type="text"
+                      placeholder="Doe"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <input
+                      type="email"
+                      placeholder="user@example.com"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Role *</Label>
+                    <Select defaultValue="staff">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
+                        <SelectItem value="driver">Driver</SelectItem>
+                        <SelectItem value="inspector">Inspector</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Vehicle Form */}
+            {entityType === 'vehicle' && (
+              <div className="space-y-4 animate-in fade-in-50 slide-in-from-top-4">
+                <div className="p-4 bg-purple-50 rounded-lg mb-4">
+                  <p className="text-sm text-purple-700">Add a new vehicle to the fleet</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Vehicle Make *</Label>
+                    <input
+                      type="text"
+                      placeholder="Toyota"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Model *</Label>
+                    <input
+                      type="text"
+                      placeholder="Camry"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Year *</Label>
+                    <input
+                      type="number"
+                      placeholder="2024"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>License Plate *</Label>
+                    <input
+                      type="text"
+                      placeholder="ABC-1234"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select defaultValue="active">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={handleCloseDialog}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={handleCreateEntity}
+                disabled={!entityType}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create {entityType.charAt(0).toUpperCase() + entityType.slice(1)}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
