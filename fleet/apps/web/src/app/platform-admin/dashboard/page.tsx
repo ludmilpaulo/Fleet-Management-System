@@ -113,17 +113,117 @@ export default function PlatformAdminDashboard() {
   };
 
   const handleCreateEntity = async () => {
-    // TODO: Implement actual API calls
-    console.log('Creating entity:', entityType);
-    
-    // Show success message
-    alert(`${entityType.charAt(0).toUpperCase() + entityType.slice(1)} created successfully!`);
-    
-    // Refresh data
-    handleRefresh();
-    
-    // Close dialog
-    handleCloseDialog();
+    try {
+      const API_BASE = 'http://127.0.0.1:8000/api';
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token');
+      
+      if (!token) {
+        alert('Authentication required. Please log in again.');
+        return;
+      }
+
+      if (entityType === 'company') {
+        // Create company
+        const response = await fetch(`${API_BASE}/companies/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`,
+          },
+          body: JSON.stringify({
+            name: (document.querySelector('input[placeholder="Enter company name"]') as HTMLInputElement)?.value,
+            email: (document.querySelector('input[placeholder="company@example.com"]') as HTMLInputElement)?.value,
+            subscription_plan: (document.querySelector('[role="combobox"]') as any)?.textContent || 'trial',
+            is_active: true,
+            subscription_status: 'active',
+            max_users: 10,
+            max_vehicles: 50,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Failed to create company');
+        }
+
+        const data = await response.json();
+        console.log('Company created:', data);
+        alert('Company created successfully!');
+      } else if (entityType === 'user') {
+        // Create user
+        const first_name = (document.querySelector('input[placeholder="John"]') as HTMLInputElement)?.value;
+        const last_name = (document.querySelector('input[placeholder="Doe"]') as HTMLInputElement)?.value;
+        const email = (document.querySelector('input[placeholder="user@example.com"]') as HTMLInputElement)?.value;
+        const role = (document.querySelectorAll('[role="option"]') as any)?.[0]?.textContent || 'staff';
+
+        const response = await fetch(`${API_BASE}/account/register/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`,
+          },
+          body: JSON.stringify({
+            username: email.split('@')[0],
+            email,
+            password: 'TempPassword123!', // Temporary password
+            password_confirm: 'TempPassword123!',
+            first_name,
+            last_name,
+            role,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || error.email?.[0] || 'Failed to create user');
+        }
+
+        const data = await response.json();
+        console.log('User created:', data);
+        alert('User created successfully! Temporary password: TempPassword123!');
+      } else if (entityType === 'vehicle') {
+        // Create vehicle
+        const make = (document.querySelector('input[placeholder="Toyota"]') as HTMLInputElement)?.value;
+        const model = (document.querySelector('input[placeholder="Camry"]') as HTMLInputElement)?.value;
+        const year = (document.querySelector('input[placeholder="2024"]') as HTMLInputElement)?.value;
+        const license_plate = (document.querySelector('input[placeholder="ABC-1234"]') as HTMLInputElement)?.value;
+
+        const response = await fetch(`${API_BASE}/fleet/vehicles/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`,
+          },
+          body: JSON.stringify({
+            make,
+            model,
+            year: parseInt(year),
+            license_plate,
+            status: 'active',
+            vin: `VIN-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+            fuel_type: 'gasoline',
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Failed to create vehicle');
+        }
+
+        const data = await response.json();
+        console.log('Vehicle created:', data);
+        alert('Vehicle created successfully!');
+      }
+      
+      // Refresh data
+      handleRefresh();
+      
+      // Close dialog
+      handleCloseDialog();
+    } catch (error: any) {
+      console.error('Error creating entity:', error);
+      alert(`Error: ${error.message}`);
+    }
   };
 
   const fetchPlatformStats = async () => {
