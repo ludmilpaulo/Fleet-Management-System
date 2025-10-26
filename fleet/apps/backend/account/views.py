@@ -31,6 +31,26 @@ class UserRegistrationView(generics.CreateAPIView):
         # Create token for the new user
         token, created = Token.objects.get_or_create(user=user)
         
+        # Send welcome email
+        try:
+            email_content = get_user_welcome_email_template({
+                'first_name': user.first_name,
+                'email': user.email,
+                'password': 'TempPassword123!',  # This should be tracked securely
+                'company_name': user.company.name if user.company else 'FleetIA'
+            })
+            
+            msg = EmailMessage(
+                subject='Welcome to FleetIA!',
+                body=email_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email],
+            )
+            msg.content_subtype = "html"
+            msg.send()
+        except Exception as e:
+            print(f"Failed to send welcome email: {e}")
+        
         return Response({
             'user': UserProfileSerializer(user).data,
             'token': token.key,

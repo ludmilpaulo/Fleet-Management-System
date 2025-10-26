@@ -223,4 +223,16 @@ AWS_S3_OBJECT_PARAMETERS = {
 
 # File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
+# For production, use:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'noreply@fleetia.online'
+EMAIL_HOST_PASSWORD = ''  # Set in environment variable
+DEFAULT_FROM_EMAIL = 'FleetIA <noreply@fleetia.online>'
+SERVER_EMAIL = 'server@fleetia.online'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB

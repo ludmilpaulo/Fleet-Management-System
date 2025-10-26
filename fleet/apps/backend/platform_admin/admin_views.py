@@ -102,6 +102,29 @@ class CompanyManagementListView(generics.ListCreateAPIView):
             admin, 'company_create', f'Created company: {company.name}',
             'Company', company.id, {'company_name': company.name}, self.request
         )
+        
+        # Send welcome email to company
+        try:
+            from account.email_templates import get_company_welcome_email_template
+            from django.core.mail import EmailMessage
+            from django.conf import settings
+            
+            email_content = get_company_welcome_email_template({
+                'name': company.name,
+                'email': company.email,
+                'subscription_plan': company.subscription_plan
+            })
+            
+            msg = EmailMessage(
+                subject=f'Welcome to FleetIA - {company.name}!',
+                body=email_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[company.email],
+            )
+            msg.content_subtype = "html"
+            msg.send()
+        except Exception as e:
+            print(f"Failed to send company welcome email: {e}")
 
 
 class CompanyManagementDetailView(generics.RetrieveUpdateDestroyAPIView):
