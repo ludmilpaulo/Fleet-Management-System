@@ -297,21 +297,31 @@ class ShiftManagementSerializer(serializers.ModelSerializer):
     """Comprehensive shift management serializer"""
     
     driver_name = serializers.SerializerMethodField()
+    vehicle_info = serializers.SerializerMethodField()
+    company_name = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
     
     def get_driver_name(self, obj):
         if obj.driver:
             return f"{obj.driver.first_name} {obj.driver.last_name}".strip() or obj.driver.username
         return 'Unknown'
-    vehicle_info = serializers.CharField(source='vehicle.license_plate', read_only=True)
-    company_name = serializers.CharField(source='driver.company.name', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    def get_vehicle_info(self, obj):
+        if obj.vehicle:
+            return obj.vehicle.reg_number
+        return 'N/A'
+    
+    def get_company_name(self, obj):
+        if obj.driver and obj.driver.company:
+            return obj.driver.company.name
+        return 'N/A'
     
     class Meta:
         model = Shift
         fields = [
             'id', 'driver', 'driver_name', 'vehicle', 'vehicle_info',
-            'company_name', 'start_time', 'end_time', 'status', 'status_display',
-            'start_location', 'end_location', 'total_distance', 'fuel_consumed',
+            'company_name', 'start_at', 'end_at', 'status', 'status_display',
+            'start_lat', 'start_lng', 'start_address', 'end_lat', 'end_lng', 'end_address',
             'notes', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -323,19 +333,33 @@ class InspectionManagementSerializer(serializers.ModelSerializer):
     inspector_name = serializers.SerializerMethodField()
     
     def get_inspector_name(self, obj):
-        if obj.inspector:
-            return f"{obj.inspector.first_name} {obj.inspector.last_name}".strip() or obj.inspector.username
+        if obj.shift and obj.shift.driver:
+            driver = obj.shift.driver
+            return f"{driver.first_name} {driver.last_name}".strip() or driver.username
         return 'Unknown'
-    vehicle_info = serializers.CharField(source='vehicle.license_plate', read_only=True)
-    company_name = serializers.CharField(source='inspector.company.name', read_only=True)
+    
+    vehicle_info = serializers.SerializerMethodField()
+    
+    def get_vehicle_info(self, obj):
+        if obj.shift and obj.shift.vehicle:
+            return obj.shift.vehicle.reg_number
+        return 'N/A'
+    
+    company_name = serializers.SerializerMethodField()
+    
+    def get_company_name(self, obj):
+        if obj.shift and obj.shift.driver and obj.shift.driver.company:
+            return obj.shift.driver.company.name
+        return 'N/A'
+    
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     
     class Meta:
         model = Inspection
         fields = [
-            'id', 'inspector', 'inspector_name', 'vehicle', 'vehicle_info',
-            'company_name', 'inspection_date', 'status', 'status_display',
-            'odometer_reading', 'overall_condition', 'notes', 'created_at', 'updated_at'
+            'id', 'shift', 'inspector_name', 'vehicle_info', 'company_name',
+            'type', 'status', 'status_display', 'started_at', 'completed_at',
+            'notes', 'weather_conditions', 'temperature', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 

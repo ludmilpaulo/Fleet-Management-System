@@ -282,8 +282,8 @@ class InspectionManagementListView(generics.ListCreateAPIView):
         inspection = serializer.save()
         admin = get_platform_admin(self.request)
         log_admin_action(
-            admin, 'inspection_create', f'Created inspection for vehicle: {inspection.vehicle.license_plate}',
-            'Inspection', inspection.id, {'vehicle': inspection.vehicle.license_plate}, self.request
+            admin, 'inspection_create', f'Created inspection for shift: {inspection.shift.id}',
+            'Inspection', inspection.id, {'shift_id': inspection.shift.id}, self.request
         )
 
 
@@ -297,15 +297,15 @@ class InspectionManagementDetailView(generics.RetrieveUpdateDestroyAPIView):
         inspection = serializer.save()
         admin = get_platform_admin(self.request)
         log_admin_action(
-            admin, 'inspection_update', f'Updated inspection for vehicle: {inspection.vehicle.license_plate}',
-            'Inspection', inspection.id, {'vehicle': inspection.vehicle.license_plate}, self.request
+            admin, 'inspection_update', f'Updated inspection for shift: {inspection.shift.id}',
+            'Inspection', inspection.id, {'shift_id': inspection.shift.id}, self.request
         )
     
     def perform_destroy(self, instance):
         admin = get_platform_admin(self.request)
         log_admin_action(
-            admin, 'inspection_delete', f'Deleted inspection for vehicle: {instance.vehicle.license_plate}',
-            'Inspection', instance.id, {'vehicle': instance.vehicle.license_plate}, self.request
+            admin, 'inspection_delete', f'Deleted inspection for shift: {instance.shift.id}',
+            'Inspection', instance.id, {'shift_id': instance.shift.id}, self.request
         )
         instance.delete()
 
