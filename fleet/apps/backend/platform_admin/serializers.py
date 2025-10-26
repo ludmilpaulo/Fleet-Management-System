@@ -101,7 +101,7 @@ class CompanyManagementSerializer(serializers.ModelSerializer):
     
     subscription_display = serializers.CharField(source='get_subscription_display', read_only=True)
     days_remaining_in_trial = serializers.IntegerField(read_only=True)
-    can_access_platform = serializers.BooleanField(source='can_access_platform', read_only=True)
+    can_access_platform = serializers.BooleanField(read_only=True)
     current_user_count = serializers.SerializerMethodField()
     current_vehicle_count = serializers.SerializerMethodField()
     
@@ -211,7 +211,7 @@ class CompanyManagementSerializer(serializers.ModelSerializer):
     
     subscription_display = serializers.CharField(source='get_subscription_display', read_only=True)
     days_remaining_in_trial = serializers.IntegerField(read_only=True)
-    can_access_platform = serializers.BooleanField(source='can_access_platform', read_only=True)
+    can_access_platform = serializers.BooleanField(read_only=True)
     current_user_count = serializers.SerializerMethodField()
     current_vehicle_count = serializers.SerializerMethodField()
     
