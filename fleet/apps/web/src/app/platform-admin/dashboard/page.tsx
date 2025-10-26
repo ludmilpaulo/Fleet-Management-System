@@ -845,19 +845,19 @@ export default function PlatformAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {stats.recent_admin_actions.map((action, index) => (
+                  {stats.recent_admin_actions?.filter(action => action).map((action, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-100 rounded-full">
                           <Crown className="w-4 h-4 text-blue-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-sm">{action.description}</p>
-                          <p className="text-xs text-gray-600">by {action.admin} • {format(new Date(action.created_at), 'MMM dd, HH:mm')}</p>
+                          <p className="font-medium text-sm">{action?.description || 'No description'}</p>
+                          <p className="text-xs text-gray-600">by {action?.admin || 'Unknown'} • {action?.created_at ? format(new Date(action.created_at), 'MMM dd, HH:mm') : 'Recently'}</p>
                         </div>
                       </div>
                       <Badge className="bg-blue-100 text-blue-800">
-                        {action.action.replace('_', ' ')}
+                        {action?.action ? action.action.replace('_', ' ') : 'Unknown Action'}
                       </Badge>
                     </div>
                   ))}
