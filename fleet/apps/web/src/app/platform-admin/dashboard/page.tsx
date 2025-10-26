@@ -148,6 +148,8 @@ export default function PlatformAdminDashboard() {
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false)
   const [allMaintenances, setAllMaintenances] = useState<any[]>([])
   const [showPlatformSettingsModal, setShowPlatformSettingsModal] = useState(false)
+  const [showEditConfigModal, setShowEditConfigModal] = useState(false)
+  const [configFormData, setConfigFormData] = useState<any>({})
 
   useEffect(() => {
     fetchPlatformStats()
@@ -448,6 +450,81 @@ export default function PlatformAdminDashboard() {
     } catch (error) {
       console.error(`Error updating ${editingEntityType}:`, error)
       alert(`Error updating ${editingEntityType}`)
+    }
+  }
+
+  const handleDeleteConfig = async (configId: number) => {
+    if (!confirm(`Are you sure you want to delete this configuration? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch(`http://127.0.0.1:8000/api/platform-admin/configurations/${configId}/`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Token ${token}` },
+      })
+
+      if (response.ok) {
+        alert('Configuration deleted successfully')
+        fetchSystemConfigs()
+      } else {
+        alert('Failed to delete configuration')
+      }
+    } catch (error) {
+      console.error('Error deleting configuration:', error)
+      alert('Error deleting configuration')
+    }
+  }
+
+  const handleSaveConfig = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      
+      if (editingConfig?.id) {
+        // Update existing config
+        const response = await fetch(`http://127.0.0.1:8000/api/platform-admin/configurations/${editingConfig.id}/`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(configFormData),
+        })
+
+        if (response.ok) {
+          alert('Configuration updated successfully')
+          setShowEditConfigModal(false)
+          setEditingConfig(null)
+          fetchSystemConfigs()
+        } else {
+          const error = await response.json()
+          alert(`Failed to update: ${error.detail || JSON.stringify(error)}`)
+        }
+      } else {
+        // Create new config
+        const response = await fetch('http://127.0.0.1:8000/api/platform-admin/configurations/', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(configFormData),
+        })
+
+        if (response.ok) {
+          alert('Configuration created successfully')
+          setShowEditConfigModal(false)
+          setEditingConfig(null)
+          fetchSystemConfigs()
+        } else {
+          const error = await response.json()
+          alert(`Failed to create: ${error.detail || JSON.stringify(error)}`)
+        }
+      }
+    } catch (error) {
+      console.error('Error saving configuration:', error)
+      alert('Error saving configuration')
     }
   }
 
@@ -2652,10 +2729,20 @@ export default function PlatformAdminDashboard() {
                         variant="outline" 
                         onClick={() => {
                           setEditingConfig(config)
+                          setConfigFormData(config)
+                          setShowEditConfigModal(true)
                         }}
                       >
                         <Edit className="w-3 h-3 mr-1" />
                         Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => handleDeleteConfig(config.id)}
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Delete
                       </Button>
                     </div>
                   </div>
@@ -2664,7 +2751,10 @@ export default function PlatformAdminDashboard() {
                 <div className="text-center py-8">
                   <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">No system configurations found</p>
-                  <Button variant="outline" className="mt-4" onClick={() => setEditingConfig({})}>
+                  <Button variant="outline" className="mt-4" onClick={() => {
+                    setEditingConfig({})
+                    setShowEditConfigModal(true)
+                  }}>
                     <Plus className="w-4 h-4 mr-2" />
                     Create Configuration
                   </Button>
@@ -2676,12 +2766,102 @@ export default function PlatformAdminDashboard() {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => setEditingConfig({})}
+                onClick={() => {
+                  setEditingConfig({})
+                  setShowEditConfigModal(true)
+                }}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Configuration
               </Button>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Configuration Modal */}
+      <Dialog open={showEditConfigModal} onOpenChange={setShowEditConfigModal}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              {editingConfig?.id ? 'Edit' : 'Create'} System Configuration
+            </DialogTitle>
+            <DialogDescription>
+              Configure system settings and parameters
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Key *</Label>
+              <Input 
+                value={configFormData.key || ''} 
+                onChange={(e) => setConfigFormData({...configFormData, key: e.target.value})}
+                placeholder="e.g., max_users_per_company"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <textarea 
+                className="w-full p-2 border rounded"
+                rows={3}
+                value={configFormData.description || ''} 
+                onChange={(e) => setConfigFormData({...configFormData, description: e.target.value})}
+                placeholder="Brief description of this configuration"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Value *</Label>
+              <Input 
+                value={configFormData.value || ''} 
+                onChange={(e) => setConfigFormData({...configFormData, value: e.target.value})}
+                placeholder="Configuration value"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Input 
+                value={configFormData.category || ''} 
+                onChange={(e) => setConfigFormData({...configFormData, category: e.target.value})}
+                placeholder="e.g., general, security, billing"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Value Type</Label>
+              <Select 
+                value={configFormData.value_type || 'string'}
+                onValueChange={(value) => setConfigFormData({...configFormData, value_type: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="string">String</SelectItem>
+                  <SelectItem value="integer">Integer</SelectItem>
+                  <SelectItem value="boolean">Boolean</SelectItem>
+                  <SelectItem value="float">Float</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => {
+              setShowEditConfigModal(false)
+              setEditingConfig(null)
+              setConfigFormData({})
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveConfig}>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              {editingConfig?.id ? 'Update' : 'Create'} Configuration
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
