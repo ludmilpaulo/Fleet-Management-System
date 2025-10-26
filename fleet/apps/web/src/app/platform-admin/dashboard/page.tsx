@@ -115,7 +115,10 @@ export default function PlatformAdminDashboard() {
   const [allUsers, setAllUsers] = useState<any[]>([])
   const [showCompaniesModal, setShowCompaniesModal] = useState(false)
   const [showUsersModal, setShowUsersModal] = useState(false)
+  const [showSubscriptionsModal, setShowSubscriptionsModal] = useState(false)
   const [entityLoading, setEntityLoading] = useState(false)
+  const [subscriptions, setSubscriptions] = useState<any[]>([])
+  const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([])
   const [entitiesData, setEntitiesData] = useState<any>({
     companies: [],
     users: [],
@@ -139,10 +142,14 @@ export default function PlatformAdminDashboard() {
     if (showUsersModal) {
       fetchAllUsers()
     }
+    if (showSubscriptionsModal) {
+      fetchSubscriptions()
+      fetchSubscriptionPlans()
+    }
     if (activeTab === 'entities') {
       fetchAllEntities()
     }
-  }, [showCompaniesModal, showUsersModal, activeTab])
+  }, [showCompaniesModal, showUsersModal, showSubscriptionsModal, activeTab])
   
   const fetchCompanies = async () => {
     try {
@@ -225,6 +232,36 @@ export default function PlatformAdminDashboard() {
       console.error('Failed to fetch entities:', error)
     } finally {
       setEntityLoading(false)
+    }
+  }
+
+  const fetchSubscriptions = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/subscriptions/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSubscriptions(Array.isArray(data) ? data : data.results || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch subscriptions:', error)
+    }
+  }
+
+  const fetchSubscriptionPlans = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      const response = await fetch('http://127.0.0.1:8000/api/platform-admin/plans/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSubscriptionPlans(Array.isArray(data) ? data : data.results || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch subscription plans:', error)
     }
   }
 
