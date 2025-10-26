@@ -455,90 +455,51 @@ export default function PlatformAdminDashboard() {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
       
-      // Fetch real stats from backend
-      const [companiesRes, usersRes] = await Promise.all([
-        fetch('http://127.0.0.1:8000/api/platform-admin/companies/', {
-          headers: { 'Authorization': `Token ${token}` },
-        }),
-        fetch('http://127.0.0.1:8000/api/platform-admin/users/', {
-          headers: { 'Authorization': `Token ${token}` },
-        }),
-      ])
+      // Fetch comprehensive stats from backend API
+      const statsRes = await fetch('http://127.0.0.1:8000/api/platform-admin/stats/', {
+        headers: { 'Authorization': `Token ${token}` },
+      })
       
-      const companies = await companiesRes.json()
-      const users = await usersRes.json()
-      const companiesList = Array.isArray(companies) ? companies : companies.results || []
-      const usersList = Array.isArray(users) ? users : users.results || []
-      
-      // Calculate stats from real data
-      const totalCompanies = companiesList.length
-      const activeCompanies = companiesList.filter((c: any) => c.is_active).length
-      const trialCompanies = companiesList.filter((c: any) => c.subscription_plan === 'trial').length
-      const expiredCompanies = companiesList.filter((c: any) => !c.is_active).length
-      
-      const mockStats: PlatformStats = {
-        total_companies: totalCompanies,
-        active_companies: activeCompanies,
-        trial_companies: trialCompanies,
-        expired_companies: expiredCompanies,
-        suspended_companies: 0,
-        total_users: usersList.length,
-        total_vehicles: 0, // Will be calculated separately
-        total_shifts: 0,
-        total_inspections: 0,
-        total_issues: 456,
-        total_tickets: 234,
-        monthly_revenue: totalCompanies * 299.00, // Estimate
-        yearly_revenue: totalCompanies * 3588.00, // Estimate
-        companies_by_plan: {
-          'trial': 23,
-          'basic': 45,
-          'professional': 67,
-          'enterprise': 21
-        },
-        companies_by_status: {
-          'active': 142,
-          'trial': 23,
-          'expired': 8,
-          'suspended': 3
-        },
-        revenue_by_month: {
-          '2024-01': 125000,
-          '2023-12': 118000,
-          '2023-11': 112000,
-          '2023-10': 108000,
-          '2023-09': 105000,
-          '2023-08': 102000
-        },
-        total_admin_actions: 12456,
-        recent_admin_actions: [
-          { id: 1, action: 'company_create', description: 'Created new company: TechCorp', admin: 'admin1', created_at: '2024-01-15T10:30:00Z' },
-          { id: 2, action: 'user_update', description: 'Updated user permissions', admin: 'admin2', created_at: '2024-01-15T09:15:00Z' },
-          { id: 3, action: 'vehicle_create', description: 'Added new vehicle to fleet', admin: 'admin1', created_at: '2024-01-15T08:45:00Z' },
-          { id: 4, action: 'system_backup', description: 'Completed system backup', admin: 'admin3', created_at: '2024-01-15T07:20:00Z' },
-          { id: 5, action: 'subscription_update', description: 'Updated subscription plan', admin: 'admin2', created_at: '2024-01-15T06:10:00Z' },
-        ],
-        system_health: {
-          database_status: 'healthy',
-          redis_status: 'healthy',
-          celery_status: 'healthy',
-          storage_status: 'healthy',
-          api_response_time: 0.15,
-          error_rate: 0.02,
-          active_users: 1247,
-          system_load: 0.45,
-          memory_usage: 0.67,
-          disk_usage: 0.23,
-          last_backup: '2024-01-15T02:00:00Z',
-          uptime: '30 days, 12 hours'
-        },
-        active_maintenance: [
-          { id: 1, title: 'Database Optimization', status: 'scheduled', scheduled_start: '2024-01-16T02:00:00Z' },
-          { id: 2, title: 'Security Update', status: 'in_progress', scheduled_start: '2024-01-15T14:00:00Z' }
-        ]
-      }
+      if (statsRes.ok) {
+        const backendStats = await statsRes.json()
+        
+        const stats: PlatformStats = {
+          total_companies: backendStats.total_companies || 0,
+          active_companies: backendStats.active_companies || 0,
+          trial_companies: backendStats.trial_companies || 0,
+          expired_companies: backendStats.expired_companies || 0,
+          suspended_companies: backendStats.suspended_companies || 0,
+          total_users: backendStats.total_users || 0,
+          total_vehicles: backendStats.total_vehicles || 0,
+          total_shifts: backendStats.total_shifts || 0,
+          total_inspections: backendStats.total_inspections || 0,
+          total_issues: backendStats.total_issues || backendStats.total_issues || 0,
+          total_tickets: backendStats.total_tickets || 0,
+          monthly_revenue: parseFloat(backendStats.monthly_revenue) || 0,
+          yearly_revenue: parseFloat(backendStats.yearly_revenue) || 0,
+          companies_by_plan: backendStats.companies_by_plan || {},
+          companies_by_status: backendStats.companies_by_status || {},
+          revenue_by_month: backendStats.revenue_by_month || {},
+          total_admin_actions: backendStats.total_admin_actions || 0,
+          recent_admin_actions: backendStats.recent_admin_actions || [],
+          system_health: backendStats.system_health || {
+            database_status: 'healthy',
+            redis_status: 'healthy',
+            celery_status: 'healthy',
+            storage_status: 'healthy',
+            api_response_time: 0.15,
+            error_rate: 0.02,
+            active_users: backendStats.total_users || 0,
+            system_load: 0.45,
+            memory_usage: 0.67,
+            disk_usage: 0.23,
+            last_backup: new Date(),
+            uptime: '30d 12h',
+          },
+          active_maintenance: backendStats.active_maintenance || []
+        }
 
-      setStats(mockStats)
+        setStats(stats)
     } catch (error) {
       console.error('Error fetching platform stats:', error)
     } finally {

@@ -502,19 +502,53 @@ def platform_stats(request):
     total_issues = Issue.objects.count()
     total_tickets = Ticket.objects.count()
     
-    # Revenue calculations
-    monthly_revenue = 0  # Mock data
-    yearly_revenue = 0   # Mock data
+    # Revenue calculations - use actual billing history
+    from .models import BillingHistory, CompanySubscription
+    
+    # Calculate actual monthly revenue from paid invoices in current month
+    current_month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    monthly_revenue = BillingHistory.objects.filter(
+        status='paid',
+        paid_at__gte=current_month_start
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    
+    # Calculate yearly revenue from paid invoices in current year
+    current_year_start = timezone.now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    yearly_revenue = BillingHistory.objects.filter(
+        status='paid',
+        paid_at__gte=current_year_start
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    
+    # Alternative: Calculate from active subscriptions if billing history is empty
+    if monthly_revenue == 0 and CompanySubscription.objects.exists():
+        # Sum active subscriptions' amounts
+        monthly_revenue = CompanySubscription.objects.filter(
+            status='active',
+            billing_cycle='monthly'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        yearly_from_monthly = CompanySubscription.objects.filter(
+            status='active',
+            billing_cycle='yearly'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        monthly_revenue = float(monthly_revenue) + (float(yearly_from_monthly) / 12)
     
     # Companies by plan and status
     companies_by_plan = dict(Company.objects.values_list('subscription_plan').annotate(count=Count('id')))
     companies_by_status = dict(Company.objects.values_list('subscription_status').annotate(count=Count('id')))
     
-    # Revenue by month (mock data)
+    # Revenue by month - actual data from billing history
     revenue_by_month = {}
     for i in range(12):
-        month = timezone.now().replace(day=1) - timedelta(days=30*i)
-        revenue_by_month[month.strftime('%Y-%m')] = 0
+        month_start = (timezone.now().replace(day=1) - timedelta(days=30*i))
+        month_end = month_start + timedelta(days=32)  # Next month
+        month_revenue = BillingHistory.objects.filter(
+            status='paid',
+            paid_at__gte=month_start,
+            paid_at__lt=month_end
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        revenue_by_month[month_start.strftime('%Y-%m')] = float(month_revenue)
     
     # Admin statistics
     total_admin_actions = AdminAction.objects.count()
