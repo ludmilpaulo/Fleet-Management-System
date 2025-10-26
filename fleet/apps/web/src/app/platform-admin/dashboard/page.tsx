@@ -144,11 +144,27 @@ export default function PlatformAdminDashboard() {
       }
 
       if (entityType === 'company') {
-        // Create company via platform-admin endpoint
-        const companyName = (document.querySelector('input[placeholder="Enter company name"]') as HTMLInputElement)?.value;
-        const email = (document.querySelector('input[placeholder="company@example.com"]') as HTMLInputElement)?.value;
-        const planElement = document.querySelector('[role="combobox"]') as any;
-        const subscription_plan = planElement?.textContent?.trim().toLowerCase() || 'trial';
+        // Get form values
+        const companyName = (document.querySelector('input[placeholder="Enter company name"]') as HTMLInputElement)?.value?.trim();
+        const email = (document.querySelector('input[placeholder="company@example.com"]') as HTMLInputElement)?.value?.trim();
+        
+        // Validate required fields
+        if (!companyName) {
+          alert('Error: Company name is required. Please fill in the company name field.');
+          return;
+        }
+        
+        if (!email) {
+          alert('Error: Email is required. Please fill in the email field.');
+          return;
+        }
+        
+        // Generate slug from name
+        const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        
+        // Get subscription plan from select dropdown
+        const planSelect = document.querySelector('select') as HTMLSelectElement;
+        const subscription_plan = planSelect?.value || 'trial';
         
         const response = await fetch(`${API_BASE}/platform-admin/companies/`, {
           method: 'POST',
@@ -158,6 +174,7 @@ export default function PlatformAdminDashboard() {
           },
           body: JSON.stringify({
             name: companyName,
+            slug: slug,
             email: email,
             subscription_plan: subscription_plan,
             is_active: true,
@@ -170,18 +187,52 @@ export default function PlatformAdminDashboard() {
         if (!response.ok) {
           const error = await response.json();
           console.error('Company creation error:', error);
-          throw new Error(error.detail || error.message || 'Failed to create company');
+          
+          // Build detailed error message
+          let errorMessage = 'Failed to create company:\n\n';
+          if (error.slug) {
+            errorMessage += `Slug: ${error.slug[0]}\n`;
+          }
+          if (error.email) {
+            errorMessage += `Email: ${error.email[0]}\n`;
+          }
+          if (error.name) {
+            errorMessage += `Name: ${error.name[0]}\n`;
+          }
+          if (error.detail) {
+            errorMessage += `Detail: ${error.detail}\n`;
+          }
+          
+          alert(errorMessage || 'An error occurred while creating the company.');
+          return;
         }
 
         const data = await response.json();
         console.log('Company created:', data);
-        alert('Company created successfully!');
+        alert(`Company "${data.name}" created successfully!`);
       } else if (entityType === 'user') {
         // Create user
-        const first_name = (document.querySelector('input[placeholder="John"]') as HTMLInputElement)?.value;
-        const last_name = (document.querySelector('input[placeholder="Doe"]') as HTMLInputElement)?.value;
-        const email = (document.querySelector('input[placeholder="user@example.com"]') as HTMLInputElement)?.value;
-        const role = (document.querySelectorAll('[role="option"]') as any)?.[0]?.textContent || 'staff';
+        const first_name = (document.querySelector('input[placeholder="John"]') as HTMLInputElement)?.value?.trim();
+        const last_name = (document.querySelector('input[placeholder="Doe"]') as HTMLInputElement)?.value?.trim();
+        const email = (document.querySelector('input[placeholder="user@example.com"]') as HTMLInputElement)?.value?.trim();
+        
+        // Validate required fields
+        if (!first_name) {
+          alert('Error: First name is required.');
+          return;
+        }
+        if (!last_name) {
+          alert('Error: Last name is required.');
+          return;
+        }
+        if (!email) {
+          alert('Error: Email is required.');
+          return;
+        }
+        
+        // Get role from select
+        const roleSelect = document.querySelectorAll('select')[1] as HTMLSelectElement;
+        const role = roleSelect?.value || 'staff';
 
         const response = await fetch(`${API_BASE}/account/register/`, {
           method: 'POST',
@@ -192,7 +243,7 @@ export default function PlatformAdminDashboard() {
           body: JSON.stringify({
             username: email.split('@')[0],
             email,
-            password: 'TempPassword123!', // Temporary password
+            password: 'TempPassword123!',
             password_confirm: 'TempPassword123!',
             first_name,
             last_name,
@@ -202,18 +253,56 @@ export default function PlatformAdminDashboard() {
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.detail || error.email?.[0] || 'Failed to create user');
+          console.error('User creation error:', error);
+          
+          let errorMessage = 'Failed to create user:\n\n';
+          if (error.email) {
+            errorMessage += `Email: ${error.email[0]}\n`;
+          }
+          if (error.username) {
+            errorMessage += `Username: ${error.username[0]}\n`;
+          }
+          if (error.first_name) {
+            errorMessage += `First Name: ${error.first_name[0]}\n`;
+          }
+          if (error.last_name) {
+            errorMessage += `Last Name: ${error.last_name[0]}\n`;
+          }
+          if (error.detail) {
+            errorMessage += `Detail: ${error.detail}\n`;
+          }
+          
+          alert(errorMessage || 'An error occurred while creating the user.');
+          return;
         }
 
         const data = await response.json();
         console.log('User created:', data);
-        alert('User created successfully! Temporary password: TempPassword123!');
+        alert(`User "${data.user.full_name}" created successfully!\nTemporary password: TempPassword123!`);
       } else if (entityType === 'vehicle') {
         // Create vehicle
-        const make = (document.querySelector('input[placeholder="Toyota"]') as HTMLInputElement)?.value;
-        const model = (document.querySelector('input[placeholder="Camry"]') as HTMLInputElement)?.value;
-        const year = (document.querySelector('input[placeholder="2024"]') as HTMLInputElement)?.value;
-        const license_plate = (document.querySelector('input[placeholder="ABC-1234"]') as HTMLInputElement)?.value;
+        const make = (document.querySelector('input[placeholder="Toyota"]') as HTMLInputElement)?.value?.trim();
+        const model = (document.querySelector('input[placeholder="Camry"]') as HTMLInputElement)?.value?.trim();
+        const year = (document.querySelector('input[placeholder="2024"]') as HTMLInputElement)?.value?.trim();
+        const reg_number = (document.querySelector('input[placeholder="ABC-1234"]') as HTMLInputElement)?.value?.trim();
+        
+        // Validate required fields
+        if (!make) {
+          alert('Error: Vehicle make is required.');
+          return;
+        }
+        if (!model) {
+          alert('Error: Vehicle model is required.');
+          return;
+        }
+        if (!year) {
+          alert('Error: Vehicle year is required.');
+          return;
+        }
+        if (!reg_number) {
+          alert('Error: License plate number is required.');
+          return;
+        }
 
         const response = await fetch(`${API_BASE}/fleet/vehicles/`, {
           method: 'POST',
@@ -225,21 +314,45 @@ export default function PlatformAdminDashboard() {
             make,
             model,
             year: parseInt(year),
-            license_plate,
-            status: 'active',
+            reg_number,
+            status: 'ACTIVE',
             vin: `VIN-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-            fuel_type: 'gasoline',
+            fuel_type: 'PETROL',
+            org: 11, // TODO: Get actual company ID from user context
           }),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.detail || 'Failed to create vehicle');
+          console.error('Vehicle creation error:', error);
+          
+          let errorMessage = 'Failed to create vehicle:\n\n';
+          if (error.reg_number) {
+            errorMessage += `License Plate: ${error.reg_number[0]}\n`;
+          }
+          if (error.make) {
+            errorMessage += `Make: ${error.make[0]}\n`;
+          }
+          if (error.model) {
+            errorMessage += `Model: ${error.model[0]}\n`;
+          }
+          if (error.fuel_type) {
+            errorMessage += `Fuel Type: ${error.fuel_type[0]}\n`;
+          }
+          if (error.org) {
+            errorMessage += `Company: ${error.org[0]}\n`;
+          }
+          if (error.detail) {
+            errorMessage += `Detail: ${error.detail}\n`;
+          }
+          
+          alert(errorMessage || 'An error occurred while creating the vehicle.');
+          return;
         }
 
         const data = await response.json();
         console.log('Vehicle created:', data);
-        alert('Vehicle created successfully!');
+        alert(`Vehicle "${data.make} ${data.model}" created successfully!`);
       }
       
       // Refresh data
