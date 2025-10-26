@@ -1,13 +1,13 @@
 // API Configuration
 export const API_CONFIG = {
-  // Production API URL
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'https://www.fleetia.online/api',
+  // Local development API URL
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api',
   
   // WebSocket URL for real-time features
-  WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'wss://www.fleetia.online/ws',
+  WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8000/ws',
   
   // App URL
-  APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://fleet-management-system.vercel.app',
+  APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001',
   
   // API Endpoints
   ENDPOINTS: {
