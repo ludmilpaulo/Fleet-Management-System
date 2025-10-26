@@ -38,7 +38,6 @@ import {
   X
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { useState as useReactState } from 'react'
 
 interface PlatformStats {
   total_companies: number
