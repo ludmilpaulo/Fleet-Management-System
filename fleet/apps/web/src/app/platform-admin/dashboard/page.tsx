@@ -170,7 +170,11 @@ export default function PlatformAdminDashboard() {
     if (showTrialSettingsModal || showBillingConfigModal || showFeatureFlagsModal) {
       fetchPlatformSettings()
     }
-  }, [showTrialSettingsModal, showBillingConfigModal, showFeatureFlagsModal])
+    if (showSubscriptionsModal) {
+      fetchSubscriptions()
+      fetchSubscriptionPlans()
+    }
+  }, [showTrialSettingsModal, showBillingConfigModal, showFeatureFlagsModal, showSubscriptionsModal])
   
   useEffect(() => {
     if (showCompaniesModal) {
@@ -494,6 +498,8 @@ export default function PlatformAdminDashboard() {
           fetchInspections()
         } else if (editingEntityType === 'issues') {
           fetchIssues()
+        } else if (editingEntityType === 'subscriptions') {
+          fetchSubscriptions()
         }
       } else {
         const error = await response.json()
@@ -610,6 +616,8 @@ export default function PlatformAdminDashboard() {
           fetchInspections()
         } else if (type === 'issues') {
           fetchIssues()
+        } else if (type === 'subscriptions') {
+          fetchSubscriptions()
         }
       } else {
         alert(`Failed to delete ${type}`)
@@ -1531,6 +1539,22 @@ export default function PlatformAdminDashboard() {
                       <Button size="sm" onClick={() => { setEntityType('vehicle'); setShowAddEntityDialog(true); }}>
                         <Plus className="w-4 h-4 mr-1" />
                         Add
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Crown className="w-6 h-6 text-yellow-600" />
+                      <span className="font-medium">Subscriptions</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Total: {subscriptions.length} subscriptions
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setShowSubscriptionsModal(true)}>
+                        <Eye className="w-4 h-4 mr-1" />
+                        View All
                       </Button>
                     </div>
                   </div>
@@ -2943,6 +2967,59 @@ export default function PlatformAdminDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Subscriptions List Modal */}
+      <Dialog open={showSubscriptionsModal} onOpenChange={setShowSubscriptionsModal}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5" />
+              Company Subscriptions ({subscriptions.length})
+            </DialogTitle>
+            <DialogDescription>
+              View and manage all company subscriptions
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {subscriptions.length > 0 ? (
+              <div className="space-y-2">
+                {subscriptions.map((subscription: any) => (
+                  <div key={subscription.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold">{subscription.company || subscription.company_name || `Company #${subscription.company_id || subscription.id}`}</h3>
+                        <Badge variant={subscription.status === 'active' ? 'default' : subscription.status === 'trial' ? 'secondary' : 'outline'}>
+                          {subscription.status || 'Unknown'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">Plan: {subscription.plan || subscription.plan_name || 'N/A'}</p>
+                      <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                        <span>Billing: {subscription.billing_cycle || 'N/A'}</span>
+                        <span>Amount: ${subscription.amount || subscription.plan_price || '0.00'}</span>
+                        {subscription.current_period_end && <span>Ends: {new Date(subscription.current_period_end).toLocaleDateString()}</span>}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditEntity(subscription, 'subscriptions')}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteEntity(subscription.id, 'subscriptions')}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Crown className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No subscriptions found</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* System Configuration Modal */}
       <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
         <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
@@ -3368,6 +3445,62 @@ export default function PlatformAdminDashboard() {
                     rows={3}
                     value={editFormData.notes || ''} 
                     onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                  />
+                </div>
+              </div>
+            )}
+
+            {editingEntityType === 'subscriptions' && editingEntity && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={editFormData.status || ''} 
+                    onValueChange={(value) => setEditFormData({...editFormData, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trial">Trial</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="expired">Expired</SelectItem>
+                      <SelectItem value="suspended">Suspended</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Billing Cycle</Label>
+                  <Select 
+                    value={editFormData.billing_cycle || ''} 
+                    onValueChange={(value) => setEditFormData({...editFormData, billing_cycle: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Amount</Label>
+                  <Input 
+                    type="number"
+                    step="0.01"
+                    value={editFormData.amount || ''} 
+                    onChange={(e) => setEditFormData({...editFormData, amount: parseFloat(e.target.value)})}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Currency</Label>
+                  <Input 
+                    value={editFormData.currency || 'USD'} 
+                    onChange={(e) => setEditFormData({...editFormData, currency: e.target.value})}
+                    placeholder="USD"
                   />
                 </div>
               </div>
