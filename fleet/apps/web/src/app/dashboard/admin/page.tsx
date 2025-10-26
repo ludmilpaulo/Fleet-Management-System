@@ -30,6 +30,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchUserProfile } from '@/store/slices/authSlice'
 import { analytics } from '@/lib/mixpanel'
 import { useRouter } from 'next/navigation'
+import { API_CONFIG } from '@/config/api'
 
 interface DashboardStats {
   company_name: string
@@ -77,13 +78,13 @@ export default function AdminDashboard() {
 
       // Fetch real dashboard data from API
       const [dashboardRes, userStatsRes] = await Promise.all([
-        fetch('http://127.0.0.1:8000/api/fleet/stats/dashboard/', {
+        fetch(`${API_CONFIG.BASE_URL}/fleet/stats/dashboard/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json'
           }
         }),
-        fetch('http://127.0.0.1:8000/api/account/stats/', {
+        fetch(`${API_CONFIG.BASE_URL}/account/stats/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json'

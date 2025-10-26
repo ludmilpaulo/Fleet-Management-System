@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link';
 import { addNotification } from '@/store/slices/uiSlice';
 import { useAppDispatch } from '@/store/hooks';
+import { API_CONFIG } from '@/config/api';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -38,7 +39,7 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'}/account/forgot-password/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/account/forgot-password/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: data.email }),
