@@ -106,7 +106,7 @@ export default function PlatformAdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [showAddEntityDialog, setShowAddEntityDialog] = useState(false)
-  const [entityType, setEntityType] = useState<'company' | 'user' | 'vehicle' | 'inspection' | 'issue' | ''>('')
+  const [entityType, setEntityType] = useState<'company' | 'user' | 'vehicle' | 'shift' | 'inspection' | 'issue' | ''>('')
   const [companies, setCompanies] = useState<Company[]>([])
   const [companySearchTerm, setCompanySearchTerm] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
@@ -714,9 +714,64 @@ export default function PlatformAdminDashboard() {
           return;
         }
 
-        const data = await response.json();
-        console.log('Vehicle created:', data);
-        alert(`Vehicle "${data.make} ${data.model}" created successfully!`);
+      const data = await response.json();
+      console.log('Vehicle created:', data);
+      alert(`Vehicle "${data.make} ${data.model}" created successfully!`);
+      } else if (entityType === 'shift') {
+      // Get form values
+      const driverId = (document.querySelector('input[placeholder="Enter driver user ID"]') as HTMLInputElement)?.value?.trim();
+      const vehicleId = (document.querySelector('input[placeholder="Enter vehicle ID"]') as HTMLInputElement)?.value?.trim();
+      const startAt = (document.querySelector('input[type="datetime-local"]') as HTMLInputElement)?.value;
+      const endAt = (document.querySelectorAll('input[type="datetime-local"]')[1] as HTMLInputElement)?.value;
+      const status = (document.querySelector('select') as HTMLSelectElement)?.value || 'ACTIVE';
+      const notes = (document.querySelector('textarea[placeholder="Additional shift notes..."]') as HTMLTextAreaElement)?.value?.trim();
+
+      if (!driverId) {
+        alert('Error: Driver ID is required.');
+        return;
+      }
+      if (!vehicleId) {
+        alert('Error: Vehicle ID is required.');
+        return;
+      }
+      if (!startAt) {
+        alert('Error: Start date/time is required.');
+        return;
+      }
+
+      const payload: any = {
+        driver: parseInt(driverId),
+        vehicle: parseInt(vehicleId),
+        start_at: startAt,
+        status: status,
+      };
+
+      if (endAt && endAt !== '') {
+        payload.end_at = endAt;
+      }
+
+      if (notes && notes !== '') {
+        payload.notes = notes;
+      }
+
+      const response = await fetch(`${API_BASE}/platform-admin/shifts/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Failed to create shift: ${error.detail || JSON.stringify(error)}`);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Shift created:', data);
+      alert(`Shift created successfully!`);
       } else if (entityType === 'inspection') {
       // Get form values
       const shiftId = (document.querySelector('input[placeholder="Enter shift ID"]') as HTMLInputElement)?.value?.trim();
@@ -1320,7 +1375,7 @@ export default function PlatformAdminDashboard() {
                         <Eye className="w-4 h-4 mr-1" />
                         View All
                       </Button>
-                      <Button size="sm" onClick={() => alert('Add shift (API endpoint needed)')}>
+                      <Button size="sm" onClick={() => { setEntityType('shift'); setShowAddEntityDialog(true); }}>
                         <Plus className="w-4 h-4 mr-1" />
                         Add
                       </Button>
@@ -1653,6 +1708,18 @@ export default function PlatformAdminDashboard() {
                       Inspection
                     </div>
                   </SelectItem>
+                  <SelectItem value="shift">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Shift
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="inspection">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Inspection
+                    </div>
+                  </SelectItem>
                   <SelectItem value="issue">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4" />
@@ -1935,6 +2002,78 @@ export default function PlatformAdminDashboard() {
                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     rows={3}
                     placeholder="Additional inspection notes..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Shift Form */}
+            {entityType === 'shift' && (
+              <div className="space-y-4 animate-in fade-in-50 slide-in-from-top-4">
+                <div className="p-4 bg-yellow-50 rounded-lg mb-4">
+                  <p className="text-sm text-yellow-700">Create a new driver shift</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Driver ID *</Label>
+                    <Input
+                      type="number"
+                      placeholder="Enter driver user ID"
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500">The ID of the driver starting the shift</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Vehicle ID *</Label>
+                    <Input
+                      type="number"
+                      placeholder="Enter vehicle ID"
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500">The ID of the vehicle for this shift</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Start Date & Time *</Label>
+                  <Input
+                    type="datetime-local"
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500">When the shift starts</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>End Date & Time (Optional)</Label>
+                  <Input
+                    type="datetime-local"
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500">When the shift ends (leave empty for active shift)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select defaultValue="ACTIVE">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <textarea
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    rows={3}
+                    placeholder="Additional shift notes..."
                   />
                 </div>
               </div>
