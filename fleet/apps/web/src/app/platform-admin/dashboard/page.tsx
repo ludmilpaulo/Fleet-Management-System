@@ -109,10 +109,11 @@ export default function PlatformAdminDashboard() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [companySearchTerm, setCompanySearchTerm] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
+  const [vehicleCompanyId, setVehicleCompanyId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchPlatformStats()
-    if (showAddEntityDialog && entityType === 'user') {
+    if (showAddEntityDialog && (entityType === 'user' || entityType === 'vehicle')) {
       fetchCompanies()
     }
   }, [showAddEntityDialog, entityType])
@@ -149,6 +150,7 @@ export default function PlatformAdminDashboard() {
     setEntityType('');
     setSelectedCompany('');
     setCompanySearchTerm('');
+    setVehicleCompanyId(null);
   };
 
   const handleLogout = async () => {
@@ -324,6 +326,12 @@ export default function PlatformAdminDashboard() {
         console.log('User created:', data);
         alert(`User "${data.user.full_name}" created successfully!\nTemporary password: TempPassword123!`);
       } else if (entityType === 'vehicle') {
+        // Validate company is selected
+        if (!vehicleCompanyId) {
+          alert('Error: Company is required. Please select a company.');
+          return;
+        }
+        
         // Create vehicle
         const make = (document.querySelector('input[placeholder="Toyota"]') as HTMLInputElement)?.value?.trim();
         const model = (document.querySelector('input[placeholder="Camry"]') as HTMLInputElement)?.value?.trim();
@@ -362,7 +370,7 @@ export default function PlatformAdminDashboard() {
             status: 'ACTIVE',
             vin: `VIN-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
             fuel_type: 'PETROL',
-            org: 11, // TODO: Get actual company ID from user context
+            org: vehicleCompanyId, // Use selected company ID
           }),
         });
 
@@ -1231,6 +1239,28 @@ export default function PlatformAdminDashboard() {
                   <p className="text-sm text-purple-700">Add a new vehicle to the fleet</p>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Company *</Label>
+                  <Select value={vehicleCompanyId?.toString() || ''} onValueChange={(value) => setVehicleCompanyId(parseInt(value))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a company" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {companies
+                        .filter(company => company.slug && company.slug.trim() !== '')
+                        .map((company) => (
+                          <SelectItem key={company.id} value={company.id.toString()}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{company.name}</span>
+                              <span className="text-xs text-gray-500">{company.email}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">Select the company this vehicle belongs to</p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Vehicle Make *</Label>
@@ -1271,14 +1301,14 @@ export default function PlatformAdminDashboard() {
 
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <Select defaultValue="active">
+                  <Select defaultValue="ACTIVE">
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+                      <SelectItem value="INACTIVE">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
