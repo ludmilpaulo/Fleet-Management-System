@@ -129,6 +129,7 @@ export default function PlatformAdminDashboard() {
   const [subscriptions, setSubscriptions] = useState<any[]>([])
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([])
   const [showPlansModal, setShowPlansModal] = useState(false)
+  const [showAssignPlanModal, setShowAssignPlanModal] = useState(false)
   const [vehicles, setVehicles] = useState<any[]>([])
   const [shifts, setShifts] = useState<any[]>([])
   const [inspections, setInspections] = useState<any[]>([])
@@ -3138,10 +3139,16 @@ export default function PlatformAdminDashboard() {
           <div className="space-y-4 py-4">
             <div className="flex justify-between items-center">
               <p className="text-sm text-gray-600">Manage company subscription assignments</p>
-              <Button size="sm" variant="outline" onClick={() => setShowPlansModal(true)}>
-                <Settings className="w-4 h-4 mr-2" />
-                Manage Plans
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => setShowAssignPlanModal(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Assign Plan
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowPlansModal(true)}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Manage Plans
+                </Button>
+              </div>
             </div>
             {subscriptions.length > 0 ? (
               <div className="space-y-2">
@@ -3260,6 +3267,170 @@ export default function PlatformAdminDashboard() {
                 <p className="text-gray-500">No subscription plans found</p>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Plan to Company Modal */}
+      <Dialog open={showAssignPlanModal} onOpenChange={setShowAssignPlanModal}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5" />
+              Assign Plan to Company
+            </DialogTitle>
+            <DialogDescription>
+              Select a company and assign a subscription plan
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Company *</Label>
+              <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a company" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {companies
+                    .filter(company => company.slug && company.slug.trim() !== '')
+                    .map((company) => (
+                      <SelectItem key={company.slug} value={company.slug}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{company.name}</span>
+                          <span className="text-xs text-gray-500">{company.email}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Subscription Plan *</Label>
+              <Select 
+                value={editingEntity?.plan_id?.toString() || ''} 
+                onValueChange={(value) => setEditingEntity({...editingEntity, plan_id: parseInt(value)})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a plan" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {subscriptionPlans
+                    .filter(plan => plan.is_active)
+                    .map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id.toString()}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{plan.display_name || plan.name}</span>
+                          <span className="text-xs text-gray-500">
+                            ${plan.monthly_price}/mo or ${plan.yearly_price}/yr
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Status *</Label>
+                <Select 
+                  value={editFormData.status || 'trial'} 
+                  onValueChange={(value) => setEditFormData({...editFormData, status: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="trial">Trial</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Billing Cycle *</Label>
+                <Select 
+                  value={editFormData.billing_cycle || 'monthly'} 
+                  onValueChange={(value) => setEditFormData({...editFormData, billing_cycle: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="yearly">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowAssignPlanModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={async () => {
+              if (!selectedCompany) {
+                alert('Please select a company')
+                return
+              }
+              if (!editingEntity?.plan_id) {
+                alert('Please select a plan')
+                return
+              }
+
+              const company = companies.find(c => c.slug === selectedCompany)
+              if (!company) {
+                alert('Company not found')
+                return
+              }
+
+              const plan = subscriptionPlans.find(p => p.id === editingEntity.plan_id)
+              if (!plan) {
+                alert('Plan not found')
+                return
+              }
+
+              try {
+                const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+                const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/subscriptions/`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                  },
+                  body: JSON.stringify({
+                    company: company.id,
+                    plan: plan.id,
+                    status: editFormData.status || 'trial',
+                    billing_cycle: editFormData.billing_cycle || 'monthly',
+                    amount: parseFloat(plan.monthly_price) || 0,
+                    currency: 'USD',
+                    current_period_start: new Date().toISOString(),
+                    current_period_end: new Date(Date.now() + (editFormData.billing_cycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
+                    trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                  }),
+                });
+
+                if (response.ok) {
+                  alert('Plan assigned successfully!')
+                  setShowAssignPlanModal(false)
+                  fetchSubscriptions()
+                } else {
+                  const error = await response.json()
+                  alert(`Failed to assign plan: ${error.detail || JSON.stringify(error)}`)
+                }
+              } catch (error) {
+                console.error('Error assigning plan:', error)
+                alert('Failed to assign plan')
+              }
+            }}>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Assign Plan
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
