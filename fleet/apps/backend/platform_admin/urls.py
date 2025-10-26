@@ -58,6 +58,7 @@ urlpatterns = [
     
     # Subscriptions
     path('subscriptions/', views.CompanySubscriptionListView.as_view(), name='subscription-list'),
+    path('subscriptions/<int:pk>/', views.CompanySubscriptionDetailView.as_view(), name='subscription-detail'),
     
     # Billing
     path('billing/', views.BillingHistoryListView.as_view(), name='billing-list'),

@@ -55,11 +55,49 @@ class CompanyManagementDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = CompanyManagementSerializer
 
 
-class CompanySubscriptionListView(generics.ListAPIView):
-    """List all company subscriptions"""
+class CompanySubscriptionListView(generics.ListCreateAPIView):
+    """List and create company subscriptions"""
     permission_classes = [permissions.IsAuthenticated, IsPlatformAdmin]
     queryset = CompanySubscription.objects.all()
     serializer_class = CompanySubscriptionSerializer
+    
+    def perform_create(self, serializer):
+        subscription = serializer.save()
+        AuditLog.objects.create(
+            action='subscription_created',
+            description=f'Created subscription for {subscription.company.name}',
+            company=subscription.company,
+            user=self.request.user,
+            metadata={'subscription_id': subscription.id, 'plan': subscription.plan.name}
+        )
+
+
+class CompanySubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update, or delete a company subscription"""
+    permission_classes = [permissions.IsAuthenticated, IsPlatformAdmin]
+    queryset = CompanySubscription.objects.all()
+    serializer_class = CompanySubscriptionSerializer
+    
+    def perform_update(self, serializer):
+        subscription = serializer.save()
+        AuditLog.objects.create(
+            action='subscription_updated',
+            description=f'Updated subscription for {subscription.company.name}',
+            company=subscription.company,
+            user=self.request.user,
+            metadata={'subscription_id': subscription.id}
+        )
+    
+    def perform_destroy(self, instance):
+        company_name = instance.company.name
+        instance.delete()
+        AuditLog.objects.create(
+            action='subscription_cancelled',
+            description=f'Cancelled subscription for {company_name}',
+            company=instance.company,
+            user=self.request.user,
+            metadata={'company_name': company_name}
+        )
 
 
 class BillingHistoryListView(generics.ListAPIView):
