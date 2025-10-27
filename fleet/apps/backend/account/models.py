@@ -249,6 +249,13 @@ class User(AbstractUser):
     def is_inspector(self):
         return self.role == self.Role.INSPECTOR
     
+    @property
+    def full_name(self):
+        """Get user's full name"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.username
+    
     def has_permission(self, permission):
         """
         Check if user has specific permission based on role

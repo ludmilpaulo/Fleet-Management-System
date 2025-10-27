@@ -60,7 +60,7 @@ def create_companies():
         )
         companies.append(company)
         status = "Created" if created else "Already exists"
-        print(f"  ✓ {company.name} - {status}")
+        print(f"  - {company.name} - {status}")
     
     return companies
 
@@ -92,9 +92,19 @@ def create_users(companies):
         {'username': 'driver4', 'email': 'driver@transportmasters.com', 'password': 'driver123', 
          'role': 'driver', 'company': companies[1], 'first_name': 'Tom', 'last_name': 'Driver'},
         
+        # Logistics Pro users
+        {'username': 'admin3', 'email': 'admin@logisticspro.com', 'password': 'admin123', 
+         'role': 'admin', 'company': companies[2], 'first_name': 'Laura', 'last_name': 'Admin'},
+        {'username': 'driver5', 'email': 'driver@logisticspro.com', 'password': 'driver123', 
+         'role': 'driver', 'company': companies[2], 'first_name': 'Ethan', 'last_name': 'Driver'},
+        
         # Platform Admin
         {'username': 'platform_admin', 'email': 'platform@fleetmanagement.com', 'password': 'platform123', 
          'role': 'platform_admin', 'company': None, 'first_name': 'Platform', 'last_name': 'Admin', 'is_staff': True, 'is_superuser': True},
+
+        # Test Admin for automation
+        {'username': 'testadmin', 'email': 'testadmin@fleetcorp.com', 'password': 'Test@1234', 
+         'role': 'admin', 'company': companies[0], 'first_name': 'Test', 'last_name': 'Admin'},
     ]
     
     users = {}
@@ -118,7 +128,7 @@ def create_users(companies):
             status = "Already exists"
         
         users[data['username']] = user
-        print(f"  ✓ {user.username} ({user.role}) - {status}")
+        print(f"  - {user.username} ({user.role}) - {status}")
     
     return users
 
@@ -148,7 +158,7 @@ def create_vehicles(companies):
         )
         vehicles.append(vehicle)
         status = "Created" if created else "Already exists"
-        print(f"  ✓ {vehicle.reg_number} ({vehicle.make} {vehicle.model}) - {status}")
+        print(f"  - {vehicle.reg_number} ({vehicle.make} {vehicle.model}) - {status}")
     
     return vehicles
 
@@ -178,69 +188,75 @@ def create_shifts(users, vehicles):
             notes=f'Shift {i+1} - Regular route'
         )
         shifts.append(shift)
-        print(f"  ✓ Shift {shift.id} - {driver.username} in {vehicle.reg_number} ({shift.status})")
+        print(f"  - Shift {shift.id} - {driver.username} in {vehicle.reg_number} ({shift.status})")
     
     return shifts
 
-def create_inspections(users, vehicles):
+def create_inspections(shifts):
     print_header("Creating Inspections")
     
-    inspectors = [u for u in users.values() if u.role == 'inspector']
-    
-    inspection_categories = [
-        'Brakes', 'Tires', 'Lights', 'Engine', 'Transmission',
-        'Steering', 'Suspension', 'Exhaust', 'Body', 'Interior'
+    parts = [
+        'FRONT', 'REAR', 'LEFT', 'RIGHT', 'ROOF', 'INTERIOR', 'DASHBOARD',
+        'ODOMETER', 'WINDSHIELD', 'TYRES', 'LIGHTS', 'ENGINE', 'BRAKES', 'FUEL'
     ]
     
     inspections = []
-    for i in range(50):  # Create 50 inspections
-        inspector = random.choice(inspectors)
-        vehicle = random.choice([v for v in vehicles if v.org == inspector.company])
+    attempts = 0
+    created_count = 0
+    target = 50
+    while created_count < target and attempts < target * 3:
+        attempts += 1
+        shift = random.choice(shifts)
+        insp_type = random.choice(['START', 'END'])
+        status_choice = random.choice(['IN_PROGRESS', 'PASS', 'FAIL'])
         
-        inspection_date = timezone.now() - timedelta(days=random.randint(0, 90))
-        
-        passed = random.choice([True, True, True, False])  # 75% pass rate
-        
-        inspection = Inspection.objects.create(
-            vehicle=vehicle,
-            inspector=inspector,
-            inspection_date=inspection_date,
-            odometer_reading=vehicle.mileage + random.randint(-5000, 5000),
-            passed=passed,
-            notes=f'Inspection {i+1} - {"Passed" if passed else "Failed"}',
-            next_inspection_due=inspection_date + timedelta(days=90)
+        inspection, created = Inspection.objects.get_or_create(
+            shift=shift,
+            type=insp_type,
+            defaults={
+                'status': status_choice,
+                'notes': f'Inspection - {status_choice}',
+                'weather_conditions': random.choice(['Sunny', 'Rainy', 'Cloudy']),
+                'temperature': random.uniform(10.0, 35.0),
+                'created_by': shift.driver
+            }
         )
+        if not created:
+            continue
         
         # Create inspection items
-        num_items = random.randint(5, len(inspection_categories))
-        selected_categories = random.sample(inspection_categories, num_items)
+        num_items = random.randint(5, len(parts))
+        selected_parts = random.sample(parts, num_items)
         
-        for category in selected_categories:
-            item_passed = passed or random.choice([True, True, False])
+        for part in selected_parts:
+            item_status = random.choice(['PASS', 'PASS', 'FAIL'])  # majority pass
             InspectionItem.objects.create(
                 inspection=inspection,
-                category=category,
-                item_name=f'{category} Check',
-                status='pass' if item_passed else 'fail',
-                notes=f'{"Good condition" if item_passed else "Needs attention"}'
+                part=part,
+                status=item_status,
+                notes='OK' if item_status == 'PASS' else 'Needs attention'
             )
         
         inspections.append(inspection)
-        print(f"  ✓ Inspection {inspection.id} - {vehicle.reg_number} by {inspector.username} ({'PASSED' if passed else 'FAILED'})")
+        created_count += 1
+        print(f"  - Inspection {inspection.id} - {shift.vehicle.reg_number} ({insp_type}/{status_choice})")
     
     return inspections
 
 def create_issues(users, vehicles):
     print_header("Creating Issues")
     
-    issue_types = ['mechanical', 'electrical', 'body_damage', 'maintenance']
-    priorities = ['low', 'medium', 'high', 'critical']
-    statuses = ['open', 'in_progress', 'resolved', 'closed']
+    categories = ['MECHANICAL', 'ELECTRICAL', 'COSMETIC', 'ENGINE', 'BRAKE', 'LIGHT', 'OTHER']
+    severities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+    statuses = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']
     
     issues = []
     for i in range(30):  # Create 30 issues
         vehicle = random.choice(vehicles)
-        reporter = random.choice([u for u in users.values() if u.company == vehicle.org])
+        same_company_users = [u for u in users.values() if u.company == vehicle.org]
+        if not same_company_users:
+            continue
+        reporter = random.choice(same_company_users)
         
         created_date = timezone.now() - timedelta(days=random.randint(0, 60))
         status = random.choice(statuses)
@@ -248,15 +264,16 @@ def create_issues(users, vehicles):
         issue = Issue.objects.create(
             vehicle=vehicle,
             reported_by=reporter,
-            issue_type=random.choice(issue_types),
-            priority=random.choice(priorities),
+            title=f"Issue {i+1}",
+            description='Needs attention',
+            category=random.choice(categories),
+            severity=random.choice(severities),
             status=status,
-            description=f'Issue {i+1} - Needs attention',
             reported_at=created_date,
-            resolved_at=created_date + timedelta(days=random.randint(1, 10)) if status in ['resolved', 'closed'] else None
+            resolved_at=created_date + timedelta(days=random.randint(1, 10)) if status in ['RESOLVED', 'CLOSED'] else None
         )
         issues.append(issue)
-        print(f"  ✓ Issue {issue.id} - {vehicle.reg_number} ({issue.priority} priority, {issue.status})")
+        print(f"  - Issue {issue.id} - {vehicle.reg_number} ({issue.severity} severity, {issue.status})")
     
     return issues
 
@@ -266,45 +283,57 @@ def create_subscription_data():
     plans_data = [
         {
             'name': 'Basic',
-            'slug': 'basic',
+            'display_name': 'Basic',
             'description': 'Perfect for small fleets',
             'max_vehicles': 10,
             'max_users': 5,
-            'price_monthly': Decimal('99.00'),
-            'price_yearly': Decimal('999.00'),
-            'features': {'gps_tracking': True, 'maintenance_alerts': True, 'basic_reports': True}
+            'max_drivers': 10,
+            'max_inspectors': 5,
+            'monthly_price': Decimal('99.00'),
+            'yearly_price': Decimal('999.00'),
+            'features': ['gps_tracking', 'maintenance_alerts', 'basic_reports'],
+            'is_active': True,
+            'is_popular': False,
         },
         {
             'name': 'Professional',
-            'slug': 'professional',
+            'display_name': 'Professional',
             'description': 'Ideal for growing businesses',
             'max_vehicles': 50,
             'max_users': 25,
-            'price_monthly': Decimal('299.00'),
-            'price_yearly': Decimal('2999.00'),
-            'features': {'gps_tracking': True, 'maintenance_alerts': True, 'advanced_reports': True, 'api_access': True}
+            'max_drivers': 50,
+            'max_inspectors': 25,
+            'monthly_price': Decimal('299.00'),
+            'yearly_price': Decimal('2999.00'),
+            'features': ['gps_tracking', 'maintenance_alerts', 'advanced_reports', 'api_access'],
+            'is_active': True,
+            'is_popular': True,
         },
         {
             'name': 'Enterprise',
-            'slug': 'enterprise',
+            'display_name': 'Enterprise',
             'description': 'For large-scale operations',
             'max_vehicles': 999,
             'max_users': 999,
-            'price_monthly': Decimal('999.00'),
-            'price_yearly': Decimal('9999.00'),
-            'features': {'gps_tracking': True, 'maintenance_alerts': True, 'advanced_reports': True, 'api_access': True, 'custom_integrations': True, 'priority_support': True}
+            'max_drivers': 999,
+            'max_inspectors': 999,
+            'monthly_price': Decimal('999.00'),
+            'yearly_price': Decimal('9999.00'),
+            'features': ['gps_tracking', 'maintenance_alerts', 'advanced_reports', 'api_access', 'custom_integrations', 'priority_support'],
+            'is_active': True,
+            'is_popular': False,
         },
     ]
     
     plans = []
     for data in plans_data:
         plan, created = SubscriptionPlan.objects.get_or_create(
-            slug=data['slug'],
+            name=data['name'],
             defaults=data
         )
         plans.append(plan)
         status = "Created" if created else "Already exists"
-        print(f"  ✓ {plan.name} Plan - {status}")
+        print(f"  - {plan.name} Plan - {status}")
     
     return plans
 
@@ -319,21 +348,21 @@ def main():
         users = create_users(companies)
         vehicles = create_vehicles(companies)
         shifts = create_shifts(users, vehicles)
-        inspections = create_inspections(users, vehicles)
+        inspections = create_inspections(shifts)
         issues = create_issues(users, vehicles)
         plans = create_subscription_data()
         
         print_header("SUMMARY")
-        print(f"  ✓ Companies created: {len(companies)}")
-        print(f"  ✓ Users created: {len(users)}")
-        print(f"  ✓ Vehicles created: {len(vehicles)}")
-        print(f"  ✓ Shifts created: {len(shifts)}")
-        print(f"  ✓ Inspections created: {len(inspections)}")
-        print(f"  ✓ Issues created: {len(issues)}")
-        print(f"  ✓ Subscription plans: {len(plans)}")
+        print(f"  - Companies created: {len(companies)}")
+        print(f"  - Users created: {len(users)}")
+        print(f"  - Vehicles created: {len(vehicles)}")
+        print(f"  - Shifts created: {len(shifts)}")
+        print(f"  - Inspections created: {len(inspections)}")
+        print(f"  - Issues created: {len(issues)}")
+        print(f"  - Subscription plans: {len(plans)}")
         
         print("\n" + "="*80)
-        print("  ✅ TEST DATA SEEDING COMPLETED SUCCESSFULLY!")
+        print("  TEST DATA SEEDING COMPLETED SUCCESSFULLY")
         print("="*80)
         
         print("\n📋 Demo Credentials:")
@@ -345,7 +374,7 @@ def main():
         print("\n")
         
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nError: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

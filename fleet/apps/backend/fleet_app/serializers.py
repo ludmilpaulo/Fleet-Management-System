@@ -63,14 +63,16 @@ class VehicleCreateSerializer(serializers.ModelSerializer):
         model = Vehicle
         fields = [
             'vin', 'reg_number', 'make', 'model', 'year', 'color',
-            'mileage', 'fuel_type', 'engine_size', 'transmission'
+            'mileage', 'fuel_type', 'engine_size', 'transmission', 'status'
         ]
     
     def validate_reg_number(self, value):
         """Validate registration number uniqueness within organization"""
-        org = self.context['request'].user.company
-        if Vehicle.objects.filter(org=org, reg_number=value).exists():
-            raise serializers.ValidationError("A vehicle with this registration number already exists.")
+        request = self.context.get('request')
+        if request and request.user and hasattr(request.user, 'company') and request.user.company:
+            org = request.user.company
+            if Vehicle.objects.filter(org=org, reg_number=value).exists():
+                raise serializers.ValidationError("A vehicle with this registration number already exists.")
         return value
 
 

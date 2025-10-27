@@ -15,8 +15,60 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fleet Management System",
-  description: "Modern fleet management system with role-based access for admin, staff, drivers, and inspectors",
+  metadataBase: new URL('https://www.fleetia.online'),
+  title: {
+    default: "Fleet Management System - Modern Fleet Operations Platform",
+    template: "%s | Fleet Management System"
+  },
+  description: "Modern fleet management system with role-based access for admin, staff, drivers, and inspectors. Track vehicles, manage drivers, schedule maintenance, and ensure compliance all in one platform.",
+  keywords: [
+    "fleet management",
+    "vehicle tracking",
+    "fleet operations",
+    "driver management",
+    "vehicle maintenance",
+    "fleet analytics",
+    "route optimization",
+    "fleet compliance",
+    "fleet software",
+    "commercial vehicle management"
+  ],
+  authors: [{ name: "FleetIA Team" }],
+  creator: "FleetIA",
+  publisher: "FleetIA",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://www.fleetia.online",
+    siteName: "Fleet Management System",
+    title: "Fleet Management System - Modern Fleet Operations Platform",
+    description: "Modern fleet management system with role-based access. Streamline your fleet operations with comprehensive tracking and management.",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Fleet Management System",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Fleet Management System - Modern Fleet Operations Platform",
+    description: "Modern fleet management system with role-based access for comprehensive fleet operations.",
+    images: ["/og-image.jpg"],
+  },
   viewport: {
     width: "device-width",
     initialScale: 1,
@@ -25,7 +77,7 @@ export const metadata: Metadata = {
     viewportFit: "cover",
   },
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: light)", color: "#3b82f6" },
     { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
   ],
   appleWebApp: {
@@ -33,6 +85,10 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Fleet Management",
   },
+  alternates: {
+    canonical: "https://www.fleetia.online",
+  },
+  category: "Business",
 };
 
 export default function RootLayout({

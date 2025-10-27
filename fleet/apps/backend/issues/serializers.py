@@ -118,9 +118,11 @@ class IssueCreateSerializer(serializers.ModelSerializer):
     
     def validate_vehicle(self, value):
         """Validate vehicle belongs to user's organization"""
-        user_org = self.context['request'].user.company
-        if value.org != user_org:
-            raise serializers.ValidationError("Vehicle does not belong to your organization.")
+        request = self.context.get('request')
+        if request and request.user and request.user.company:
+            user_org = request.user.company
+            if value.org != user_org:
+                raise serializers.ValidationError("Vehicle does not belong to your organization.")
         return value
     
     def create(self, validated_data):

@@ -1,4 +1,4 @@
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.db.models import Q, Count, Avg
@@ -25,9 +25,18 @@ class VehicleListView(generics.ListCreateAPIView):
             return VehicleCreateSerializer
         return VehicleSerializer
     
+    def get_serializer_context(self):
+        """Add request to serializer context"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
     def perform_create(self, serializer):
         """Set organization and creator"""
-        serializer.save(org=self.request.user.company, created_by=self.request.user)
+        if not self.request.user.company:
+            raise serializers.ValidationError("User must belong to a company to create vehicles.")
+        vehicle = serializer.save(org=self.request.user.company, created_by=self.request.user)
+        return vehicle
 
 
 class VehicleDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -42,6 +51,12 @@ class VehicleDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method in ['PUT', 'PATCH']:
             return VehicleCreateSerializer
         return VehicleSerializer
+    
+    def get_serializer_context(self):
+        """Add request to serializer context"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 
 class KeyTrackerListView(generics.ListCreateAPIView):

@@ -32,7 +32,7 @@ class IssueListView(generics.ListCreateAPIView):
         if vehicle_filter:
             queryset = queryset.filter(vehicle_id=vehicle_filter)
         
-        return queryset.select_related('vehicle', 'inspection_item').order_by('-created_at')
+        return queryset.select_related('vehicle', 'inspection_item').order_by('-reported_at')
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

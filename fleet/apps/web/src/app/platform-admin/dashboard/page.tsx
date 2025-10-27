@@ -1833,4 +1833,1663 @@ export default function PlatformAdminDashboard() {
                       <span className="text-xl font-bold">{stats.system_health.active_users}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="
+                      <span className="text-sm font-medium">Fleet Size</span>
+                      <span className="text-xl font-bold">{stats.total_vehicles}</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="maintenance" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wrench className="w-5 h-5" />
+                Maintenance Tasks
+              </CardTitle>
+              <CardDescription>Scheduled and ongoing maintenance activities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {allMaintenances.length === 0 ? (
+                <p className="text-center py-8 text-gray-500">No scheduled maintenance tasks found.</p>
+              ) : (
+                <div className="space-y-4">
+                  {allMaintenances.map((maintenance) => (
+                    <div key={maintenance.id} className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{maintenance.title}</h4>
+                        <Badge className={`${getStatusColor(maintenance.status)} text-xs`}>
+                          {maintenance.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Scheduled for: {format(new Date(maintenance.scheduled_start), 'MMM dd, HH:mm')}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {maintenance.description || 'No description provided.'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="mt-4 space-y-2">
+                <Button variant="outline" className="w-full" onClick={() => setShowMaintenanceModal(true)}>
+                  <Calendar className="w-4 h-4 mr-2" />
+                  View All Maintenance Tasks
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Platform Settings
+              </CardTitle>
+              <CardDescription>Configure platform-wide settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid gap-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">System Name</span>
+                    <Input
+                      placeholder="e.g., Fleet Management Platform"
+                      value={platformSettingsData.system_name || ''}
+                      onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, system_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">System Logo</span>
+                    <Input
+                      placeholder="Enter URL for system logo"
+                      value={platformSettingsData.system_logo || ''}
+                      onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, system_logo: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Default Currency</span>
+                    <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, default_currency: value })} value={platformSettingsData.default_currency || 'USD'}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USD">USD - US Dollar</SelectItem>
+                        <SelectItem value="EUR">EUR - Euro</SelectItem>
+                        <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                        <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                        <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
+                        <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Time Zone</span>
+                    <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, timezone: value })} value={platformSettingsData.timezone || 'UTC'}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="UTC">UTC</SelectItem>
+                        <SelectItem value="America/New_York">America/New_York</SelectItem>
+                        <SelectItem value="Europe/London">Europe/London</SelectItem>
+                        <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
+                        <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
+                        <SelectItem value="Asia/Kolkata">Asia/Kolkata</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Date Format</span>
+                    <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, date_format: value })} value={platformSettingsData.date_format || 'MM/DD/YYYY'}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a date format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                        <SelectItem value="MM-DD-YYYY">MM-DD-YYYY</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Time Format</span>
+                    <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, time_format: value })} value={platformSettingsData.time_format || 'HH:mm'}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a time format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="HH:mm">HH:mm</SelectItem>
+                        <SelectItem value="HH:mm:ss">HH:mm:ss</SelectItem>
+                        <SelectItem value="HH:mm a">HH:mm a</SelectItem>
+                        <SelectItem value="HH:mm:ss a">HH:mm:ss a</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Decimal Separator</span>
+                    <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, decimal_separator: value })} value={platformSettingsData.decimal_separator || '.'}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a decimal separator" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value=".">.</SelectItem>
+                        <SelectItem value=",">,</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Thousands Separator</span>
+                    <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, thousands_separator: value })} value={platformSettingsData.thousands_separator || ','}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a thousands separator" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value=",">,</SelectItem>
+                        <SelectItem value=".">.</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <Button variant="outline" className="w-full" onClick={() => setShowTrialSettingsModal(true)}>
+                    <Clock className="w-4 h-4 mr-2" />
+                    Manage Trial Settings
+                  </Button>
+                  <Button variant="outline" className="w-full" onClick={() => setShowBillingConfigModal(true)}>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Manage Billing Configuration
+                  </Button>
+                  <Button variant="outline" className="w-full" onClick={() => setShowFeatureFlagsModal(true)}>
+                    <ToggleLeft className="w-4 h-4 mr-2" />
+                    Manage Feature Flags
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Add Entity Dialog */}
+      <Dialog open={showAddEntityDialog} onOpenChange={setShowAddEntityDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Entity</DialogTitle>
+            <DialogDescription>
+              Select the type of entity you want to add.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Button variant="outline" className="w-full" onClick={() => { setEntityType('company'); setShowAddEntityDialog(true); }}>
+              <Building2 className="w-4 h-4 mr-2" />
+              Company
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { setEntityType('user'); setShowAddEntityDialog(true); }}>
+              <Users className="w-4 h-4 mr-2" />
+              User
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { setEntityType('vehicle'); setShowAddEntityDialog(true); }}>
+              <Truck className="w-4 h-4 mr-2" />
+              Vehicle
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { setEntityType('shift'); setShowAddEntityDialog(true); }}>
+              <Clock className="w-4 h-4 mr-2" />
+              Shift
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { setEntityType('inspection'); setShowAddEntityDialog(true); }}>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Inspection
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { setEntityType('issue'); setShowAddEntityDialog(true); }}>
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Issue
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { setEntityType('subscription'); setShowAddEntityDialog(true); }}>
+              <Package className="w-4 h-4 mr-2" />
+              Subscription
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Entity Dialog */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit {editingEntityType}</DialogTitle>
+            <DialogDescription>
+              Make changes to the {editingEntityType} details.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {editingEntityType === 'companies' && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="company-name">Company Name</Label>
+                  <Input
+                    id="company-name"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="company-slug">Company Slug</Label>
+                  <Input
+                    id="company-slug"
+                    value={editFormData.slug}
+                    onChange={(e) => setEditFormData({ ...editFormData, slug: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="company-email">Company Email</Label>
+                  <Input
+                    id="company-email"
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="company-plan">Subscription Plan</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, subscription_plan: value })} value={editFormData.subscription_plan || 'trial'}>
+                    <SelectTrigger id="company-plan">
+                      <SelectValue placeholder="Select a plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trial">Trial</SelectItem>
+                      <SelectItem value="basic">Basic</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="enterprise">Enterprise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="company-status">Company Status</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, is_active: value === 'true' })} value={editFormData.is_active ? 'true' : 'false'}>
+                    <SelectTrigger id="company-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Active</SelectItem>
+                      <SelectItem value="false">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="company-max-users">Max Users</Label>
+                  <Input
+                    id="company-max-users"
+                    type="number"
+                    value={editFormData.max_users || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, max_users: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="company-max-vehicles">Max Vehicles</Label>
+                  <Input
+                    id="company-max-vehicles"
+                    type="number"
+                    value={editFormData.max_vehicles || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, max_vehicles: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+            )}
+            {editingEntityType === 'users' && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="user-first-name">First Name</Label>
+                  <Input
+                    id="user-first-name"
+                    value={editFormData.first_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="user-last-name">Last Name</Label>
+                  <Input
+                    id="user-last-name"
+                    value={editFormData.last_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="user-email">Email</Label>
+                  <Input
+                    id="user-email"
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="user-role">Role</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, role: value })} value={editFormData.role || 'staff'}>
+                    <SelectTrigger id="user-role">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="user-company">Company</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, company: parseInt(value) })} value={editFormData.company?.toString() || ''}>
+                    <SelectTrigger id="user-company">
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map(company => (
+                        <SelectItem key={company.id} value={company.id.toString()}>{company.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            {editingEntityType === 'vehicles' && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="vehicle-make">Make</Label>
+                  <Input
+                    id="vehicle-make"
+                    value={editFormData.make}
+                    onChange={(e) => setEditFormData({ ...editFormData, make: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="vehicle-model">Model</Label>
+                  <Input
+                    id="vehicle-model"
+                    value={editFormData.model}
+                    onChange={(e) => setEditFormData({ ...editFormData, model: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="vehicle-year">Year</Label>
+                  <Input
+                    id="vehicle-year"
+                    type="number"
+                    value={editFormData.year || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, year: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="vehicle-reg-number">Registration Number</Label>
+                  <Input
+                    id="vehicle-reg-number"
+                    value={editFormData.reg_number}
+                    onChange={(e) => setEditFormData({ ...editFormData, reg_number: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="vehicle-status">Status</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, status: value })} value={editFormData.status || 'ACTIVE'}>
+                    <SelectTrigger id="vehicle-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="INACTIVE">Inactive</SelectItem>
+                      <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="vehicle-vin">VIN</Label>
+                  <Input
+                    id="vehicle-vin"
+                    value={editFormData.vin}
+                    onChange={(e) => setEditFormData({ ...editFormData, vin: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="vehicle-fuel-type">Fuel Type</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, fuel_type: value })} value={editFormData.fuel_type || 'PETROL'}>
+                    <SelectTrigger id="vehicle-fuel-type">
+                      <SelectValue placeholder="Select fuel type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PETROL">Petrol</SelectItem>
+                      <SelectItem value="DIESEL">Diesel</SelectItem>
+                      <SelectItem value="ELECTRIC">Electric</SelectItem>
+                      <SelectItem value="HYBRID">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="vehicle-company">Company</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, org: parseInt(value) })} value={editFormData.org?.toString() || ''}>
+                    <SelectTrigger id="vehicle-company">
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map(company => (
+                        <SelectItem key={company.id} value={company.id.toString()}>{company.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            {editingEntityType === 'shifts' && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="shift-driver">Driver</Label>
+                  <Input
+                    id="shift-driver"
+                    type="number"
+                    value={editFormData.driver?.toString() || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, driver: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="shift-vehicle">Vehicle</Label>
+                  <Input
+                    id="shift-vehicle"
+                    type="number"
+                    value={editFormData.vehicle?.toString() || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, vehicle: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="shift-start-at">Start Date/Time</Label>
+                  <Input
+                    id="shift-start-at"
+                    type="datetime-local"
+                    value={editFormData.start_at ? format(new Date(editFormData.start_at), 'YYYY-MM-DDTHH:mm') : ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, start_at: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="shift-end-at">End Date/Time</Label>
+                  <Input
+                    id="shift-end-at"
+                    type="datetime-local"
+                    value={editFormData.end_at ? format(new Date(editFormData.end_at), 'YYYY-MM-DDTHH:mm') : ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, end_at: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="shift-status">Status</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, status: value })} value={editFormData.status || 'ACTIVE'}>
+                    <SelectTrigger id="shift-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="shift-notes">Notes</Label>
+                  <textarea
+                    id="shift-notes"
+                    className="border rounded-md p-2"
+                    rows={3}
+                    value={editFormData.notes}
+                    onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+            {editingEntityType === 'inspections' && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="inspection-shift">Shift</Label>
+                  <Input
+                    id="inspection-shift"
+                    type="number"
+                    value={editFormData.shift?.toString() || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, shift: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="inspection-type">Type</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, type: value })} value={editFormData.type || 'START'}>
+                    <SelectTrigger id="inspection-type">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="START">Start</SelectItem>
+                      <SelectItem value="END">End</SelectItem>
+                      <SelectItem value="INTERIM">Interim</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="inspection-weather">Weather Conditions</Label>
+                  <Input
+                    id="inspection-weather"
+                    value={editFormData.weather_conditions || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, weather_conditions: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="inspection-temperature">Temperature (°C)</Label>
+                  <Input
+                    id="inspection-temperature"
+                    type="number"
+                    value={editFormData.temperature || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, temperature: parseFloat(e.target.value) || null })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="inspection-notes">Notes</Label>
+                  <textarea
+                    id="inspection-notes"
+                    className="border rounded-md p-2"
+                    rows={3}
+                    value={editFormData.notes}
+                    onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="inspection-status">Status</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, status: value })} value={editFormData.status || 'IN_PROGRESS'}>
+                    <SelectTrigger id="inspection-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="FAILED">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            {editingEntityType === 'issues' && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="issue-title">Title</Label>
+                  <Input
+                    id="issue-title"
+                    value={editFormData.title}
+                    onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="issue-description">Description</Label>
+                  <textarea
+                    id="issue-description"
+                    className="border rounded-md p-2"
+                    rows={3}
+                    value={editFormData.description}
+                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="issue-vehicle">Vehicle (Optional)</Label>
+                  <Input
+                    id="issue-vehicle"
+                    type="number"
+                    value={editFormData.vehicle?.toString() || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, vehicle: parseInt(e.target.value) || null })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="issue-priority">Priority</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, priority: value })} value={editFormData.priority || 'medium'}>
+                    <SelectTrigger id="issue-priority">
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="issue-status">Status</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, status: value })} value={editFormData.status || 'open'}>
+                    <SelectTrigger id="issue-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            {editingEntityType === 'subscriptions' && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="subscription-company">Company</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, company: parseInt(value) })} value={editFormData.company?.toString() || ''}>
+                    <SelectTrigger id="subscription-company">
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map(company => (
+                        <SelectItem key={company.id} value={company.id.toString()}>{company.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="subscription-status">Status</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, status: value })} value={editFormData.status || 'trial'}>
+                    <SelectTrigger id="subscription-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trial">Trial</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="expired">Expired</SelectItem>
+                      <SelectItem value="suspended">Suspended</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="subscription-billing-cycle">Billing Cycle</Label>
+                  <Select onValueChange={(value) => setEditFormData({ ...editFormData, billing_cycle: value })} value={editFormData.billing_cycle || 'monthly'}>
+                    <SelectTrigger id="subscription-billing-cycle">
+                      <SelectValue placeholder="Select billing cycle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="subscription-amount">Amount</Label>
+                  <Input
+                    id="subscription-amount"
+                    type="number"
+                    value={editFormData.amount || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, amount: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="subscription-currency">Currency</Label>
+                  <Input
+                    id="subscription-currency"
+                    placeholder="USD"
+                    value={editFormData.currency || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, currency: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+            {editingEntityType === 'plans' && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="plan-name">Plan Name</Label>
+                  <Input
+                    id="plan-name"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="plan-price">Price</Label>
+                  <Input
+                    id="plan-price"
+                    type="number"
+                    value={editFormData.price || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, price: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="plan-features">Features</Label>
+                  <textarea
+                    id="plan-features"
+                    className="border rounded-md p-2"
+                    rows={3}
+                    value={editFormData.features || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, features: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="plan-max-users">Max Users</Label>
+                  <Input
+                    id="plan-max-users"
+                    type="number"
+                    value={editFormData.max_users || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, max_users: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="plan-max-vehicles">Max Vehicles</Label>
+                  <Input
+                    id="plan-max-vehicles"
+                    type="number"
+                    value={editFormData.max_vehicles || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, max_vehicles: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          <Button className="btn-gradient w-full" onClick={handleUpdateEntity}>
+            <Edit className="w-4 h-4 mr-2" />
+            Save Changes
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Companies Modal */}
+      <Dialog open={showCompaniesModal} onOpenChange={setShowCompaniesModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Companies</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete companies.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="company-search">Search Companies</Label>
+              <Input
+                id="company-search"
+                placeholder="Search by name or slug"
+                value={companySearchTerm}
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('company'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Company
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {companies.filter(company => 
+                company.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                company.slug.toLowerCase().includes(companySearchTerm.toLowerCase())
+              ).map(company => (
+                <div key={company.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium">{company.name}</p>
+                      <p className="text-sm text-gray-600">{company.slug}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(company, 'companies')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(company.id, 'companies')}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Users Modal */}
+      <Dialog open={showUsersModal} onOpenChange={setShowUsersModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Users</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete users.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="user-search">Search Users</Label>
+              <Input
+                id="user-search"
+                placeholder="Search by email or username"
+                value={companySearchTerm} // Reusing companySearchTerm for user search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('user'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New User
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {allUsers.filter(user => 
+                user.email.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                user.username.toLowerCase().includes(companySearchTerm.toLowerCase())
+              ).map(user => (
+                <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Users className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="font-medium">{user.full_name}</p>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(user, 'users')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(user.id, 'users')}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Vehicles Modal */}
+      <Dialog open={showVehiclesModal} onOpenChange={setShowVehiclesModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Vehicles</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete vehicles.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="vehicle-search">Search Vehicles</Label>
+              <Input
+                id="vehicle-search"
+                placeholder="Search by registration number or VIN"
+                value={companySearchTerm} // Reusing companySearchTerm for vehicle search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('vehicle'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Vehicle
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {vehicles.filter(vehicle => 
+                vehicle.reg_number.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                vehicle.vin.toLowerCase().includes(companySearchTerm.toLowerCase())
+              ).map(vehicle => (
+                <div key={vehicle.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Truck className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <p className="font-medium">{vehicle.make} {vehicle.model}</p>
+                      <p className="text-sm text-gray-600">{vehicle.reg_number}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(vehicle, 'vehicles')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(vehicle.id, 'vehicles')}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Shifts Modal */}
+      <Dialog open={showShiftsModal} onOpenChange={setShowShiftsModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Shifts</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete shifts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="shift-search">Search Shifts</Label>
+              <Input
+                id="shift-search"
+                placeholder="Search by driver or vehicle"
+                value={companySearchTerm} // Reusing companySearchTerm for shift search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('shift'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Shift
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {shifts.filter(shift => 
+                shift.driver.toString().includes(companySearchTerm) ||
+                shift.vehicle.toString().includes(companySearchTerm)
+              ).map(shift => (
+                <div key={shift.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-5 h-5 text-orange-600" />
+                    <div>
+                      <p className="font-medium">Shift {shift.id}</p>
+                      <p className="text-sm text-gray-600">Driver: {shift.driver_name}, Vehicle: {shift.vehicle_name}</p>
+                      <p className="text-sm text-gray-600">Start: {format(new Date(shift.start_at), 'MMM dd, HH:mm')}, End: {shift.end_at ? format(new Date(shift.end_at), 'MMM dd, HH:mm') : 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(shift, 'shifts')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(shift.id, 'shifts')}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Inspections Modal */}
+      <Dialog open={showInspectionsModal} onOpenChange={setShowInspectionsModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Inspections</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete inspections.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="inspection-search">Search Inspections</Label>
+              <Input
+                id="inspection-search"
+                placeholder="Search by shift or type"
+                value={companySearchTerm} // Reusing companySearchTerm for inspection search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('inspection'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Inspection
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {inspections.filter(inspection => 
+                inspection.shift.toString().includes(companySearchTerm) ||
+                inspection.type.toLowerCase().includes(companySearchTerm.toLowerCase())
+              ).map(inspection => (
+                <div key={inspection.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-indigo-600" />
+                    <div>
+                      <p className="font-medium">Inspection {inspection.id}</p>
+                      <p className="text-sm text-gray-600">Shift: {inspection.shift_name}, Type: {inspection.type}</p>
+                      <p className="text-sm text-gray-600">Status: {inspection.status}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(inspection, 'inspections')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(inspection.id, 'inspections')}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Issues Modal */}
+      <Dialog open={showIssuesModal} onOpenChange={setShowIssuesModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Issues</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete issues.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="issue-search">Search Issues</Label>
+              <Input
+                id="issue-search"
+                placeholder="Search by title or description"
+                value={companySearchTerm} // Reusing companySearchTerm for issue search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('issue'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Issue
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {issues.filter(issue => 
+                issue.title.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                issue.description.toLowerCase().includes(companySearchTerm.toLowerCase())
+              ).map(issue => (
+                <div key={issue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                    <div>
+                      <p className="font-medium">Issue {issue.id}: {issue.title}</p>
+                      <p className="text-sm text-gray-600">Vehicle: {issue.vehicle_name || 'N/A'}, Priority: {issue.priority}</p>
+                      <p className="text-sm text-gray-600">Status: {issue.status}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(issue, 'issues')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(issue.id, 'issues')}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Subscriptions Modal */}
+      <Dialog open={showSubscriptionsModal} onOpenChange={setShowSubscriptionsModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Subscriptions</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete subscriptions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="subscription-search">Search Subscriptions</Label>
+              <Input
+                id="subscription-search"
+                placeholder="Search by company or status"
+                value={companySearchTerm} // Reusing companySearchTerm for subscription search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('subscription'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Subscription
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {subscriptions.filter(subscription => 
+                subscription.company_name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                subscription.status.toLowerCase().includes(companySearchTerm.toLowerCase())
+              ).map(subscription => (
+                <div key={subscription.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <p className="font-medium">Subscription {subscription.id}</p>
+                      <p className="text-sm text-gray-600">Company: {subscription.company_name}, Plan: {subscription.plan_name}</p>
+                      <p className="text-sm text-gray-600">Amount: {subscription.amount} {subscription.currency}</p>
+                      <p className="text-sm text-gray-600">Status: {subscription.status}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(subscription, 'subscriptions')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(subscription.id, 'subscriptions')}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Plans Modal */}
+      <Dialog open={showPlansModal} onOpenChange={setShowPlansModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Subscription Plans</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete subscription plans.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="plan-search">Search Plans</Label>
+              <Input
+                id="plan-search"
+                placeholder="Search by name or price"
+                value={companySearchTerm} // Reusing companySearchTerm for plan search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('plans'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Plan
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {subscriptionPlans.filter(plan => 
+                plan.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                plan.price.toString().includes(companySearchTerm)
+              ).map(plan => (
+                <div key={plan.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium">Plan {plan.id}: {plan.name}</p>
+                      <p className="text-sm text-gray-600">Price: {plan.price} {plan.currency}</p>
+                      <p className="text-sm text-gray-600">Max Users: {plan.max_users}, Max Vehicles: {plan.max_vehicles}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(plan, 'plans')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(plan.id, 'plans')}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Plan Modal */}
+      <Dialog open={showAssignPlanModal} onOpenChange={setShowAssignPlanModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Subscription Plan</DialogTitle>
+            <DialogDescription>
+              Select a company and a plan to assign.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="assign-company">Company</Label>
+              <Select onValueChange={(value) => setSelectedCompany(value)} value={selectedCompany}>
+                <SelectTrigger id="assign-company">
+                  <SelectValue placeholder="Select a company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map(company => (
+                    <SelectItem key={company.id} value={company.slug}>{company.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="assign-plan">Plan</Label>
+              <Select onValueChange={(value) => setSelectedPlan(value)} value={selectedPlan}>
+                <SelectTrigger id="assign-plan">
+                  <SelectValue placeholder="Select a plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subscriptionPlans.map(plan => (
+                    <SelectItem key={plan.id} value={plan.id.toString()}>{plan.name} - {plan.price} {plan.currency}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="btn-gradient w-full" onClick={handleAssignPlan}>
+              <Package className="w-4 h-4 mr-2" />
+              Assign Plan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Configurations Modal */}
+      <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage System Configurations</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete system configurations.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="config-search">Search Configurations</Label>
+              <Input
+                id="config-search"
+                placeholder="Search by key or value"
+                value={companySearchTerm} // Reusing companySearchTerm for config search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEditingConfig(null); setConfigFormData({}); setShowEditConfigModal(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Configuration
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {systemConfigs.filter(config => 
+                config.key.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                config.value.toLowerCase().includes(companySearchTerm.toLowerCase())
+              ).map(config => (
+                <div key={config.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Database className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium">Config {config.id}: {config.key}</p>
+                      <p className="text-sm text-gray-600">Value: {config.value}</p>
+                      <p className="text-sm text-gray-600">Description: {config.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(config, 'configurations')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteConfig(config.id)}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Configuration Modal */}
+      <Dialog open={showEditConfigModal} onOpenChange={setShowEditConfigModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Configuration</DialogTitle>
+            <DialogDescription>
+              Modify the selected configuration.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-config-key">Key</Label>
+              <Input
+                id="edit-config-key"
+                value={configFormData.key || ''}
+                onChange={(e) => setConfigFormData({ ...configFormData, key: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-config-value">Value</Label>
+              <Input
+                id="edit-config-value"
+                value={configFormData.value || ''}
+                onChange={(e) => setConfigFormData({ ...configFormData, value: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-config-description">Description</Label>
+              <Input
+                id="edit-config-description"
+                value={configFormData.description || ''}
+                onChange={(e) => setConfigFormData({ ...configFormData, description: e.target.value })}
+              />
+            </div>
+          </div>
+          <Button className="btn-gradient w-full" onClick={handleSaveConfig}>
+            <Edit className="w-4 h-4 mr-2" />
+            Save Changes
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Maintenance Modal */}
+      <Dialog open={showMaintenanceModal} onOpenChange={setShowMaintenanceModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Maintenance Tasks</DialogTitle>
+            <DialogDescription>
+              View, add, edit, or delete maintenance tasks.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="maintenance-search">Search Maintenance Tasks</Label>
+              <Input
+                id="maintenance-search"
+                placeholder="Search by title or status"
+                value={companySearchTerm} // Reusing companySearchTerm for maintenance search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('maintenance'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Maintenance Task
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {allMaintenances.filter(maintenance => 
+                maintenance.title.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                maintenance.status.toLowerCase().includes(companySearchTerm.toLowerCase())
+              ).map(maintenance => (
+                <div key={maintenance.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Wrench className="w-5 h-5 text-gray-600" />
+                    <div>
+                      <p className="font-medium">Maintenance {maintenance.id}: {maintenance.title}</p>
+                      <p className="text-sm text-gray-600">Status: {maintenance.status}, Scheduled: {format(new Date(maintenance.scheduled_start), 'MMM dd, HH:mm')}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(maintenance, 'maintenance')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(maintenance.id, 'maintenance')}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Trial Settings Modal */}
+      <Dialog open={showTrialSettingsModal} onOpenChange={setShowTrialSettingsModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Trial Settings</DialogTitle>
+            <DialogDescription>
+              Configure settings for the trial period.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="trial-max-users">Max Users for Trial</Label>
+              <Input
+                id="trial-max-users"
+                type="number"
+                value={platformSettingsData.trial_max_users || ''}
+                onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, trial_max_users: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="trial-max-vehicles">Max Vehicles for Trial</Label>
+              <Input
+                id="trial-max-vehicles"
+                type="number"
+                value={platformSettingsData.trial_max_vehicles || ''}
+                onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, trial_max_vehicles: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="trial-duration">Trial Duration (days)</Label>
+              <Input
+                id="trial-duration"
+                type="number"
+                value={platformSettingsData.trial_duration || ''}
+                onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, trial_duration: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+          </div>
+          <Button className="btn-gradient w-full" onClick={handleSavePlatformSettings}>
+            <Settings className="w-4 h-4 mr-2" />
+            Save Trial Settings
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Billing Configuration Modal */}
+      <Dialog open={showBillingConfigModal} onOpenChange={setShowBillingConfigModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Billing Configuration</DialogTitle>
+            <DialogDescription>
+              Configure billing settings and currency.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="billing-currency">Default Currency</Label>
+              <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, default_currency: value })} value={platformSettingsData.default_currency || 'USD'}>
+                <SelectTrigger id="billing-currency">
+                  <SelectValue placeholder="Select default currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD - US Dollar</SelectItem>
+                  <SelectItem value="EUR">EUR - Euro</SelectItem>
+                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                  <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                  <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
+                  <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="billing-tax-rate">Default Tax Rate (%)</Label>
+              <Input
+                id="billing-tax-rate"
+                type="number"
+                value={platformSettingsData.tax_rate || ''}
+                onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, tax_rate: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="billing-invoice-prefix">Invoice Prefix</Label>
+              <Input
+                id="billing-invoice-prefix"
+                value={platformSettingsData.invoice_prefix || ''}
+                onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, invoice_prefix: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="billing-invoice-footer">Invoice Footer</Label>
+              <textarea
+                id="billing-invoice-footer"
+                className="border rounded-md p-2"
+                rows={3}
+                value={platformSettingsData.invoice_footer || ''}
+                onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, invoice_footer: e.target.value })}
+              />
+            </div>
+          </div>
+          <Button className="btn-gradient w-full" onClick={handleSavePlatformSettings}>
+            <CreditCard className="w-4 h-4 mr-2" />
+            Save Billing Settings
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Feature Flags Modal */}
+      <Dialog open={showFeatureFlagsModal} onOpenChange={setShowFeatureFlagsModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Feature Flags</DialogTitle>
+            <DialogDescription>
+              Enable or disable platform features.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="feature-flag-search">Search Feature Flags</Label>
+              <Input
+                id="feature-flag-search"
+                placeholder="Search by name or description"
+                value={companySearchTerm} // Reusing companySearchTerm for feature flag search
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+              />
+            </div>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('feature_flag'); setShowAddEntityDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Feature Flag
+            </Button>
+            <div className="overflow-y-auto max-h-96">
+              {systemConfigs.filter(config => 
+                config.key.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                config.description.toLowerCase().includes(companySearchTerm.toLowerCase())
+              ).map(config => (
+                <div key={config.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <ToggleLeft className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <p className="font-medium">Feature: {config.key}</p>
+                      <p className="text-sm text-gray-600">Description: {config.description}</p>
+                      <p className="text-sm text-gray-600">Enabled: {config.value === 'true' ? 'Yes' : 'No'}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(config, 'feature_flag')}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteConfig(config.id)}>
+                      <X className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Platform Settings Modal */}
+      <Dialog open={showPlatformSettingsModal} onOpenChange={setShowPlatformSettingsModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Platform Settings</DialogTitle>
+            <DialogDescription>
+              Configure platform-wide settings.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="system-name">System Name</Label>
+              <Input
+                id="system-name"
+                value={platformSettingsData.system_name || ''}
+                onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, system_name: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="system-logo">System Logo URL</Label>
+              <Input
+                id="system-logo"
+                value={platformSettingsData.system_logo || ''}
+                onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, system_logo: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="default-currency">Default Currency</Label>
+              <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, default_currency: value })} value={platformSettingsData.default_currency || 'USD'}>
+                <SelectTrigger id="default-currency">
+                  <SelectValue placeholder="Select default currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD - US Dollar</SelectItem>
+                  <SelectItem value="EUR">EUR - Euro</SelectItem>
+                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                  <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                  <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
+                  <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="timezone">Time Zone</Label>
+              <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, timezone: value })} value={platformSettingsData.timezone || 'UTC'}>
+                <SelectTrigger id="timezone">
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="UTC">UTC</SelectItem>
+                  <SelectItem value="America/New_York">America/New_York</SelectItem>
+                  <SelectItem value="Europe/London">Europe/London</SelectItem>
+                  <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
+                  <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
+                  <SelectItem value="Asia/Kolkata">Asia/Kolkata</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="date-format">Date Format</Label>
+              <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, date_format: value })} value={platformSettingsData.date_format || 'MM/DD/YYYY'}>
+                <SelectTrigger id="date-format">
+                  <SelectValue placeholder="Select date format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                  <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                  <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                  <SelectItem value="MM-DD-YYYY">MM-DD-YYYY</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="time-format">Time Format</Label>
+              <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, time_format: value })} value={platformSettingsData.time_format || 'HH:mm'}>
+                <SelectTrigger id="time-format">
+                  <SelectValue placeholder="Select time format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HH:mm">HH:mm</SelectItem>
+                  <SelectItem value="HH:mm:ss">HH:mm:ss</SelectItem>
+                  <SelectItem value="HH:mm a">HH:mm a</SelectItem>
+                  <SelectItem value="HH:mm:ss a">HH:mm:ss a</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="decimal-separator">Decimal Separator</Label>
+              <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, decimal_separator: value })} value={platformSettingsData.decimal_separator || '.'}>
+                <SelectTrigger id="decimal-separator">
+                  <SelectValue placeholder="Select decimal separator" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value=".">.</SelectItem>
+                  <SelectItem value=",">,</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="thousands-separator">Thousands Separator</Label>
+              <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, thousands_separator: value })} value={platformSettingsData.thousands_separator || ','}>
+                <SelectTrigger id="thousands-separator">
+                  <SelectValue placeholder="Select thousands separator" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value=",">,</SelectItem>
+                  <SelectItem value=".">.</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Button className="btn-gradient w-full" onClick={handleSavePlatformSettings}>
+            <Settings className="w-4 h-4 mr-2" />
+            Save Platform Settings
+          </Button>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
