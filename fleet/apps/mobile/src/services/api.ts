@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, Company, CompanyStats } from '../types';
 
-const API_BASE_URL = 'https://taki.pythonanywhere.com/api';
+const API_BASE_URL = 'http://localhost:8001/api';
 
 class ApiService {
   private baseURL: string;

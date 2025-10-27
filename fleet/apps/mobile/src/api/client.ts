@@ -1,4 +1,4 @@
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://www.fleetia.online/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8001/api';
 
 let access: string | null = null;
 let refresh: string | null = null;
