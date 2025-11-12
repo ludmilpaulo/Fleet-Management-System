@@ -499,7 +499,7 @@ export default function AdminDashboard() {
               <Button 
                 variant="outline" 
                 className="h-20 flex flex-col gap-2"
-                onClick={() => router.push('/dashboard/admin/users')}
+                onClick={() => router.push('/dashboard/staff/users')}
               >
                 <Users className="w-6 h-6" />
                 <span>Manage Users</span>
@@ -507,7 +507,7 @@ export default function AdminDashboard() {
               <Button 
                 variant="outline" 
                 className="h-20 flex flex-col gap-2"
-                onClick={() => router.push('/dashboard/admin/vehicles')}
+                onClick={() => router.push('/dashboard/vehicles')}
               >
                 <Truck className="w-6 h-6" />
                 <span>Add Vehicle</span>
