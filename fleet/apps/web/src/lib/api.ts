@@ -1,6 +1,24 @@
 import axios from 'axios'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api'
+const resolveApiBase = (): string => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl) return envUrl;
+  const isBrowser = typeof window !== 'undefined';
+  if (isBrowser) {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      // Production default
+      return 'https://taki.pythonanywhere.com/api';
+    }
+    return 'http://localhost:8000/api';
+  }
+  // Server-side default
+  return process.env.NODE_ENV === 'production'
+    ? 'https://taki.pythonanywhere.com/api'
+    : 'http://localhost:8000/api';
+};
+
+const API_BASE_URL = resolveApiBase()
 //const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api'
 
 // Create axios instance

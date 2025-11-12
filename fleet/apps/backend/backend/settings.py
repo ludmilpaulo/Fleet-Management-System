@@ -184,6 +184,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.1.110:3000",
     "https://fleet-management-system.vercel.app",
     "https://fleet-management-system-sooty.vercel.app",
+    "https://www.fleetia.online",
+    "https://fleetia.online",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

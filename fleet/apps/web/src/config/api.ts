@@ -1,13 +1,39 @@
 // API Configuration
+const detectProdApiBase = (): string => {
+  if (typeof window === 'undefined') {
+    // Server-side: prefer env; fall back to production API
+    return 'https://taki.pythonanywhere.com/api';
+  }
+  const host = window.location.hostname;
+  // Known production frontends mapped to backend API
+  if (host.endsWith('vercel.app')) return 'https://taki.pythonanywhere.com/api';
+  if (host === 'www.fleetia.online' || host === 'fleetia.online') return 'https://taki.pythonanywhere.com/api';
+  // Default dev
+  return 'http://localhost:8000/api';
+};
+
+const detectWsBase = (): string => {
+  if (typeof window === 'undefined') return 'wss://taki.pythonanywhere.com/ws';
+  const host = window.location.hostname;
+  if (host.endsWith('vercel.app')) return 'wss://taki.pythonanywhere.com/ws';
+  if (host === 'www.fleetia.online' || host === 'fleetia.online') return 'wss://taki.pythonanywhere.com/ws';
+  return 'ws://127.0.0.1:8000/ws';
+};
+
+const detectAppUrl = (): string => {
+  if (typeof window !== 'undefined') return window.location.origin;
+  return 'http://localhost:3000';
+};
+
 export const API_CONFIG = {
-  // Local development API URL
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api',
-  
+  // API base URL (env takes precedence). Falls back to production API in prod, localhost in dev.
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || detectProdApiBase(),
+
   // WebSocket URL for real-time features
-  WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8000/ws',
-  
+  WS_URL: process.env.NEXT_PUBLIC_WS_URL || detectWsBase(),
+
   // App URL
-  APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001',
+  APP_URL: process.env.NEXT_PUBLIC_APP_URL || detectAppUrl(),
   
   // API Endpoints
   ENDPOINTS: {
