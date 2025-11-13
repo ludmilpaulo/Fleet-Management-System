@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { setTokens, setUser } from '@/store/authSlice';
+import { API_CONFIG } from '@/config/api';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -15,25 +16,51 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     try {
-      const loginResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts/auth/login`, {
+      const loginResp = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.LOGIN}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
       if (!loginResp.ok) {
-        setError('Invalid credentials');
+        const errorData = await loginResp.json().catch(() => ({}));
+        setError(errorData.detail || errorData.error || 'Invalid credentials');
         return;
       }
-      const { access, refresh } = await loginResp.json();
-      dispatch(setTokens({ access, refresh }));
-      const meResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts/me`, {
-        headers: { Authorization: `Bearer ${access}` },
-      });
-      const user = meResp.ok ? await meResp.json() : null;
-      dispatch(setUser(user));
-      router.push('/vehicles');
-    } catch {
-      setError('Network error');
+      const loginData = await loginResp.json();
+      const token = loginData.token;
+      const user = loginData.user;
+      
+      if (token) {
+        dispatch(setTokens({ access: token, refresh: token }));
+      }
+      if (user) {
+        dispatch(setUser(user));
+        // Redirect based on role
+        if (user.role === 'admin') {
+          router.push('/dashboard/admin');
+        } else if (user.role === 'staff') {
+          router.push('/dashboard/staff');
+        } else if (user.role === 'driver') {
+          router.push('/dashboard/driver');
+        } else if (user.role === 'inspector') {
+          router.push('/dashboard/inspector');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        // Fallback: fetch user profile
+        const meResp = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.ME}`, {
+          headers: { Authorization: `Token ${token}` },
+        });
+        if (meResp.ok) {
+          const userData = await meResp.json();
+          dispatch(setUser(userData));
+          router.push('/dashboard');
+        }
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Network error. Please check if the backend is running.');
     }
   };
 
