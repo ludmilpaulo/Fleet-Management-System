@@ -114,18 +114,34 @@ export default function SignInPage() {
     } catch (err: unknown) {
       // Extract detailed error message from API response
       let errorMessage = 'An error occurred during login. Please try again.';
+      let errorTitle = 'Login Failed';
       
-      if (err && typeof err === 'object' && 'error' in err) {
-        const errorObj = err as { error: string };
-        errorMessage = errorObj.error || errorMessage;
+      if (typeof err === 'string') {
+        errorMessage = err;
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
       
-      // Error is handled by Redux slice
+      // Determine specific error type for better user feedback
+      const lowerMessage = errorMessage.toLowerCase();
+      if (lowerMessage.includes('does not exist') || lowerMessage.includes('username or email')) {
+        errorTitle = 'User Not Found';
+        errorMessage = 'The username or email you entered does not exist. Please check your credentials and try again.';
+      } else if (lowerMessage.includes('incorrect password') || lowerMessage.includes('password')) {
+        errorTitle = 'Incorrect Password';
+        errorMessage = 'The password you entered is incorrect. Please try again or use "Forgot Password" to reset it.';
+      } else if (lowerMessage.includes('disabled') || lowerMessage.includes('inactive')) {
+        errorTitle = 'Account Disabled';
+        errorMessage = 'Your account has been disabled. Please contact support for assistance.';
+      }
+      
+      // Show alert to user
+      alert(`${errorTitle}\n\n${errorMessage}`);
+      
+      // Also dispatch notification for UI display
       dispatch(addNotification({
         type: 'error',
-        title: 'Login Failed',
+        title: errorTitle,
         message: errorMessage,
       }));
     }

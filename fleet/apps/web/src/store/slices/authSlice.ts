@@ -26,7 +26,33 @@ export const loginUser = createAsyncThunk(
       const response = await authAPI.login(credentials);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Login failed');
+      // Extract error message from API response
+      let errorMessage = 'An error occurred during login. Please try again.';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Check for non_field_errors (Django REST Framework format)
+        if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors) && errorData.non_field_errors.length > 0) {
+          errorMessage = errorData.non_field_errors[0];
+        }
+        // Check for detail field
+        else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        }
+        // Check for error field
+        else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+        // Check if it's a string
+        else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return rejectWithValue(errorMessage);
     }
   }
 );
