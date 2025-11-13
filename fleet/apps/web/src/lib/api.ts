@@ -1,18 +1,22 @@
 import axios from 'axios'
 
 const resolveApiBase = (): string => {
+  // Environment variable takes highest priority
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
   if (envUrl) return envUrl;
+  
   const isBrowser = typeof window !== 'undefined';
   if (isBrowser) {
     const host = window.location.hostname;
-    if (host !== 'localhost' && host !== '127.0.0.1') {
-      // Production default
-      return 'https://taki.pythonanywhere.com/api';
+    // Local development - prioritize localhost
+    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.')) {
+      return 'http://localhost:8000/api';
     }
-    return 'http://localhost:8000/api';
+    // Production default
+    return 'https://taki.pythonanywhere.com/api';
   }
-  // Server-side default
+  
+  // Server-side default - prioritize localhost for development
   return process.env.NODE_ENV === 'production'
     ? 'https://taki.pythonanywhere.com/api'
     : 'http://localhost:8000/api';

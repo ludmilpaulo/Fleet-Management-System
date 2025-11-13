@@ -1,39 +1,80 @@
 // API Configuration
 const detectProdApiBase = (): string => {
-  if (typeof window === 'undefined') {
-    // Server-side: prefer env; fall back to production API
-    return 'https://taki.pythonanywhere.com/api';
+  // Environment variable takes highest priority
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
   }
+  
+  if (typeof window === 'undefined') {
+    // Server-side: default to localhost for local development
+    return process.env.NODE_ENV === 'production' 
+      ? 'https://taki.pythonanywhere.com/api'
+      : 'http://localhost:8000/api';
+  }
+  
   const host = window.location.hostname;
+  // Local development - prioritize localhost
+  if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.')) {
+    return 'http://localhost:8000/api';
+  }
+  
   // Known production frontends mapped to backend API
   if (host.endsWith('vercel.app')) return 'https://taki.pythonanywhere.com/api';
   if (host === 'www.fleetia.online' || host === 'fleetia.online') return 'https://taki.pythonanywhere.com/api';
-  // Default dev
+  
+  // Default to localhost for local development
   return 'http://localhost:8000/api';
 };
 
 const detectWsBase = (): string => {
-  if (typeof window === 'undefined') return 'wss://taki.pythonanywhere.com/ws';
+  // Environment variable takes highest priority
+  if (process.env.NEXT_PUBLIC_WS_URL) {
+    return process.env.NEXT_PUBLIC_WS_URL;
+  }
+  
+  if (typeof window === 'undefined') {
+    return process.env.NODE_ENV === 'production'
+      ? 'wss://taki.pythonanywhere.com/ws'
+      : 'ws://localhost:8000/ws';
+  }
+  
   const host = window.location.hostname;
+  // Local development - prioritize localhost
+  if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.')) {
+    return 'ws://localhost:8000/ws';
+  }
+  
+  // Production WebSocket URLs
   if (host.endsWith('vercel.app')) return 'wss://taki.pythonanywhere.com/ws';
   if (host === 'www.fleetia.online' || host === 'fleetia.online') return 'wss://taki.pythonanywhere.com/ws';
-  return 'ws://127.0.0.1:8000/ws';
+  
+  // Default to localhost for local development
+  return 'ws://localhost:8000/ws';
 };
 
 const detectAppUrl = (): string => {
-  if (typeof window !== 'undefined') return window.location.origin;
+  // Environment variable takes highest priority
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  
+  // Default to localhost for local development
   return 'http://localhost:3000';
 };
 
 export const API_CONFIG = {
-  // API base URL (env takes precedence). Falls back to production API in prod, localhost in dev.
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || detectProdApiBase(),
+  // API base URL - defaults to localhost:8000 for local development
+  BASE_URL: detectProdApiBase(),
 
-  // WebSocket URL for real-time features
-  WS_URL: process.env.NEXT_PUBLIC_WS_URL || detectWsBase(),
+  // WebSocket URL for real-time features - defaults to localhost:8000 for local development
+  WS_URL: detectWsBase(),
 
-  // App URL
-  APP_URL: process.env.NEXT_PUBLIC_APP_URL || detectAppUrl(),
+  // App URL - defaults to localhost:3000 for local development
+  APP_URL: detectAppUrl(),
   
   // API Endpoints
   ENDPOINTS: {
