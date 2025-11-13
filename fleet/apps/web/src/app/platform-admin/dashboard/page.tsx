@@ -116,6 +116,7 @@ export default function PlatformAdminDashboard() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [companySearchTerm, setCompanySearchTerm] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
+  const [selectedPlan, setSelectedPlan] = useState<string>('')
   const [vehicleCompanyId, setVehicleCompanyId] = useState<number | null>(null)
   const [allCompanies, setAllCompanies] = useState<any[]>([])
   const [allUsers, setAllUsers] = useState<any[]>([])
@@ -643,6 +644,51 @@ export default function PlatformAdminDashboard() {
     await fetchPlatformStats();
     setLoading(false);
   };
+
+  const handleAssignPlan = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
+      if (!token) {
+        alert('Authentication required. Please log in again.')
+        return
+      }
+      if (!selectedCompany || !selectedPlan) {
+        alert('Please select both a company and a plan.')
+        return
+      }
+      const company = companies.find(c => c.slug === selectedCompany)
+      if (!company) {
+        alert('Selected company not found.')
+        return
+      }
+      const planObj = subscriptionPlans.find(p => String(p.id) === String(selectedPlan))
+      const planName = planObj?.name || selectedPlan
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/companies/${company.id}/upgrade-plan/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ plan: planName, billing_cycle: 'monthly' }),
+      })
+
+      if (response.ok) {
+        alert('Plan assigned successfully')
+        setShowAssignPlanModal(false)
+        setSelectedCompany('')
+        setSelectedPlan('')
+        fetchSubscriptions()
+        fetchCompanies()
+      } else {
+        const err = await response.json().catch(() => ({}))
+        alert(`Failed to assign plan: ${err.error || err.detail || response.statusText}`)
+      }
+    } catch (error) {
+      console.error('Error assigning plan:', error)
+      alert('Error assigning plan')
+    }
+  }
 
   const handleAddEntity = () => {
     setShowAddEntityDialog(true);
@@ -2985,7 +3031,7 @@ export default function PlatformAdminDashboard() {
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('plans'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('subscription'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Plan
             </Button>
@@ -3179,7 +3225,7 @@ export default function PlatformAdminDashboard() {
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('maintenance'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('issue'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Maintenance Task
             </Button>
@@ -3338,7 +3384,7 @@ export default function PlatformAdminDashboard() {
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('feature_flag'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full" onClick={() => { setEntityType('company'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Feature Flag
             </Button>
