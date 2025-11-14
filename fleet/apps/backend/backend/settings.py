@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'tickets',
     'telemetry',
     'platform_admin',
+    'billing',
 ]
 
 MIDDLEWARE = [
@@ -251,3 +252,32 @@ EMAIL_HOST_PASSWORD = ''  # Set in environment variable
 DEFAULT_FROM_EMAIL = 'FleetIA <noreply@fleetia.online>'
 SERVER_EMAIL = 'server@fleetia.online'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# Frontend URL (for redirects)
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
+# Payment Provider Configuration
+PAYMENT_PROVIDER = os.environ.get('PAYMENT_PROVIDER', 'mock')  # 'stripe', 'payfast', 'paystack', 'yoco', 'mock'
+
+PAYMENT_PROVIDERS = {
+    'stripe': {
+        'api_key': os.environ.get('STRIPE_SECRET_KEY', ''),
+        'webhook_secret': os.environ.get('STRIPE_WEBHOOK_SECRET', ''),
+    },
+    'payfast': {
+        'api_key': os.environ.get('PAYFAST_MERCHANT_ID', ''),
+        'webhook_secret': os.environ.get('PAYFAST_PASSPHRASE', ''),
+    },
+    'paystack': {
+        'api_key': os.environ.get('PAYSTACK_SECRET_KEY', ''),
+        'webhook_secret': os.environ.get('PAYSTACK_WEBHOOK_SECRET', ''),
+    },
+    'yoco': {
+        'api_key': os.environ.get('YOCO_SECRET_KEY', ''),
+        'webhook_secret': os.environ.get('YOCO_WEBHOOK_SECRET', ''),
+    },
+    'mock': {
+        'api_key': '',
+        'webhook_secret': '',
+    },
+}

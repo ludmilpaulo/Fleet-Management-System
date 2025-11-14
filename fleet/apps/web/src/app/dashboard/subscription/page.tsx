@@ -28,6 +28,120 @@ import { format } from 'date-fns'
 import { analytics } from '@/lib/mixpanel'
 import { useAppSelector } from '@/store/hooks'
 
+function BillingHistoryCard() {
+  const [payments, setPayments] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchPayments()
+  }, [])
+
+  const fetchPayments = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/billing/payments/`,
+        {
+          headers: {
+            'Authorization': `Token ${localStorage.getItem('auth_token') || localStorage.getItem('access_token')}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+      
+      if (response.ok) {
+        const data = await response.json()
+        setPayments(data.results || data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching payments:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Billing History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Calendar className="w-5 h-5" />
+          Billing History
+        </CardTitle>
+        <CardDescription>Your recent invoices and payments</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {payments.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No payment history yet</p>
+          ) : (
+            payments.map((payment) => (
+              <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-4">
+                  <div className={`p-2 rounded-full ${
+                    payment.status === 'success' ? 'bg-green-100' :
+                    payment.status === 'failed' ? 'bg-red-100' :
+                    'bg-yellow-100'
+                  }`}>
+                    {payment.status === 'success' ? (
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : payment.status === 'failed' ? (
+                      <AlertTriangle className="w-4 h-4 text-red-600" />
+                    ) : (
+                      <Clock className="w-4 h-4 text-yellow-600" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      {payment.provider_invoice_id || `Payment #${payment.id}`}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {payment.paid_at ? format(new Date(payment.paid_at), 'MMM dd, yyyy') : 
+                       format(new Date(payment.created_at), 'MMM dd, yyyy')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="font-medium">
+                      {payment.currency} {parseFloat(payment.amount).toFixed(2)}
+                    </p>
+                    <Badge className={
+                      payment.status === 'success' ? 'bg-green-100 text-green-800' :
+                      payment.status === 'failed' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }>
+                      {payment.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 interface SubscriptionPlan {
   id: string
   name: string
@@ -74,84 +188,54 @@ export default function SubscriptionPage() {
 
   const fetchSubscriptionData = async () => {
     try {
-      // Mock data for subscription management
-      const mockSubscription: CompanySubscription = {
-        id: '1',
-        company_name: 'FleetCorp Solutions',
-        plan: 'professional',
-        status: 'active',
-        billing_cycle: 'monthly',
-        current_period_end: '2024-02-15T00:00:00Z',
-        trial_ends_at: '2024-01-15T00:00:00Z',
-        days_remaining: 0,
-        amount: 99.00,
-        currency: 'USD'
+      const [subscriptionData, plansData] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/billing/subscriptions/current/`, {
+          headers: {
+            'Authorization': `Token ${localStorage.getItem('auth_token') || localStorage.getItem('access_token')}`,
+            'Content-Type': 'application/json',
+          },
+        }).then(res => res.ok ? res.json() : null).catch(() => null),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/billing/plans/`, {
+          headers: {
+            'Authorization': `Token ${localStorage.getItem('auth_token') || localStorage.getItem('access_token')}`,
+            'Content-Type': 'application/json',
+          },
+        }).then(res => res.json()).catch(() => [])
+      ])
+
+      if (subscriptionData) {
+        setSubscription({
+          id: subscriptionData.id.toString(),
+          company_name: subscriptionData.company_name || 'Your Company',
+          plan: subscriptionData.plan?.name || 'trial',
+          status: subscriptionData.status,
+          billing_cycle: subscriptionData.billing_cycle,
+          current_period_end: subscriptionData.current_period_end,
+          trial_ends_at: subscriptionData.trial_end,
+          days_remaining: subscriptionData.days_until_period_end || 0,
+          amount: subscriptionData.plan?.amount || 0,
+          currency: subscriptionData.plan?.currency || 'USD'
+        })
       }
 
-      const mockPlans: SubscriptionPlan[] = [
-        {
-          id: '1',
-          name: 'basic',
-          display_name: 'Basic Plan',
-          description: 'Perfect for small fleets getting started',
-          monthly_price: 29,
-          yearly_price: 290,
-          max_users: 5,
-          max_vehicles: 10,
-          features: [
-            'Up to 5 users',
-            'Up to 10 vehicles',
-            'Basic vehicle tracking',
-            'Email support',
-            'Standard reports'
-          ],
-          is_popular: false
-        },
-        {
-          id: '2',
-          name: 'professional',
-          display_name: 'Professional Plan',
-          description: 'Ideal for growing businesses with advanced needs',
-          monthly_price: 99,
-          yearly_price: 990,
-          max_users: 25,
-          max_vehicles: 50,
-          features: [
-            'Up to 25 users',
-            'Up to 50 vehicles',
-            'Advanced tracking & analytics',
-            'Priority support',
-            'Custom reports',
-            'API access',
-            'Mobile app access'
-          ],
-          is_popular: true
-        },
-        {
-          id: '3',
-          name: 'enterprise',
-          display_name: 'Enterprise Plan',
-          description: 'Complete solution for large organizations',
-          monthly_price: 299,
-          yearly_price: 2990,
-          max_users: 100,
-          max_vehicles: 200,
-          features: [
-            'Unlimited users',
-            'Up to 200 vehicles',
-            'Advanced analytics & AI',
-            '24/7 phone support',
-            'Custom integrations',
-            'Dedicated account manager',
-            'White-label options',
-            'Advanced security features'
-          ],
-          is_popular: false
-        }
-      ]
+      // Transform plans data to match expected format
+      const transformedPlans = plansData.map((plan: any) => ({
+        id: plan.id.toString(),
+        name: plan.name,
+        display_name: plan.display_name,
+        description: plan.description || '',
+        monthly_price: plan.interval === 'month' ? parseFloat(plan.amount) : parseFloat(plan.amount) / 12,
+        yearly_price: plan.interval === 'year' ? parseFloat(plan.amount) : parseFloat(plan.amount) * 12,
+        max_users: plan.features?.max_users || 0,
+        max_vehicles: plan.features?.max_vehicles || 0,
+        features: Object.entries(plan.features || {}).map(([key, value]) => {
+          if (key === 'max_users' || key === 'max_vehicles') return null;
+          return `${key}: ${value}`;
+        }).filter(Boolean) as string[],
+        is_popular: plan.is_popular || false
+      }))
 
-      setSubscription(mockSubscription)
-      setPlans(mockPlans)
+      setPlans(transformedPlans)
     } catch (error) {
       console.error('Error fetching subscription data:', error)
     } finally {
@@ -420,13 +504,45 @@ export default function SubscriptionPage() {
                         <Button 
                           className={`w-full ${plan.is_popular ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                           variant={plan.is_popular ? 'default' : 'outline'}
-                          onClick={() => {
+                          onClick={async () => {
                             analytics.trackButtonClick(`upgrade_to_${plan.name}`, 'subscription_page');
                             analytics.trackPlanUpgrade(
                               subscription?.plan || 'trial',
                               plan.name,
                               'monthly'
                             );
+                            
+                            try {
+                              // Create checkout session
+                              const response = await fetch(
+                                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/billing/checkout-session/`,
+                                {
+                                  method: 'POST',
+                                  headers: {
+                                    'Authorization': `Token ${localStorage.getItem('auth_token') || localStorage.getItem('access_token')}`,
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({
+                                    plan_id: parseInt(plan.id),
+                                    billing_cycle: 'monthly',
+                                    success_url: `${window.location.origin}/dashboard/subscription?success=true`,
+                                    cancel_url: `${window.location.origin}/dashboard/subscription?canceled=true`,
+                                  }),
+                                }
+                              );
+                              
+                              if (response.ok) {
+                                const data = await response.json();
+                                // Redirect to checkout URL
+                                window.location.href = data.checkout_url;
+                              } else {
+                                const error = await response.json();
+                                alert(`Failed to create checkout session: ${error.error || error.detail || 'Unknown error'}`);
+                              }
+                            } catch (error) {
+                              console.error('Error creating checkout session:', error);
+                              alert('Failed to create checkout session. Please try again.');
+                            }
                           }}
                         >
                           {subscription?.plan === 'trial' ? 'Upgrade Now' : 'Switch Plan'}
@@ -442,45 +558,7 @@ export default function SubscriptionPage() {
         </Card>
 
         {/* Billing History */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Billing History
-            </CardTitle>
-            <CardDescription>Your recent invoices and payments</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { date: '2024-01-15', amount: 99.00, status: 'paid', invoice: 'INV-001' },
-                { date: '2023-12-15', amount: 99.00, status: 'paid', invoice: 'INV-002' },
-                { date: '2023-11-15', amount: 99.00, status: 'paid', invoice: 'INV-003' },
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-green-100 rounded-full">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.invoice}</p>
-                      <p className="text-sm text-gray-600">{format(new Date(item.date), 'MMM dd, yyyy')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-medium">${item.amount}</p>
-                      <Badge className="bg-green-100 text-green-800">{item.status}</Badge>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <BillingHistoryCard />
 
         {/* Support */}
         <Card>

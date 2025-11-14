@@ -118,6 +118,11 @@ export default function PlatformAdminDashboard() {
   const [selectedCompany, setSelectedCompany] = useState('')
   const [selectedPlan, setSelectedPlan] = useState<string>('')
   const [vehicleCompanyId, setVehicleCompanyId] = useState<number | null>(null)
+  const [formCompanyPlan, setFormCompanyPlan] = useState('trial')
+  const [formUserRole, setFormUserRole] = useState('staff')
+  const [formShiftStatus, setFormShiftStatus] = useState('ACTIVE')
+  const [formInspectionType, setFormInspectionType] = useState('START')
+  const [formIssuePriority, setFormIssuePriority] = useState('medium')
   const [allCompanies, setAllCompanies] = useState<any[]>([])
   const [allUsers, setAllUsers] = useState<any[]>([])
   const [showCompaniesModal, setShowCompaniesModal] = useState(false)
@@ -700,6 +705,11 @@ export default function PlatformAdminDashboard() {
     setSelectedCompany('');
     setCompanySearchTerm('');
     setVehicleCompanyId(null);
+    setFormCompanyPlan('trial');
+    setFormUserRole('staff');
+    setFormShiftStatus('ACTIVE');
+    setFormInspectionType('START');
+    setFormIssuePriority('medium');
   };
 
   const handleLogout = async () => {
@@ -729,8 +739,8 @@ export default function PlatformAdminDashboard() {
 
       if (entityType === 'company') {
         // Get form values
-        const companyName = (document.querySelector('input[placeholder="Enter company name"]') as HTMLInputElement)?.value?.trim();
-        const email = (document.querySelector('input[placeholder="company@example.com"]') as HTMLInputElement)?.value?.trim();
+        const companyName = (document.getElementById('company-name') as HTMLInputElement)?.value?.trim();
+        const email = (document.getElementById('company-email') as HTMLInputElement)?.value?.trim();
         
         // Validate required fields
         if (!companyName) {
@@ -746,9 +756,8 @@ export default function PlatformAdminDashboard() {
         // Generate slug from name
         const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         
-        // Get subscription plan from select dropdown
-        const planSelect = document.querySelector('select') as HTMLSelectElement;
-        const subscription_plan = planSelect?.value || 'trial';
+        // Get subscription plan from state
+        const subscription_plan = formCompanyPlan;
         
         const response = await fetch(`${API_BASE}/platform-admin/companies/`, {
           method: 'POST',
@@ -794,6 +803,9 @@ export default function PlatformAdminDashboard() {
         const data = await response.json();
         console.log('Company created:', data);
         alert(`Company "${data.name}" created successfully!`);
+        handleCloseDialog();
+        fetchCompanies();
+        fetchPlatformStats();
       } else if (entityType === 'user') {
         // Get company from state
         const company_slug = selectedCompany;
@@ -804,9 +816,9 @@ export default function PlatformAdminDashboard() {
           return;
         }
         
-        const first_name = (document.querySelector('input[placeholder="John"]') as HTMLInputElement)?.value?.trim();
-        const last_name = (document.querySelector('input[placeholder="Doe"]') as HTMLInputElement)?.value?.trim();
-        const email = (document.querySelector('input[placeholder="user@example.com"]') as HTMLInputElement)?.value?.trim();
+        const first_name = (document.getElementById('user-first-name') as HTMLInputElement)?.value?.trim();
+        const last_name = (document.getElementById('user-last-name') as HTMLInputElement)?.value?.trim();
+        const email = (document.getElementById('user-email') as HTMLInputElement)?.value?.trim();
         
         if (!first_name) {
           alert('Error: First name is required.');
@@ -821,9 +833,35 @@ export default function PlatformAdminDashboard() {
           return;
         }
         
-        // Get role from select
-        const roleSelect = document.getElementById('user-role-select') as HTMLSelectElement;
-        const role = roleSelect?.value || 'staff';
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          alert('Error: Please enter a valid email address.');
+          return;
+        }
+        
+        // Get role from state
+        const role = formUserRole;
+        
+        // Generate username from email
+        const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!username || username.length < 3) {
+          alert('Error: Could not generate a valid username from email. Please use a different email.');
+          return;
+        }
+
+        const requestPayload = {
+          username: username,
+          email: email,
+          password: 'TempPassword123!',
+          password_confirm: 'TempPassword123!',
+          first_name: first_name,
+          last_name: last_name,
+          role: role,
+          company_slug: company_slug.trim(),
+        };
+        
+        console.log('Creating user with payload:', { ...requestPayload, password: '***', password_confirm: '***' });
 
         const response = await fetch(`${API_BASE}/account/register/`, {
           method: 'POST',
@@ -831,7 +869,18 @@ export default function PlatformAdminDashboard() {
             'Content-Type': 'application/json',
             'Authorization': `Token ${token}`,
           },
-          body: JSON.stringify({
+          body: JSON.stringify(requestPayload),
+        });
+
+        if (!response.ok) {
+          let error;
+          try {
+            error = await response.json();
+          } catch (e) {
+            error = { detail: 'Failed to parse error response' };
+          }
+          console.error('User creation error:', error);
+          console.error('Request payload:', {
             username: email.split('@')[0],
             email,
             password: 'TempPassword123!',
@@ -839,32 +888,51 @@ export default function PlatformAdminDashboard() {
             first_name,
             last_name,
             role,
-            company_slug: company_slug, // Add company_slug
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          console.error('User creation error:', error);
+            company_slug: company_slug,
+          });
           
           let errorMessage = 'Failed to create user:\n\n';
+          
+          // Handle different error formats
           if (error.company_slug) {
-            errorMessage += `Company: ${error.company_slug[0]}\n`;
+            const companyError = Array.isArray(error.company_slug) ? error.company_slug[0] : error.company_slug;
+            errorMessage += `Company: ${companyError}\n`;
           }
           if (error.email) {
-            errorMessage += `Email: ${error.email[0]}\n`;
+            const emailError = Array.isArray(error.email) ? error.email[0] : error.email;
+            errorMessage += `Email: ${emailError}\n`;
           }
           if (error.username) {
-            errorMessage += `Username: ${error.username[0]}\n`;
+            const usernameError = Array.isArray(error.username) ? error.username[0] : error.username;
+            errorMessage += `Username: ${usernameError}\n`;
+          }
+          if (error.password) {
+            const passwordError = Array.isArray(error.password) ? error.password[0] : error.password;
+            errorMessage += `Password: ${passwordError}\n`;
+          }
+          if (error.password_confirm) {
+            const passwordConfirmError = Array.isArray(error.password_confirm) ? error.password_confirm[0] : error.password_confirm;
+            errorMessage += `Password Confirm: ${passwordConfirmError}\n`;
           }
           if (error.first_name) {
-            errorMessage += `First Name: ${error.first_name[0]}\n`;
+            const firstNameError = Array.isArray(error.first_name) ? error.first_name[0] : error.first_name;
+            errorMessage += `First Name: ${firstNameError}\n`;
           }
           if (error.last_name) {
-            errorMessage += `Last Name: ${error.last_name[0]}\n`;
+            const lastNameError = Array.isArray(error.last_name) ? error.last_name[0] : error.last_name;
+            errorMessage += `Last Name: ${lastNameError}\n`;
+          }
+          if (error.non_field_errors) {
+            const nonFieldError = Array.isArray(error.non_field_errors) ? error.non_field_errors[0] : error.non_field_errors;
+            errorMessage += `Error: ${nonFieldError}\n`;
           }
           if (error.detail) {
             errorMessage += `Detail: ${error.detail}\n`;
+          }
+          
+          // If no specific errors, show the whole error object
+          if (errorMessage === 'Failed to create user:\n\n') {
+            errorMessage += JSON.stringify(error, null, 2);
           }
           
           alert(errorMessage || 'An error occurred while creating the user.');
@@ -874,6 +942,8 @@ export default function PlatformAdminDashboard() {
         const data = await response.json();
         console.log('User created:', data);
         alert(`User "${data.user.full_name}" created successfully!\nTemporary password: TempPassword123!`);
+        handleCloseDialog();
+        fetchPlatformStats();
       } else if (entityType === 'vehicle') {
         // Validate company is selected
         if (!vehicleCompanyId) {
@@ -882,10 +952,10 @@ export default function PlatformAdminDashboard() {
         }
         
         // Create vehicle
-        const make = (document.querySelector('input[placeholder="Toyota"]') as HTMLInputElement)?.value?.trim();
-        const model = (document.querySelector('input[placeholder="Camry"]') as HTMLInputElement)?.value?.trim();
-        const year = (document.querySelector('input[placeholder="2024"]') as HTMLInputElement)?.value?.trim();
-        const reg_number = (document.querySelector('input[placeholder="ABC-1234"]') as HTMLInputElement)?.value?.trim();
+        const make = (document.getElementById('vehicle-make') as HTMLInputElement)?.value?.trim();
+        const model = (document.getElementById('vehicle-model') as HTMLInputElement)?.value?.trim();
+        const year = (document.getElementById('vehicle-year') as HTMLInputElement)?.value?.trim();
+        const reg_number = (document.getElementById('vehicle-reg') as HTMLInputElement)?.value?.trim();
         
         // Validate required fields
         if (!make) {
@@ -954,14 +1024,17 @@ export default function PlatformAdminDashboard() {
       const data = await response.json();
       console.log('Vehicle created:', data);
       alert(`Vehicle "${data.make} ${data.model}" created successfully!`);
+      handleCloseDialog();
+      fetchVehicles();
+      fetchPlatformStats();
       } else if (entityType === 'shift') {
       // Get form values
-      const driverId = (document.querySelector('input[placeholder="Enter driver user ID"]') as HTMLInputElement)?.value?.trim();
-      const vehicleId = (document.querySelector('input[placeholder="Enter vehicle ID"]') as HTMLInputElement)?.value?.trim();
-      const startAt = (document.querySelector('input[type="datetime-local"]') as HTMLInputElement)?.value;
-      const endAt = (document.querySelectorAll('input[type="datetime-local"]')[1] as HTMLInputElement)?.value;
-      const status = (document.querySelector('select') as HTMLSelectElement)?.value || 'ACTIVE';
-      const notes = (document.querySelector('textarea[placeholder="Additional shift notes..."]') as HTMLTextAreaElement)?.value?.trim();
+      const driverId = (document.getElementById('shift-driver-id') as HTMLInputElement)?.value?.trim();
+      const vehicleId = (document.getElementById('shift-vehicle-id') as HTMLInputElement)?.value?.trim();
+      const startAt = (document.getElementById('shift-start') as HTMLInputElement)?.value;
+      const endAt = (document.getElementById('shift-end') as HTMLInputElement)?.value;
+      const status = formShiftStatus;
+      const notes = (document.getElementById('shift-notes') as HTMLTextAreaElement)?.value?.trim();
 
       if (!driverId) {
         alert('Error: Driver ID is required.');
@@ -1009,13 +1082,15 @@ export default function PlatformAdminDashboard() {
       const data = await response.json();
       console.log('Shift created:', data);
       alert(`Shift created successfully!`);
+      handleCloseDialog();
+      fetchPlatformStats();
       } else if (entityType === 'inspection') {
       // Get form values
-      const shiftId = (document.querySelector('input[placeholder="Enter shift ID"]') as HTMLInputElement)?.value?.trim();
-      const type = (document.querySelector('select') as HTMLSelectElement)?.value || 'START';
-      const weather_conditions = (document.querySelector('input[placeholder="e.g., Sunny, Rainy, Cloudy"]') as HTMLInputElement)?.value?.trim();
-      const temperature = (document.querySelector('input[placeholder="25"]') as HTMLInputElement)?.value?.trim();
-      const notes = (document.querySelector('textarea') as HTMLTextAreaElement)?.value?.trim();
+      const shiftId = (document.getElementById('inspection-shift-id') as HTMLInputElement)?.value?.trim();
+      const type = formInspectionType;
+      const weather_conditions = (document.getElementById('inspection-weather') as HTMLInputElement)?.value?.trim();
+      const temperature = (document.getElementById('inspection-temp') as HTMLInputElement)?.value?.trim();
+      const notes = (document.getElementById('inspection-notes-text') as HTMLTextAreaElement)?.value?.trim();
 
       if (!shiftId) {
         alert('Error: Shift ID is required.');
@@ -1047,13 +1122,15 @@ export default function PlatformAdminDashboard() {
       const data = await response.json();
       console.log('Inspection created:', data);
       alert(`Inspection created successfully!`);
+      handleCloseDialog();
+      fetchPlatformStats();
     } else if (entityType === 'issue') {
       // Get form values
-      const title = (document.querySelector('input[placeholder="e.g., Engine overheating"]') as HTMLInputElement)?.value?.trim();
-      const description = (document.querySelector('textarea[placeholder="Describe the issue in detail..."]') as HTMLTextAreaElement)?.value?.trim();
-      const vehicleId = (document.querySelector('input[placeholder="Vehicle ID (optional)"]') as HTMLInputElement)?.value?.trim();
-      const priority = (document.querySelector('select') as HTMLSelectElement)?.value || 'medium';
-      const status = (document.querySelectorAll('select')[1] as HTMLSelectElement)?.value || 'open';
+      const title = (document.getElementById('issue-title') as HTMLInputElement)?.value?.trim();
+      const description = (document.getElementById('issue-description') as HTMLTextAreaElement)?.value?.trim();
+      const vehicleId = (document.getElementById('issue-vehicle-id') as HTMLInputElement)?.value?.trim();
+      const priority = formIssuePriority;
+      const status = 'open'; // Default status for new issues
 
       if (!title) {
         alert('Error: Title is required.');
@@ -1093,6 +1170,8 @@ export default function PlatformAdminDashboard() {
       const data = await response.json();
       console.log('Issue created:', data);
       alert(`Issue "${data.title}" created successfully!`);
+      handleCloseDialog();
+      fetchPlatformStats();
       } else if (entityType === 'subscription') {
         // Get company from state
         const company_slug = selectedCompany;
@@ -2065,44 +2144,459 @@ export default function PlatformAdminDashboard() {
       </Tabs>
 
       {/* Add Entity Dialog */}
-      <Dialog open={showAddEntityDialog} onOpenChange={setShowAddEntityDialog}>
-        <DialogContent>
+      <Dialog open={showAddEntityDialog} onOpenChange={(open) => {
+        setShowAddEntityDialog(open);
+        if (!open) {
+          setEntityType('');
+          setSelectedCompany('');
+          setCompanySearchTerm('');
+          setVehicleCompanyId(null);
+          setFormCompanyPlan('trial');
+          setFormUserRole('staff');
+          setFormShiftStatus('ACTIVE');
+          setFormInspectionType('START');
+          setFormIssuePriority('medium');
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Entity</DialogTitle>
+            <DialogTitle>
+              {entityType ? `Add New ${entityType.charAt(0).toUpperCase() + entityType.slice(1)}` : 'Add New Entity'}
+            </DialogTitle>
             <DialogDescription>
-              Select the type of entity you want to add.
+              {entityType 
+                ? `Fill in the details to create a new ${entityType}.`
+                : 'Select the type of entity you want to add.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Button variant="outline" className="w-full" onClick={() => { setEntityType('company'); setShowAddEntityDialog(true); }}>
-              <Building2 className="w-4 h-4 mr-2" />
-              Company
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => { setEntityType('user'); setShowAddEntityDialog(true); }}>
-              <Users className="w-4 h-4 mr-2" />
-              User
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => { setEntityType('vehicle'); setShowAddEntityDialog(true); }}>
-              <Truck className="w-4 h-4 mr-2" />
-              Vehicle
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => { setEntityType('shift'); setShowAddEntityDialog(true); }}>
-              <Clock className="w-4 h-4 mr-2" />
-              Shift
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => { setEntityType('inspection'); setShowAddEntityDialog(true); }}>
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Inspection
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => { setEntityType('issue'); setShowAddEntityDialog(true); }}>
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              Issue
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => { setEntityType('subscription'); setShowAddEntityDialog(true); }}>
-              <Package className="w-4 h-4 mr-2" />
-              Subscription
-            </Button>
-          </div>
+          
+          {!entityType ? (
+            // Entity Type Selection
+            <div className="grid gap-4 py-4">
+              <Button variant="outline" className="w-full" onClick={() => setEntityType('company')}>
+                <Building2 className="w-4 h-4 mr-2" />
+                Company
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => setEntityType('user')}>
+                <Users className="w-4 h-4 mr-2" />
+                User
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => setEntityType('vehicle')}>
+                <Truck className="w-4 h-4 mr-2" />
+                Vehicle
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => setEntityType('shift')}>
+                <Clock className="w-4 h-4 mr-2" />
+                Shift
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => setEntityType('inspection')}>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Inspection
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => setEntityType('issue')}>
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Issue
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => setEntityType('subscription')}>
+                <Package className="w-4 h-4 mr-2" />
+                Subscription
+              </Button>
+            </div>
+          ) : (
+            // Entity Creation Forms
+            <div className="grid gap-4 py-4">
+              {entityType === 'company' && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="company-name">Company Name *</Label>
+                    <Input
+                      id="company-name"
+                      placeholder="Enter company name"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="company-email">Email *</Label>
+                    <Input
+                      id="company-email"
+                      type="email"
+                      placeholder="company@example.com"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="company-plan">Subscription Plan</Label>
+                    <Select value={formCompanyPlan} onValueChange={setFormCompanyPlan}>
+                      <SelectTrigger id="company-plan">
+                        <SelectValue placeholder="Select a plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="trial">Trial</SelectItem>
+                        <SelectItem value="basic">Basic</SelectItem>
+                        <SelectItem value="professional">Professional</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setEntityType('')}>
+                      Back
+                    </Button>
+                    <Button className="btn-gradient flex-1" onClick={handleCreateEntity}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Company
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {entityType === 'user' && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="user-company">Company *</Label>
+                    <Select value={selectedCompany || undefined} onValueChange={setSelectedCompany}>
+                      <SelectTrigger id="user-company">
+                        <SelectValue placeholder="Select a company" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {companies.filter(company => company.slug && company.slug.trim() !== '').map(company => (
+                          <SelectItem key={company.id} value={company.slug}>{company.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="user-first-name">First Name *</Label>
+                    <Input
+                      id="user-first-name"
+                      placeholder="John"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="user-last-name">Last Name *</Label>
+                    <Input
+                      id="user-last-name"
+                      placeholder="Doe"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="user-email">Email *</Label>
+                    <Input
+                      id="user-email"
+                      type="email"
+                      placeholder="user@example.com"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="user-role-select">Role</Label>
+                    <Select id="user-role-select" value={formUserRole} onValueChange={setFormUserRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
+                        <SelectItem value="driver">Driver</SelectItem>
+                        <SelectItem value="inspector">Inspector</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setEntityType('')}>
+                      Back
+                    </Button>
+                    <Button className="btn-gradient flex-1" onClick={handleCreateEntity}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create User
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {entityType === 'vehicle' && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="vehicle-company-select">Company *</Label>
+                    <Select value={vehicleCompanyId?.toString() || undefined} onValueChange={(value) => setVehicleCompanyId(parseInt(value))}>
+                      <SelectTrigger id="vehicle-company-select">
+                        <SelectValue placeholder="Select a company" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {companies.filter(company => company.id && company.id.toString().trim() !== '').map(company => (
+                          <SelectItem key={company.id} value={company.id.toString()}>{company.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="vehicle-make">Make *</Label>
+                    <Input
+                      id="vehicle-make"
+                      placeholder="Toyota"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="vehicle-model">Model *</Label>
+                    <Input
+                      id="vehicle-model"
+                      placeholder="Camry"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="vehicle-year">Year *</Label>
+                    <Input
+                      id="vehicle-year"
+                      type="number"
+                      placeholder="2024"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="vehicle-reg">Registration Number *</Label>
+                    <Input
+                      id="vehicle-reg"
+                      placeholder="ABC-1234"
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setEntityType('')}>
+                      Back
+                    </Button>
+                    <Button className="btn-gradient flex-1" onClick={handleCreateEntity}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Vehicle
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {entityType === 'shift' && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="shift-driver-id">Driver ID *</Label>
+                    <Input
+                      id="shift-driver-id"
+                      type="number"
+                      placeholder="Enter driver user ID"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="shift-vehicle-id">Vehicle ID *</Label>
+                    <Input
+                      id="shift-vehicle-id"
+                      type="number"
+                      placeholder="Enter vehicle ID"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="shift-start">Start Date/Time *</Label>
+                    <Input
+                      id="shift-start"
+                      type="datetime-local"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="shift-end">End Date/Time (Optional)</Label>
+                    <Input
+                      id="shift-end"
+                      type="datetime-local"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="shift-status">Status</Label>
+                    <Select value={formShiftStatus} onValueChange={setFormShiftStatus}>
+                      <SelectTrigger id="shift-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="COMPLETED">Completed</SelectItem>
+                        <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="shift-notes">Notes (Optional)</Label>
+                    <textarea
+                      id="shift-notes"
+                      className="border rounded-md p-2 min-h-[80px]"
+                      placeholder="Additional shift notes..."
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setEntityType('')}>
+                      Back
+                    </Button>
+                    <Button className="btn-gradient flex-1" onClick={handleCreateEntity}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Shift
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {entityType === 'inspection' && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="inspection-shift-id">Shift ID *</Label>
+                    <Input
+                      id="inspection-shift-id"
+                      type="number"
+                      placeholder="Enter shift ID"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="inspection-type-select">Type</Label>
+                    <Select value={formInspectionType} onValueChange={setFormInspectionType}>
+                      <SelectTrigger id="inspection-type-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="START">Start</SelectItem>
+                        <SelectItem value="END">End</SelectItem>
+                        <SelectItem value="INTERIM">Interim</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="inspection-weather">Weather Conditions (Optional)</Label>
+                    <Input
+                      id="inspection-weather"
+                      placeholder="e.g., Sunny, Rainy, Cloudy"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="inspection-temp">Temperature °C (Optional)</Label>
+                    <Input
+                      id="inspection-temp"
+                      type="number"
+                      placeholder="25"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="inspection-notes-text">Notes (Optional)</Label>
+                    <textarea
+                      id="inspection-notes-text"
+                      className="border rounded-md p-2 min-h-[80px]"
+                      placeholder="Inspection notes..."
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setEntityType('')}>
+                      Back
+                    </Button>
+                    <Button className="btn-gradient flex-1" onClick={handleCreateEntity}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Inspection
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {entityType === 'issue' && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="issue-title">Title *</Label>
+                    <Input
+                      id="issue-title"
+                      placeholder="Enter issue title"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="issue-description">Description *</Label>
+                    <textarea
+                      id="issue-description"
+                      className="border rounded-md p-2 min-h-[100px]"
+                      placeholder="Describe the issue..."
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="issue-vehicle-id">Vehicle ID (Optional)</Label>
+                    <Input
+                      id="issue-vehicle-id"
+                      type="number"
+                      placeholder="Enter vehicle ID"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="issue-priority">Priority</Label>
+                    <Select value={formIssuePriority} onValueChange={setFormIssuePriority}>
+                      <SelectTrigger id="issue-priority">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setEntityType('')}>
+                      Back
+                    </Button>
+                    <Button className="btn-gradient flex-1" onClick={handleCreateEntity}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Issue
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {entityType === 'subscription' && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="subscription-company-select">Company *</Label>
+                    <Select value={selectedCompany || undefined} onValueChange={setSelectedCompany}>
+                      <SelectTrigger id="subscription-company-select">
+                        <SelectValue placeholder="Select a company" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {companies.filter(company => company.slug && company.slug.trim() !== '').map(company => (
+                          <SelectItem key={company.id} value={company.slug}>{company.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="subscription-plan-select">Plan *</Label>
+                    <Select value={selectedPlan || undefined} onValueChange={setSelectedPlan}>
+                      <SelectTrigger id="subscription-plan-select">
+                        <SelectValue placeholder="Select a plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subscriptionPlans.filter(plan => plan.id && plan.id.toString().trim() !== '').map(plan => (
+                          <SelectItem key={plan.id} value={plan.id.toString()}>{plan.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setEntityType('')}>
+                      Back
+                    </Button>
+                    <Button className="btn-gradient flex-1" onClick={handleAssignPlan}>
+                      <Package className="w-4 h-4 mr-2" />
+                      Assign Subscription
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -2236,7 +2730,7 @@ export default function PlatformAdminDashboard() {
                       <SelectValue placeholder="Select company" />
                     </SelectTrigger>
                     <SelectContent>
-                      {companies.map(company => (
+                      {companies.filter(company => company.id && company.id.toString().trim() !== '').map(company => (
                         <SelectItem key={company.id} value={company.id.toString()}>{company.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -2321,7 +2815,7 @@ export default function PlatformAdminDashboard() {
                       <SelectValue placeholder="Select company" />
                     </SelectTrigger>
                     <SelectContent>
-                      {companies.map(company => (
+                      {companies.filter(company => company.id && company.id.toString().trim() !== '').map(company => (
                         <SelectItem key={company.id} value={company.id.toString()}>{company.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -2526,7 +3020,7 @@ export default function PlatformAdminDashboard() {
                       <SelectValue placeholder="Select company" />
                     </SelectTrigger>
                     <SelectContent>
-                      {companies.map(company => (
+                      {companies.filter(company => company.id && company.id.toString().trim() !== '').map(company => (
                         <SelectItem key={company.id} value={company.id.toString()}>{company.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -3078,12 +3572,12 @@ export default function PlatformAdminDashboard() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="assign-company">Company</Label>
-              <Select onValueChange={(value) => setSelectedCompany(value)} value={selectedCompany}>
+              <Select onValueChange={(value) => setSelectedCompany(value)} value={selectedCompany || undefined}>
                 <SelectTrigger id="assign-company">
                   <SelectValue placeholder="Select a company" />
                 </SelectTrigger>
                 <SelectContent>
-                  {companies.map(company => (
+                  {companies.filter(company => company.slug && company.slug.trim() !== '').map(company => (
                     <SelectItem key={company.id} value={company.slug}>{company.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -3091,12 +3585,12 @@ export default function PlatformAdminDashboard() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="assign-plan">Plan</Label>
-              <Select onValueChange={(value) => setSelectedPlan(value)} value={selectedPlan}>
+              <Select onValueChange={(value) => setSelectedPlan(value)} value={selectedPlan || undefined}>
                 <SelectTrigger id="assign-plan">
                   <SelectValue placeholder="Select a plan" />
                 </SelectTrigger>
                 <SelectContent>
-                  {subscriptionPlans.map(plan => (
+                  {subscriptionPlans.filter(plan => plan.id && plan.id.toString().trim() !== '').map(plan => (
                     <SelectItem key={plan.id} value={plan.id.toString()}>{plan.name} - {plan.price} {plan.currency}</SelectItem>
                   ))}
                 </SelectContent>

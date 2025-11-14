@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
+import { API_CONFIG } from '@/config/api';
+import Cookies from 'js-cookie';
 
 interface SupportTicket {
   id: number;
@@ -32,40 +34,46 @@ export default function TicketsPage() {
   }, []);
 
   const fetchTickets = async () => {
-    const mockData: SupportTicket[] = [
-      {
-        id: 1,
-        title: 'Cannot access vehicle maintenance records',
-        description: 'Getting error when trying to view maintenance history',
-        status: 'OPEN',
-        priority: 'HIGH',
-        created_by: 'John Admin',
-        created_at: '2025-01-15',
-        responses: 0,
-      },
-      {
-        id: 2,
-        title: 'Request for new driver account',
-        description: 'Need to add new driver John Smith to the system',
-        status: 'IN_PROGRESS',
-        priority: 'MEDIUM',
-        created_by: 'Sarah Staff',
-        created_at: '2025-01-14',
-        responses: 3,
-      },
-      {
-        id: 3,
-        title: 'Mobile app login issue',
-        description: 'Driver cannot login to mobile app',
-        status: 'RESOLVED',
-        priority: 'HIGH',
-        created_by: 'James Driver',
-        created_at: '2025-01-10',
-        responses: 5,
-      },
-    ];
-    setTickets(mockData);
-    setLoading(false);
+    try {
+      const token = Cookies.get('auth_token')
+      if (!token) {
+        console.error('No authentication token found')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TICKETS.LIST}`, {
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch tickets')
+      }
+
+      const data = await response.json()
+      const ticketsData = Array.isArray(data) ? data : (data.results || [])
+      
+      // Transform API data to match our interface
+      const transformedTickets: SupportTicket[] = ticketsData.map((ticket: any) => ({
+        id: ticket.id || 0,
+        title: ticket.title || ticket.subject || 'Untitled Ticket',
+        description: ticket.description || ticket.body || 'No description',
+        status: ticket.status || 'OPEN',
+        priority: ticket.priority || 'MEDIUM',
+        created_by: ticket.created_by?.full_name || ticket.created_by?.username || 'Unknown',
+        created_at: ticket.created_at ? ticket.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+        responses: ticket.responses_count || ticket.responses?.length || 0,
+      }))
+      
+      setTickets(transformedTickets)
+    } catch (error) {
+      console.error('Error fetching tickets:', error)
+    } finally {
+      setLoading(false)
+    }
   };
 
   const filteredTickets = tickets.filter(ticket => {

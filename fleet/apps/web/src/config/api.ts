@@ -96,18 +96,28 @@ export const API_CONFIG = {
       DELETE: (id: number) => `/fleet/vehicles/${id}/`,
     },
     
+    // Fleet Stats
+    FLEET_STATS: {
+      DASHBOARD: '/fleet/stats/dashboard/',
+      VEHICLES: '/fleet/stats/vehicles/',
+      SHIFTS: '/fleet/stats/shifts/',
+    },
+    
+    // Shifts
+    SHIFTS: {
+      LIST: '/fleet/shifts/',
+      CREATE: '/fleet/shifts/',
+      DETAIL: (id: number) => `/fleet/shifts/${id}/`,
+      START: '/fleet/shifts/start/',
+      END: (id: number) => `/fleet/shifts/${id}/end/`,
+    },
+    
     // Inspections
     INSPECTIONS: {
       LIST: '/inspections/',
       CREATE: '/inspections/',
       DETAIL: (id: number) => `/inspections/${id}/`,
       COMPLETE: (id: number) => `/inspections/${id}/complete/`,
-    },
-    
-    // Shifts
-    SHIFTS: {
-      START: '/inspections/shifts/start/',
-      END: (id: number) => `/inspections/shifts/${id}/end/`,
     },
     
     // Uploads
@@ -133,6 +143,17 @@ export const API_CONFIG = {
     // Telemetry
     TELEMETRY: {
       PARKING: '/telemetry/parking/',
+    },
+    
+    // Billing
+    BILLING: {
+      PLANS: '/billing/plans/',
+      PLAN_DETAIL: (id: number) => `/billing/plans/${id}/`,
+      CHECKOUT_SESSION: '/billing/checkout-session/',
+      SUBSCRIPTION_CURRENT: '/billing/subscriptions/current/',
+      SUBSCRIPTIONS: '/billing/subscriptions/',
+      PAYMENTS: '/billing/payments/',
+      WEBHOOK: (provider: string) => `/billing/webhooks/${provider}/`,
     },
   },
   

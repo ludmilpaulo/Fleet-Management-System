@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useRouter } from 'next/navigation'
 import { RootState, AppDispatch } from '@/store'
 import { fetchDashboardStats } from '@/store/slices/dashboardSlice'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,16 +14,39 @@ import {
   CheckCircle, 
   Clock, 
   Activity,
-  AlertCircle
+  AlertCircle,
+  TrendingUp,
+  ArrowRight,
+  Sparkles
 } from 'lucide-react'
 
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>()
+  const router = useRouter()
   const { stats, loading, error } = useSelector((state: RootState) => state.dashboard)
 
   useEffect(() => {
     dispatch(fetchDashboardStats())
   }, [dispatch])
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'add-vehicle':
+        router.push('/dashboard/vehicles')
+        break
+      case 'start-shift':
+        router.push('/dashboard/shifts')
+        break
+      case 'new-inspection':
+        router.push('/dashboard/inspections')
+        break
+      case 'report-issue':
+        router.push('/dashboard/issues')
+        break
+      default:
+        break
+    }
+  }
 
   if (loading) {
     return (
@@ -110,12 +134,21 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">
-          Overview of your fleet management system
-        </p>
+    <div className="space-y-8 p-6 bg-gradient-to-br from-gray-50 via-white to-gray-50 min-h-screen">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+          <p className="text-gray-600 mt-2 text-lg">
+            Welcome back! Here's an overview of your fleet management system
+          </p>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+          <Sparkles className="h-5 w-5 text-blue-600" />
+          <span className="text-sm font-medium text-gray-700">Real-time Updates</span>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -123,22 +156,29 @@ export default function DashboardPage() {
         {statCards.map((stat, index) => {
           const Icon = stat.icon
           return (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+            <Card 
+              key={index} 
+              className="hover:shadow-xl transition-all duration-300 border-2 hover:border-opacity-50 hover:scale-105 group relative overflow-hidden"
+            >
+              <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bgColor} opacity-10 rounded-full -mr-16 -mt-16 group-hover:opacity-20 transition-opacity`}></div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                   {stat.title}
                 </CardTitle>
-                <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                  <Icon className={`h-4 w-4 ${stat.color}`} />
+                <div className={`p-3 rounded-xl ${stat.bgColor} shadow-sm group-hover:shadow-md transition-shadow`}>
+                  <Icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">
+              <CardContent className="relative z-10">
+                <div className="text-4xl font-bold text-gray-900 mb-1">
                   {stat.value}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {stat.description}
-                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <TrendingUp className="h-3 w-3 text-gray-400" />
+                  <p className="text-xs font-medium text-gray-600">
+                    {stat.description}
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )
@@ -146,65 +186,108 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>
-            Common tasks and operations
-          </CardDescription>
+      <Card className="border-2 shadow-lg bg-gradient-to-br from-white to-gray-50">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-bold text-gray-900">Quick Actions</CardTitle>
+              <CardDescription className="text-base mt-1">
+                Common tasks and operations at your fingertips
+              </CardDescription>
+            </div>
+            <Activity className="h-6 w-6 text-blue-600" />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-              <Truck className="h-6 w-6 mb-2" />
-              <span>Add Vehicle</span>
+            <Button 
+              variant="outline" 
+              className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 hover:border-blue-400 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+              onClick={() => handleQuickAction('add-vehicle')}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-500/0 group-hover:from-blue-500/5 group-hover:to-blue-500/10 transition-all"></div>
+              <Truck className="h-7 w-7 text-blue-600 group-hover:scale-110 transition-transform relative z-10" />
+              <span className="font-semibold text-gray-700 relative z-10">Add Vehicle</span>
+              <ArrowRight className="h-4 w-4 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity absolute right-3 top-3 relative z-10" />
             </Button>
-            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-              <Users className="h-6 w-6 mb-2" />
-              <span>Start Shift</span>
+            <Button 
+              variant="outline" 
+              className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-gradient-to-br hover:from-green-50 hover:to-green-100 hover:border-green-400 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+              onClick={() => handleQuickAction('start-shift')}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/0 group-hover:from-green-500/5 group-hover:to-green-500/10 transition-all"></div>
+              <Users className="h-7 w-7 text-green-600 group-hover:scale-110 transition-transform relative z-10" />
+              <span className="font-semibold text-gray-700 relative z-10">Start Shift</span>
+              <ArrowRight className="h-4 w-4 text-green-600 opacity-0 group-hover:opacity-100 transition-opacity absolute right-3 top-3 relative z-10" />
             </Button>
-            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-              <CheckCircle className="h-6 w-6 mb-2" />
-              <span>New Inspection</span>
+            <Button 
+              variant="outline" 
+              className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-gradient-to-br hover:from-purple-50 hover:to-purple-100 hover:border-purple-400 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+              onClick={() => handleQuickAction('new-inspection')}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/0 group-hover:from-purple-500/5 group-hover:to-purple-500/10 transition-all"></div>
+              <CheckCircle className="h-7 w-7 text-purple-600 group-hover:scale-110 transition-transform relative z-10" />
+              <span className="font-semibold text-gray-700 relative z-10">New Inspection</span>
+              <ArrowRight className="h-4 w-4 text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity absolute right-3 top-3 relative z-10" />
             </Button>
-            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-              <AlertTriangle className="h-6 w-6 mb-2" />
-              <span>Report Issue</span>
+            <Button 
+              variant="outline" 
+              className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-gradient-to-br hover:from-red-50 hover:to-red-100 hover:border-red-400 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+              onClick={() => handleQuickAction('report-issue')}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/0 to-red-500/0 group-hover:from-red-500/5 group-hover:to-red-500/10 transition-all"></div>
+              <AlertTriangle className="h-7 w-7 text-red-600 group-hover:scale-110 transition-transform relative z-10" />
+              <span className="font-semibold text-gray-700 relative z-10">Report Issue</span>
+              <ArrowRight className="h-4 w-4 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity absolute right-3 top-3 relative z-10" />
             </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>
-            Latest updates and events
-          </CardDescription>
+      <Card className="border-2 shadow-lg">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-bold text-gray-900">Recent Activity</CardTitle>
+              <CardDescription className="text-base mt-1">
+                Latest updates and events in your fleet
+              </CardDescription>
+            </div>
+            <Clock className="h-6 w-6 text-gray-600" />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div className="flex items-start space-x-4 p-4 rounded-lg hover:bg-gray-50 transition-colors group cursor-pointer border-l-4 border-green-500">
+              <div className="w-3 h-3 bg-green-500 rounded-full mt-2 shadow-lg shadow-green-500/50"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium">Vehicle ABC123 inspection completed</p>
-                <p className="text-xs text-gray-500">2 minutes ago</p>
+                <p className="text-sm font-semibold text-gray-900 group-hover:text-green-700 transition-colors">
+                  Vehicle ABC123 inspection completed
+                </p>
+                <p className="text-xs text-gray-500 mt-1">2 minutes ago</p>
               </div>
+              <ArrowRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+            <div className="flex items-start space-x-4 p-4 rounded-lg hover:bg-gray-50 transition-colors group cursor-pointer border-l-4 border-red-500">
+              <div className="w-3 h-3 bg-red-500 rounded-full mt-2 shadow-lg shadow-red-500/50"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium">Critical issue reported for Vehicle XYZ789</p>
-                <p className="text-xs text-gray-500">15 minutes ago</p>
+                <p className="text-sm font-semibold text-gray-900 group-hover:text-red-700 transition-colors">
+                  Critical issue reported for Vehicle XYZ789
+                </p>
+                <p className="text-xs text-gray-500 mt-1">15 minutes ago</p>
               </div>
+              <ArrowRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="flex items-start space-x-4 p-4 rounded-lg hover:bg-gray-50 transition-colors group cursor-pointer border-l-4 border-blue-500">
+              <div className="w-3 h-3 bg-blue-500 rounded-full mt-2 shadow-lg shadow-blue-500/50"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium">New shift started for Driver John Doe</p>
-                <p className="text-xs text-gray-500">1 hour ago</p>
+                <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                  New shift started for Driver John Doe
+                </p>
+                <p className="text-xs text-gray-500 mt-1">1 hour ago</p>
               </div>
+              <ArrowRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </div>
         </CardContent>

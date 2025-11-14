@@ -24,38 +24,62 @@ class UserRegistrationView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     
     def create(self, request, *args, **kwargs):
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Log the incoming request data (without password)
+        request_data = request.data.copy()
+        if 'password' in request_data:
+            request_data['password'] = '***'
+        if 'password_confirm' in request_data:
+            request_data['password_confirm'] = '***'
+        logger.info(f"User registration request: {request_data}")
+        
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
+        if not serializer.is_valid():
+            logger.error(f"Validation errors: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create token for the new user
-        token, created = Token.objects.get_or_create(user=user)
-        
-        # Send welcome email
         try:
-            email_content = get_user_welcome_email_template({
-                'first_name': user.first_name,
-                'email': user.email,
-                'password': 'TempPassword123!',  # This should be tracked securely
-                'company_name': user.company.name if user.company else 'FleetIA'
-            })
+            user = serializer.save()
             
-            msg = EmailMessage(
-                subject='Welcome to FleetIA!',
-                body=email_content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[user.email],
-            )
-            msg.content_subtype = "html"
-            msg.send()
+            # Create token for the new user
+            token, created = Token.objects.get_or_create(user=user)
+            
+            # Send welcome email
+            try:
+                from .email_templates import get_user_welcome_email_template
+                from django.core.mail import EmailMessage
+                from django.conf import settings
+                
+                email_content = get_user_welcome_email_template({
+                    'first_name': user.first_name,
+                    'email': user.email,
+                    'password': 'TempPassword123!',  # This should be tracked securely
+                    'company_name': user.company.name if user.company else 'FleetIA'
+                })
+                
+                msg = EmailMessage(
+                    subject='Welcome to FleetIA!',
+                    body=email_content,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[user.email],
+                )
+                msg.content_subtype = "html"
+                msg.send()
+            except Exception as e:
+                logger.warning(f"Failed to send welcome email: {e}")
+            
+            return Response({
+                'user': UserProfileSerializer(user).data,
+                'token': token.key,
+                'message': 'User registered successfully'
+            }, status=status.HTTP_201_CREATED)
         except Exception as e:
-            print(f"Failed to send welcome email: {e}")
-        
-        return Response({
-            'user': UserProfileSerializer(user).data,
-            'token': token.key,
-            'message': 'User registered successfully'
-        }, status=status.HTTP_201_CREATED)
+            logger.error(f"Error creating user: {str(e)}")
+            return Response({
+                'detail': f'Error creating user: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])

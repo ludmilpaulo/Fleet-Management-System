@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
+import { API_CONFIG } from '@/config/api';
+import Cookies from 'js-cookie';
 
 interface Issue {
   id: number;
@@ -31,37 +33,49 @@ export default function IssuesPage() {
   }, []);
 
   const fetchIssues = async () => {
-    const mockData: Issue[] = [
-      {
-        id: 1,
-        vehicle: { reg_number: 'VH-003', make: 'Mercedes', model: 'Sprinter' },
-        reported_by: 'James Driver',
-        priority: 'HIGH',
-        status: 'OPEN',
-        description: 'Engine making unusual noise, needs immediate inspection',
-        reported_at: '2025-01-15',
-      },
-      {
-        id: 2,
-        vehicle: { reg_number: 'VH-005', make: 'Volvo', model: 'VNL' },
-        reported_by: 'Maria Garcia',
-        priority: 'MEDIUM',
-        status: 'IN_PROGRESS',
-        description: 'Brake pedal feels soft, scheduled for inspection',
-        reported_at: '2025-01-14',
-      },
-      {
-        id: 3,
-        vehicle: { reg_number: 'VH-001', make: 'Toyota', model: 'Camry' },
-        reported_by: 'David Chen',
-        priority: 'LOW',
-        status: 'RESOLVED',
-        description: 'Minor scratch on passenger door, repaired',
-        reported_at: '2025-01-10',
-      },
-    ];
-    setIssues(mockData);
-    setLoading(false);
+    try {
+      const token = Cookies.get('auth_token')
+      if (!token) {
+        console.error('No authentication token found')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ISSUES.LIST}`, {
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch issues')
+      }
+
+      const data = await response.json()
+      const issuesData = Array.isArray(data) ? data : (data.results || [])
+      
+      // Transform API data to match our interface
+      const transformedIssues: Issue[] = issuesData.map((issue: any) => ({
+        id: issue.id || 0,
+        vehicle: {
+          reg_number: issue.vehicle?.reg_number || 'N/A',
+          make: issue.vehicle?.make || 'Unknown',
+          model: issue.vehicle?.model || 'Unknown',
+        },
+        reported_by: issue.reported_by?.full_name || issue.reported_by?.username || 'Unknown',
+        priority: issue.priority || 'MEDIUM',
+        status: issue.status || 'OPEN',
+        description: issue.description || issue.title || 'No description',
+        reported_at: issue.created_at ? issue.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+      }))
+      
+      setIssues(transformedIssues)
+    } catch (error) {
+      console.error('Error fetching issues:', error)
+    } finally {
+      setLoading(false)
+    }
   };
 
   const filteredIssues = issues.filter(issue => {

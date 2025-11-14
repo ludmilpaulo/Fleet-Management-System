@@ -109,7 +109,14 @@ const vehiclesSlice = createSlice({
       })
       .addCase(fetchVehicles.fulfilled, (state, action) => {
         state.loading = false
-        state.vehicles = action.payload
+        // Handle both array and paginated responses
+        if (Array.isArray(action.payload)) {
+          state.vehicles = action.payload
+        } else if (action.payload?.results && Array.isArray(action.payload.results)) {
+          state.vehicles = action.payload.results
+        } else {
+          state.vehicles = []
+        }
       })
       .addCase(fetchVehicles.rejected, (state, action) => {
         state.loading = false

@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CalendarDays, Clock, MapPin, User, Car, Filter, Search } from 'lucide-react'
 import { format } from 'date-fns'
+import Cookies from 'js-cookie'
+import { API_CONFIG } from '@/config/api'
 
 interface Shift {
   id: string
@@ -46,41 +48,48 @@ export default function ShiftsPage() {
 
   const fetchShifts = async () => {
     try {
-      // Mock data for now - replace with actual API call
-      const mockShifts: Shift[] = [
-        {
-          id: '1',
-          vehicle: { reg_number: 'ABC123', make: 'Toyota', model: 'Camry' },
-          driver: { username: 'johndoe', full_name: 'John Doe' },
-          start_at: '2024-01-15T08:00:00Z',
-          end_at: '2024-01-15T17:00:00Z',
-          status: 'COMPLETED',
-          start_address: '123 Main St, City',
-          end_address: '456 Oak Ave, City',
-          notes: 'Regular shift completed successfully'
+      const token = Cookies.get('auth_token')
+      if (!token) {
+        console.error('No authentication token found')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SHIFTS.LIST}`, {
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
         },
-        {
-          id: '2',
-          vehicle: { reg_number: 'XYZ789', make: 'Honda', model: 'Civic' },
-          driver: { username: 'janedoe', full_name: 'Jane Doe' },
-          start_at: '2024-01-15T09:00:00Z',
-          status: 'ACTIVE',
-          start_address: '789 Pine St, City',
-          notes: 'Morning shift in progress'
-        },
-        {
-          id: '3',
-          vehicle: { reg_number: 'DEF456', make: 'Ford', model: 'Transit' },
-          driver: { username: 'bobsmith', full_name: 'Bob Smith' },
-          start_at: '2024-01-14T14:00:00Z',
-          end_at: '2024-01-14T22:00:00Z',
-          status: 'CANCELLED',
-          start_address: '321 Elm St, City',
-          notes: 'Shift cancelled due to vehicle maintenance'
-        }
-      ]
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch shifts')
+      }
+
+      const data = await response.json()
+      const shiftsData = Array.isArray(data) ? data : (data.results || [])
       
-      setShifts(mockShifts)
+      // Transform API data to match our interface
+      const transformedShifts: Shift[] = shiftsData.map((shift: any) => ({
+        id: shift.id?.toString() || '',
+        vehicle: {
+          reg_number: shift.vehicle?.reg_number || 'N/A',
+          make: shift.vehicle?.make || 'Unknown',
+          model: shift.vehicle?.model || 'Unknown',
+        },
+        driver: {
+          username: shift.driver?.username || 'unknown',
+          full_name: shift.driver?.full_name || shift.driver?.first_name + ' ' + shift.driver?.last_name || 'Unknown Driver',
+        },
+        start_at: shift.start_at || '',
+        end_at: shift.end_at || undefined,
+        status: shift.status || 'COMPLETED',
+        start_address: shift.start_address || 'Address not available',
+        end_address: shift.end_address || undefined,
+        notes: shift.notes || undefined,
+      }))
+      
+      setShifts(transformedShifts)
     } catch (error) {
       console.error('Error fetching shifts:', error)
     } finally {

@@ -27,22 +27,48 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         }
     
     def validate(self, attrs):
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError("Passwords don't match.")
+        if attrs.get('password') != attrs.get('password_confirm'):
+            raise serializers.ValidationError({
+                'password_confirm': "Passwords don't match."
+            })
         
         # Validate company exists and is active
         company_slug = attrs.get('company_slug')
+        if not company_slug:
+            raise serializers.ValidationError({
+                'company_slug': "Company is required."
+            })
+        
         try:
-            company = Company.objects.get(slug=company_slug, is_active=True)
+            # Case-insensitive lookup for company slug
+            company = Company.objects.get(slug__iexact=company_slug, is_active=True)
             attrs['company'] = company
         except Company.DoesNotExist:
-            raise serializers.ValidationError("Invalid company or company is not active.")
+            raise serializers.ValidationError({
+                'company_slug': f"Company with slug '{company_slug}' not found or is not active."
+            })
+        except Company.MultipleObjectsReturned:
+            # Shouldn't happen, but handle it
+            company = Company.objects.filter(slug__iexact=company_slug, is_active=True).first()
+            attrs['company'] = company
         
         return attrs
     
+    def validate_username(self, value):
+        """Validate username is unique"""
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("A user with this username already exists.")
+        return value
+    
+    def validate_email(self, value):
+        """Validate email is unique"""
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
+    
     def create(self, validated_data):
-        validated_data.pop('password_confirm')
-        validated_data.pop('company_slug')
+        validated_data.pop('password_confirm', None)
+        validated_data.pop('company_slug', None)
         password = validated_data.pop('password')
         user = User.objects.create_user(**validated_data)
         user.set_password(password)

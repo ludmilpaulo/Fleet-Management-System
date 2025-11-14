@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
+import { API_CONFIG } from '@/config/api';
+import Cookies from 'js-cookie';
 
 interface Inspection {
   id: number;
@@ -32,40 +34,50 @@ export default function InspectionsPage() {
   }, []);
 
   const fetchInspections = async () => {
-    const mockData: Inspection[] = [
-      {
-        id: 1,
-        vehicle: { reg_number: 'VH-001', make: 'Toyota', model: 'Camry' },
-        inspector: 'Lisa Inspector',
-        date: '2025-01-15',
-        status: 'PASSED',
-        items_checked: 25,
-        issues_found: 0,
-        next_inspection: '2025-04-15',
-      },
-      {
-        id: 2,
-        vehicle: { reg_number: 'VH-003', make: 'Mercedes', model: 'Sprinter' },
-        inspector: 'Robert Inspector',
-        date: '2025-01-14',
-        status: 'FAILED',
-        items_checked: 25,
-        issues_found: 3,
-        next_inspection: '2025-01-21',
-      },
-      {
-        id: 3,
-        vehicle: { reg_number: 'VH-002', make: 'Ford', model: 'Transit' },
-        inspector: 'Lisa Inspector',
-        date: '2025-01-10',
-        status: 'PASSED',
-        items_checked: 25,
-        issues_found: 1,
-        next_inspection: '2025-04-10',
-      },
-    ];
-    setInspections(mockData);
-    setLoading(false);
+    try {
+      const token = Cookies.get('auth_token')
+      if (!token) {
+        console.error('No authentication token found')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.INSPECTIONS.LIST}`, {
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch inspections')
+      }
+
+      const data = await response.json()
+      const inspectionsData = Array.isArray(data) ? data : (data.results || [])
+      
+      // Transform API data to match our interface
+      const transformedInspections: Inspection[] = inspectionsData.map((inspection: any) => ({
+        id: inspection.id || 0,
+        vehicle: {
+          reg_number: inspection.vehicle?.reg_number || inspection.shift?.vehicle?.reg_number || 'N/A',
+          make: inspection.vehicle?.make || inspection.shift?.vehicle?.make || 'Unknown',
+          model: inspection.vehicle?.model || inspection.shift?.vehicle?.model || 'Unknown',
+        },
+        inspector: inspection.inspector?.full_name || inspection.inspector?.username || 'Unknown Inspector',
+        date: inspection.created_at ? inspection.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+        status: inspection.status === 'PASS' ? 'PASSED' : (inspection.status === 'FAIL' ? 'FAILED' : 'PENDING'),
+        items_checked: inspection.items_checked || 0,
+        issues_found: inspection.issues_found || 0,
+        next_inspection: inspection.next_inspection || '',
+      }))
+      
+      setInspections(transformedInspections)
+    } catch (error) {
+      console.error('Error fetching inspections:', error)
+    } finally {
+      setLoading(false)
+    }
   };
 
   const filteredInspections = inspections.filter(insp => {

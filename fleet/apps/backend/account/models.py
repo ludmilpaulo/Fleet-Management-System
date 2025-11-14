@@ -77,6 +77,12 @@ class Company(models.Model):
         null=True,
         help_text="Payment method"
     )
+    payment_customer_id = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Customer ID from payment provider (Stripe, Payfast, etc.)"
+    )
     
     # Status
     is_active = models.BooleanField(default=True, help_text="Whether the company is active")

@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/tickets/', include('tickets.urls')),
     path('api/telemetry/', include('telemetry.urls')),
     path('api/platform-admin/', include('platform_admin.urls')),
+    path('api/billing/', include('billing.urls')),
     # path('api/schema/', include('drf_spectacular.urls')),
 ]
 
