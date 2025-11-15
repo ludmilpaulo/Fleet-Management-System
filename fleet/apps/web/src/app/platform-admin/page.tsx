@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,9 +26,11 @@ import {
   Play,
   Pause,
   Crown,
-  Star
+  Star,
+  AlertCircle
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { apiClient, extractResults } from '@/lib/apiClient'
 
 interface Company {
   id: string
@@ -73,6 +75,7 @@ export default function PlatformAdminPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [planFilter, setPlanFilter] = useState('all')
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -80,112 +83,30 @@ export default function PlatformAdminPage() {
 
   const fetchData = async () => {
     try {
-      // Mock data for now - replace with actual API calls
-      const mockCompanies: Company[] = [
-        {
-          id: '1',
-          name: 'FleetCorp Solutions',
-          email: 'admin@fleetcorp.com',
-          subscription_plan: 'professional',
-          subscription_status: 'active',
-          subscription_display: 'Professional Plan',
-          trial_started_at: '2024-01-01T00:00:00Z',
-          trial_ends_at: '2024-01-15T00:00:00Z',
-          days_remaining_in_trial: 0,
-          is_active: true,
-          is_trial_active: false,
-          is_payment_overdue: false,
-          can_access_platform: true,
-          current_user_count: 15,
-          current_vehicle_count: 45,
-          created_at: '2024-01-01T00:00:00Z'
-        },
-        {
-          id: '2',
-          name: 'Transport Masters',
-          email: 'info@transportmasters.com',
-          subscription_plan: 'trial',
-          subscription_status: 'trial',
-          subscription_display: 'Trial (8 days left)',
-          trial_started_at: '2024-01-08T00:00:00Z',
-          trial_ends_at: '2024-01-22T00:00:00Z',
-          days_remaining_in_trial: 8,
-          is_active: true,
-          is_trial_active: true,
-          is_payment_overdue: false,
-          can_access_platform: true,
-          current_user_count: 3,
-          current_vehicle_count: 8,
-          created_at: '2024-01-08T00:00:00Z'
-        },
-        {
-          id: '3',
-          name: 'Logistics Pro',
-          email: 'contact@logisticspro.com',
-          subscription_plan: 'trial',
-          subscription_status: 'expired',
-          subscription_display: 'Trial (Expired)',
-          trial_started_at: '2023-12-15T00:00:00Z',
-          trial_ends_at: '2023-12-29T00:00:00Z',
-          days_remaining_in_trial: 0,
-          is_active: false,
-          is_trial_active: false,
-          is_payment_overdue: true,
-          can_access_platform: false,
-          current_user_count: 2,
-          current_vehicle_count: 5,
-          created_at: '2023-12-15T00:00:00Z'
-        }
-      ]
+      const [companiesRes, statsRes] = await Promise.all([
+        apiClient('/platform-admin/companies/?page_size=100'),
+        apiClient('/platform-admin/stats/')
+      ])
 
-      const mockStats: PlatformStats = {
-        total_companies: 3,
-        active_companies: 2,
-        trial_companies: 1,
-        expired_companies: 1,
-        suspended_companies: 0,
-        total_users: 20,
-        total_vehicles: 58,
-        total_shifts: 156,
-        total_inspections: 89,
-        monthly_revenue: 2500.00,
-        yearly_revenue: 30000.00,
-        companies_by_plan: {
-          'trial': 1,
-          'basic': 0,
-          'professional': 1,
-          'enterprise': 0
-        },
-        companies_by_status: {
-          'active': 1,
-          'trial': 1,
-          'expired': 1,
-          'suspended': 0
-        },
-        revenue_by_month: {
-          '2024-01': 2500,
-          '2023-12': 2200,
-          '2023-11': 2100
-        }
-      }
-
-      setCompanies(mockCompanies)
-      setStats(mockStats)
-    } catch (error) {
+      setCompanies(extractResults(companiesRes))
+      setStats(statsRes)
+      setError(null)
+    } catch (error: any) {
       console.error('Error fetching data:', error)
+      setError(error?.message || 'Unable to load platform data. Ensure you have platform admin access.')
     } finally {
       setLoading(false)
     }
   }
 
-  const filteredCompanies = companies.filter(company => {
+  const filteredCompanies = useMemo(() => companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          company.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || company.subscription_status === statusFilter
     const matchesPlan = planFilter === 'all' || company.subscription_plan === planFilter
     
     return matchesSearch && matchesStatus && matchesPlan
-  })
+  }), [companies, searchTerm, statusFilter, planFilter])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -223,17 +144,17 @@ export default function PlatformAdminPage() {
           <h1 className="text-3xl font-bold">Platform Administration</h1>
         </div>
         <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-              </CardContent>
-            </Card>
-          ))}
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            </CardContent>
+          </Card>
+        ))}
         </div>
       </div>
     )
@@ -258,6 +179,13 @@ export default function PlatformAdminPage() {
           </Button>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      )}
 
       {/* Stats Cards */}
       {stats && (

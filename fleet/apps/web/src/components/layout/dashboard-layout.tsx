@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -28,6 +28,16 @@ import { logoutUser, initializeAuth } from '@/store/slices/authSlice';
 import { setSidebarOpen, addNotification } from '@/store/slices/uiSlice';
 import { NotificationContainer } from '@/components/ui/notification';
 import TrialWarning from '@/components/trial-warning';
+import { apiClient } from '@/lib/apiClient';
+import { API_CONFIG } from '@/config/api';
+
+interface SubscriptionSummary {
+  status: string;
+  billing_cycle: string;
+  current_period_end?: string;
+  trial_end?: string;
+  days_until_period_end?: number;
+}
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -40,6 +50,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const { sidebarOpen, unreadNotifications } = useAppSelector((state) => state.ui);
+  const companyMeta = user?.company as { subscription_status?: string; trial_ends_at?: string } | undefined;
+  const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
 
   useEffect(() => {
     // Initialize auth state from localStorage
@@ -51,6 +65,44 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       router.push('/auth/signin');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSubscription = async () => {
+      if (!user) {
+        setSubscription(null);
+        return;
+      }
+
+      setSubscriptionLoading(true);
+      try {
+        const data = await apiClient<SubscriptionSummary | null>(API_CONFIG.ENDPOINTS.BILLING.SUBSCRIPTION_CURRENT);
+        if (!isMounted) return;
+        setSubscription(data);
+        setSubscriptionError(null);
+      } catch (err: any) {
+        if (!isMounted) return;
+        if (err?.status === 404) {
+          setSubscription(null);
+          setSubscriptionError(null);
+        } else {
+          console.error('Subscription fetch error:', err);
+          setSubscriptionError(err?.message || 'Unable to load subscription details.');
+        }
+      } finally {
+        if (isMounted) {
+          setSubscriptionLoading(false);
+        }
+      }
+    };
+
+    loadSubscription();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -308,12 +360,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Page content */}
         <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8">
           {/* Trial Warning */}
-          {user && (
-            <TrialWarning
-              daysRemaining={14} // Mock data - replace with actual subscription data
-              subscriptionStatus="trial" // Mock data - replace with actual subscription status
-              onUpgrade={() => router.push('/dashboard/subscription')}
-            />
+          {user && !subscriptionLoading && (
+            <>
+              {(subscription?.status === 'trial' || companyMeta?.subscription_status === 'trial') && (
+                <TrialWarning
+                  daysRemaining={
+                    subscription?.days_until_period_end ??
+                    calculateCompanyTrialDays(companyMeta?.trial_ends_at)
+                  }
+                  subscriptionStatus={subscription?.status || companyMeta?.subscription_status || 'trial'}
+                  onUpgrade={() => router.push('/dashboard/subscription')}
+                />
+              )}
+              {!subscription && subscriptionError && (
+                <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+                  {subscriptionError}
+                </div>
+              )}
+            </>
           )}
           {children}
         </main>
@@ -323,4 +387,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <NotificationContainer />
     </div>
   );
+}
+
+function calculateCompanyTrialDays(trialEndsAt?: string | null) {
+  if (!trialEndsAt) return 0;
+  const diff = new Date(trialEndsAt).getTime() - Date.now();
+  return diff > 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24)) : 0;
 }

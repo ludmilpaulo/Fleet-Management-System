@@ -77,11 +77,11 @@ export default function VehiclesPage() {
         vin: formData.vin || undefined,
         year: formData.year ? parseInt(formData.year) : undefined,
         color: formData.color || undefined,
-        status: formData.status,
+        status: formData.status as Vehicle['status'],
         mileage: parseInt(formData.mileage) || 0,
-        fuel_type: formData.fuel_type,
+        fuel_type: formData.fuel_type as Vehicle['fuel_type'],
         engine_size: formData.engine_size || undefined,
-        transmission: formData.transmission,
+        transmission: formData.transmission as Vehicle['transmission'],
       }
       
       await dispatch(createVehicle(vehicleData)).unwrap()

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Users, Search, Filter, Plus, Mail, Phone, Shield, Edit, Trash2, Clock, Truck } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Users, Search, Filter, Plus, Mail, Phone, Shield, Edit, Trash2, Clock, Truck, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
+import { apiClient, extractResults } from '@/lib/apiClient';
 
 interface UserData {
   id: number;
@@ -17,119 +18,53 @@ interface UserData {
   first_name: string;
   last_name: string;
   role: string;
-  phone?: string;
+  phone_number?: string;
   is_active: boolean;
   last_login?: string;
 }
 
+const USERS_ENDPOINT = '/account/users/';
+
 export default function StaffUsersPage() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  useEffect(() => {
-    filterUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [users, searchTerm, roleFilter]);
-
   const fetchUsers = async () => {
     try {
-      // Mock data - replace with real API call
-      const mockUsers: UserData[] = [
-        {
-          id: 1,
-          username: 'admin1',
-          email: 'admin@fleetcorp.com',
-          first_name: 'John',
-          last_name: 'Admin',
-          role: 'admin',
-          phone: '+1 555-0101',
-          is_active: true,
-          last_login: '2 hours ago',
-        },
-        {
-          id: 2,
-          username: 'staff1',
-          email: 'staff1@fleetcorp.com',
-          first_name: 'Sarah',
-          last_name: 'Staff',
-          role: 'staff',
-          phone: '+1 555-0102',
-          is_active: true,
-          last_login: '5 minutes ago',
-        },
-        {
-          id: 3,
-          username: 'driver1',
-          email: 'driver1@fleetcorp.com',
-          first_name: 'James',
-          last_name: 'Driver',
-          role: 'driver',
-          phone: '+1 555-0103',
-          is_active: true,
-          last_login: '1 hour ago',
-        },
-        {
-          id: 4,
-          username: 'driver2',
-          email: 'driver2@fleetcorp.com',
-          first_name: 'Maria',
-          last_name: 'Garcia',
-          role: 'driver',
-          phone: '+1 555-0104',
-          is_active: true,
-          last_login: '30 minutes ago',
-        },
-        {
-          id: 5,
-          username: 'inspector1',
-          email: 'inspector1@fleetcorp.com',
-          first_name: 'Lisa',
-          last_name: 'Inspector',
-          role: 'inspector',
-          phone: '+1 555-0105',
-          is_active: true,
-          last_login: '15 minutes ago',
-        },
-        {
-          id: 6,
-          username: 'driver3',
-          email: 'driver3@fleetcorp.com',
-          first_name: 'David',
-          last_name: 'Chen',
-          role: 'driver',
-          phone: '+1 555-0106',
-          is_active: false,
-          last_login: '2 days ago',
-        },
-      ];
-      setUsers(mockUsers);
-    } catch (error) {
-      console.error('Error fetching users:', error);
+      setLoading(true);
+      const data = await apiClient(`${USERS_ENDPOINT}?page_size=100`);
+      const results = extractResults<UserData>(data);
+      setUsers(results);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching users:', err);
+      setError(err?.message || 'Unable to load users right now.');
     } finally {
       setLoading(false);
     }
   };
 
-  const filterUsers = () => {
-    let filtered = users.filter(user =>
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = useMemo(() => {
+    let filtered = users.filter((user) =>
+      [user.username, user.email, `${user.first_name} ${user.last_name}`]
+        .join(' ')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
     );
 
     if (roleFilter !== 'all') {
-      filtered = filtered.filter(user => user.role === roleFilter);
+      filtered = filtered.filter((user) => user.role === roleFilter);
     }
 
-    setFilteredUsers(filtered);
-  };
+    return filtered;
+  }, [users, searchTerm, roleFilter]);
 
   const getRoleBadge = (role: string) => {
     const badges = {
@@ -151,10 +86,10 @@ export default function StaffUsersPage() {
     return names[role as keyof typeof names] || role;
   };
 
-  const activeUsers = users.filter(u => u.is_active).length;
-  const adminCount = users.filter(u => u.role === 'admin').length;
-  const staffCount = users.filter(u => u.role === 'staff').length;
-  const driverCount = users.filter(u => u.role === 'driver').length;
+  const activeUsers = users.filter((u) => u.is_active).length;
+  const adminCount = users.filter((u) => u.role === 'admin').length;
+  const staffCount = users.filter((u) => u.role === 'staff').length;
+  const driverCount = users.filter((u) => u.role === 'driver').length;
 
   return (
     <DashboardLayout>
@@ -251,6 +186,15 @@ export default function StaffUsersPage() {
           </CardContent>
         </Card>
 
+        {error && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <p>{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Users List */}
         <div className="grid grid-cols-1 gap-4">
           {loading ? (
@@ -287,16 +231,16 @@ export default function StaffUsersPage() {
                             <Mail className="h-3 w-3 mr-1" />
                             {user.email}
                           </span>
-                          {user.phone && (
+                          {user.phone_number && (
                             <span className="flex items-center">
                               <Phone className="h-3 w-3 mr-1" />
-                              {user.phone}
+                              {user.phone_number}
                             </span>
                           )}
                           {user.last_login && (
                             <span className="flex items-center">
                               <Clock className="h-3 w-3 mr-1" />
-                              Last login: {user.last_login}
+                              Last login: {new Date(user.last_login).toLocaleString()}
                             </span>
                           )}
                         </div>

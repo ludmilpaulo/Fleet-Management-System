@@ -53,34 +53,4 @@ const adminMenuItems = [
   },
 ];
 
-const dashboardCardItems = [
-  {
-    icon: Truck,
-    title: "Total Vehicles",
-    value: 10,
-    description: "5 in service",
-    iconColor: "text-green-500",
-  },
-  {
-    icon: ClipboardCheck,
-    title: "Active Shifts",
-    value: 5,
-    description: "3 drivers",
-    iconColor: "text-blue-500",
-  },
-  {
-    icon: TriangleAlert,
-    title: "Pending Issues",
-    value: 2,
-    description: "1 critical",
-    iconColor: "text-red-500",
-  },
-  {
-    icon: Wrench,
-    title: "Open Tickets",
-    value: 8,
-    description: "4 high priority",
-    iconColor: "text-yellow-500",
-  },
-];
-export { adminMenuItems, dashboardCardItems };
+export { adminMenuItems };

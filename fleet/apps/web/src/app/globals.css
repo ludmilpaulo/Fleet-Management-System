@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: oklch(1 0 0);
+  --color-background: oklch(0.97 0 0);
   --color-foreground: oklch(0.3174 0.0149 269.22);
   --color-card: oklch(1 0 0);
   --color-card-foreground: oklch(0.3174 0.0149 269.22);
@@ -19,10 +19,20 @@
   --color-input: oklch(0.922 0 0);
   --color-ring: oklch(0.708 0 0);
   --radius: 0.5rem;
-  
+
+  /* Extended design tokens */
+  --gradient-brand: linear-gradient(120deg, #2563eb 0%, #7c3aed 50%, #f472b6 100%);
+  --gradient-surface: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.35), transparent 55%),
+    radial-gradient(circle at 80% 0%, rgba(129, 140, 248, 0.3), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.25), transparent 50%);
+  --surface-base: #030712;
+  --surface-elevated: rgba(15, 23, 42, 0.6);
+  --surface-card: rgba(15, 23, 42, 0.75);
+
   /* Custom animations */
   --animate-blob: blob 7s infinite;
   --animate-gradient: gradient 8s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
 }
 
 html {
@@ -31,11 +41,34 @@ html {
 }
 
 body {
-  background-color: var(--color-background);
+  position: relative;
+  background-color: var(--surface-base);
+  background-image: var(--gradient-surface);
   color: var(--color-foreground);
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
+  font-feature-settings: "ss01" 1, "cv05" 1;
+  letter-spacing: 0.015em;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.05)' stroke-width='0.5'%3E%3Cpath d='M0 80h160M80 0v160'/%3E%3C/g%3E%3C/svg%3E");
+  mix-blend-mode: screen;
+  opacity: 0.6;
+  z-index: -1;
+}
+
+.noise-layer {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+  pointer-events: none;
+  mix-blend-mode: soft-light;
 }
 
 /* Custom utility classes */
@@ -101,6 +134,78 @@ body {
   transform: translateY(-0.25rem);
 }
 
+.card-premium {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 25px 45px -15px rgba(15, 23, 42, 0.8);
+}
+
+.grid-overlay {
+  position: relative;
+  isolation: isolate;
+}
+
+.grid-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: linear-gradient(transparent, rgba(0, 0, 0, 0.8), transparent);
+  opacity: 0.6;
+  z-index: -1;
+}
+
+.glow-border {
+  position: relative;
+}
+
+.glow-border::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(120deg, rgba(59, 130, 246, 0.7), rgba(236, 72, 153, 0.7));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.soft-shadow {
+  box-shadow:
+    0 30px 60px -30px rgba(59, 130, 246, 0.5),
+    0 20px 40px -25px rgba(15, 23, 42, 0.9);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.pill {
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 0.35rem 0.95rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.section-shell {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  background: rgba(2, 6, 23, 0.65);
+  box-shadow: 0 30px 60px -40px rgba(15, 23, 42, 1);
+}
+
 .card-gradient {
   background: linear-gradient(to bottom right, #ffffff, #f9fafb);
   border: 1px solid #f3f4f6;
@@ -122,6 +227,10 @@ body {
 
 .scale-in {
   animation: scaleIn 0.3s ease-out;
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
 }
 
 .animation-delay-2000 {
@@ -205,6 +314,18 @@ body {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+  100% {
+    transform: translateY(0px);
   }
 }
 

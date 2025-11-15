@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,7 +22,9 @@ import {
   Crown,
   Zap,
   ArrowUpRight,
-  Building2
+  Building2,
+  Loader2,
+  AlertCircle
 } from 'lucide-react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import HelpButton from '@/components/ui/help-button'
@@ -31,6 +33,7 @@ import { fetchUserProfile } from '@/store/slices/authSlice'
 import { analytics } from '@/lib/mixpanel'
 import { useRouter } from 'next/navigation'
 import { API_CONFIG } from '@/config/api'
+import { apiClient, extractResults } from '@/lib/apiClient'
 
 interface DashboardStats {
   company_name: string
@@ -48,64 +51,75 @@ interface DashboardStats {
   pending_issues: number
 }
 
+interface ActivityItem {
+  id: string
+  title: string
+  description: string
+  timestamp: string
+  indicator: 'success' | 'warning' | 'info'
+}
+
 export default function AdminDashboard() {
   const dispatch = useAppDispatch()
   const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([])
   
   const { user, isLoading: authLoading } = useAppSelector((state) => state.auth)
 
-  useEffect(() => {
-    if (user) {
-      fetchStats()
-      // Track admin dashboard view
-      analytics.trackDashboardView('admin', user.id.toString(), user.company?.name || 'Unknown')
-    } else {
-      dispatch(fetchUserProfile())
-    }
-  }, [user, dispatch])
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
-      // Get auth token from localStorage
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        console.error('No auth token found')
-        setLoading(false)
-        return
-      }
-
-      // Fetch real dashboard data from API
-      const [dashboardRes, userStatsRes] = await Promise.all([
-        fetch(`${API_CONFIG.BASE_URL}/fleet/stats/dashboard/`, {
-          headers: {
-            'Authorization': `Token ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }),
-        fetch(`${API_CONFIG.BASE_URL}/account/stats/`, {
-          headers: {
-            'Authorization': `Token ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
+      const [
+        dashboardData,
+        userStatsData,
+        subscriptionData,
+        paymentsData,
+        userListData,
+        issuesData,
+        ticketsData,
+        inspectionsData,
+        shiftsData,
+      ] = await Promise.all([
+        apiClient(API_CONFIG.ENDPOINTS.FLEET_STATS.DASHBOARD),
+        apiClient('/account/stats/'),
+        apiClient(API_CONFIG.ENDPOINTS.BILLING.SUBSCRIPTION_CURRENT).catch(() => null),
+        apiClient(API_CONFIG.ENDPOINTS.BILLING.PAYMENTS).catch(() => null),
+        apiClient('/account/users/?page_size=5'),
+        apiClient(`${API_CONFIG.ENDPOINTS.ISSUES.LIST}?page=1`),
+        apiClient(`${API_CONFIG.ENDPOINTS.TICKETS.LIST}?page=1`),
+        apiClient(`${API_CONFIG.ENDPOINTS.INSPECTIONS.LIST}?page=1`),
+        apiClient(`${API_CONFIG.ENDPOINTS.SHIFTS.LIST}?page=1`),
       ])
 
-      const dashboardData = dashboardRes.ok ? await dashboardRes.json() : {}
-      const userStatsData = userStatsRes.ok ? await userStatsRes.json() : {}
+      const payments = extractResults<any>(paymentsData).filter((payment) => {
+        if (!payment?.paid_at) return false
+        const paidDate = new Date(payment.paid_at).getTime()
+        const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+        return paidDate >= thirtyDaysAgo && (payment.status || '').toLowerCase() === 'paid'
+      })
 
-      // Combine and format the data
+      const monthlyRevenue = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+      const trialDaysFromCompany = user?.company?.trial_ends_at
+        ? calculateCompanyTrialDays(user.company.trial_ends_at)
+        : 0
+
+      const companySubscriptionStatus =
+        subscriptionData?.status ||
+        ((user?.company as { subscription_status?: string } | undefined)?.subscription_status) ||
+        'unknown'
+
       const combinedStats: DashboardStats = {
-        company_name: userStatsData.company_name || 'FleetCorp Solutions',
+        company_name: userStatsData.company_name || user?.company?.name || 'Your Company',
         total_users: userStatsData.total_users || 0,
         active_users: userStatsData.active_users || 0,
         inactive_users: userStatsData.inactive_users || 0,
         users_by_role: userStatsData.users_by_role || {},
         recent_registrations: userStatsData.recent_registrations || 0,
-        subscription_status: 'professional', // Default for now
-        trial_days_remaining: 14, // Default trial period
-        monthly_revenue: 2500.00, // Default value
+        subscription_status: companySubscriptionStatus,
+        trial_days_remaining: subscriptionData?.days_until_period_end ?? trialDaysFromCompany,
+        monthly_revenue: monthlyRevenue,
         total_vehicles: dashboardData.total_vehicles || 0,
         active_shifts: dashboardData.active_shifts || 0,
         completed_inspections: dashboardData.completed_inspections || 0,
@@ -113,34 +127,24 @@ export default function AdminDashboard() {
       }
       
       setStats(combinedStats)
+      setRecentActivity(buildRecentActivity(userListData, issuesData, ticketsData, inspectionsData, shiftsData))
+      setError(null)
     } catch (error) {
       console.error('Error fetching stats:', error)
-      // Fallback to mock data if API fails
-      const mockStats: DashboardStats = {
-        company_name: 'FleetCorp Solutions',
-        total_users: 8,
-        active_users: 8,
-        inactive_users: 0,
-        users_by_role: {
-          'Admin': 2,
-          'Staff': 2,
-          'Driver': 3,
-          'Inspector': 1
-        },
-        recent_registrations: 8,
-        subscription_status: 'professional',
-        trial_days_remaining: 14,
-        monthly_revenue: 2500.00,
-        total_vehicles: 11,
-        active_shifts: 3,
-        completed_inspections: 25,
-        pending_issues: 2
-      }
-      setStats(mockStats)
+      setError('Unable to load dashboard data. Please try again later.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user) {
+      fetchStats()
+      analytics.trackDashboardView('admin', user.id.toString(), user.company?.name || 'Unknown')
+    } else {
+      dispatch(fetchUserProfile())
+    }
+  }, [user, dispatch, fetchStats])
 
   const getSubscriptionBadge = (status: string) => {
     switch (status) {
@@ -268,6 +272,15 @@ export default function AdminDashboard() {
         )}
 
         {/* Key Metrics */}
+        {error && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <p>{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {stats ? (
           <div className="grid gap-4 md:grid-cols-4 fade-in">
             <Card className="card-hover border-t-4 border-t-blue-500">
@@ -542,26 +555,31 @@ export default function AdminDashboard() {
             <CardDescription>Latest system events and user actions</CardDescription>
           </CardHeader>
           <CardContent>
+            {loading && (
+              <div className="flex items-center gap-2 text-gray-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading activity...
+              </div>
+            )}
+            {!loading && recentActivity.length === 0 && (
+              <p className="text-sm text-gray-500">No activity available yet.</p>
+            )}
             <div className="space-y-4">
-              {[
-                { action: 'New user registered', user: 'John Doe', time: '2 minutes ago', type: 'success' },
-                { action: 'Vehicle inspection completed', user: 'Jane Smith', time: '15 minutes ago', type: 'info' },
-                { action: 'Shift started', user: 'Mike Johnson', time: '1 hour ago', type: 'info' },
-                { action: 'Issue reported', user: 'Sarah Wilson', time: '2 hours ago', type: 'warning' },
-                { action: 'Payment received', user: 'System', time: '3 hours ago', type: 'success' },
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {recentActivity.map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className={`w-2 h-2 rounded-full ${
-                      item.type === 'success' ? 'bg-green-500' :
-                      item.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                      item.indicator === 'success' ? 'bg-green-500' :
+                      item.indicator === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
                     }`}></div>
                     <div>
-                      <p className="font-medium text-sm">{item.action}</p>
-                      <p className="text-xs text-gray-600">by {item.user}</p>
+                      <p className="font-medium text-sm">{item.title}</p>
+                      <p className="text-xs text-gray-600">{item.description}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500">{item.time}</span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(item.timestamp).toLocaleString()}
+                  </span>
                 </div>
               ))}
             </div>
@@ -570,4 +588,84 @@ export default function AdminDashboard() {
       </div>
     </DashboardLayout>
   )
+}
+
+function calculateCompanyTrialDays(trialEndsAt?: string) {
+  if (!trialEndsAt) return 0
+  const diff = new Date(trialEndsAt).getTime() - Date.now()
+  return diff > 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24)) : 0
+}
+
+function buildRecentActivity(
+  usersPayload: any,
+  issuesPayload: any,
+  ticketsPayload: any,
+  inspectionsPayload: any,
+  shiftsPayload: any
+): ActivityItem[] {
+  const items: ActivityItem[] = []
+
+  const users = extractResults<any>(usersPayload)
+  users.forEach((u) => {
+    if (u?.date_joined) {
+      items.push({
+        id: `user-${u.id}`,
+        title: 'New user registered',
+        description: `${u.full_name || `${u.first_name} ${u.last_name}` || u.username}`,
+        timestamp: u.date_joined,
+        indicator: 'success',
+      })
+    }
+  })
+
+  const issues = extractResults<any>(issuesPayload)
+  issues.forEach((issue) => {
+    items.push({
+      id: `issue-${issue.id}`,
+      title: 'Issue reported',
+      description: issue.title || 'New issue logged',
+      timestamp: issue.reported_at || issue.created_at,
+      indicator: 'warning',
+    })
+  })
+
+  const tickets = extractResults<any>(ticketsPayload)
+  tickets.forEach((ticket) => {
+    items.push({
+      id: `ticket-${ticket.id}`,
+      title: `Ticket ${ticket.status}`,
+      description: ticket.title || 'Ticket updated',
+      timestamp: ticket.updated_at || ticket.created_at,
+      indicator: ticket.status === 'COMPLETED' ? 'success' : 'info',
+    })
+  })
+
+  const inspections = extractResults<any>(inspectionsPayload)
+  inspections.forEach((inspection) => {
+    items.push({
+      id: `inspection-${inspection.id}`,
+      title: 'Inspection recorded',
+      description: inspection.vehicle_reg
+        ? `${inspection.vehicle_reg} ${inspection.vehicle_make_model || ''}`
+        : 'Vehicle inspection update',
+      timestamp: inspection.started_at || inspection.updated_at || new Date().toISOString(),
+      indicator: 'info',
+    })
+  })
+
+  const shifts = extractResults<any>(shiftsPayload)
+  shifts.forEach((shift) => {
+    items.push({
+      id: `shift-${shift.id}`,
+      title: shift.status === 'COMPLETED' ? 'Shift completed' : 'Shift started',
+      description: shift.vehicle_reg ? `Vehicle ${shift.vehicle_reg}` : 'Shift activity logged',
+      timestamp: shift.updated_at || shift.start_at,
+      indicator: 'info',
+    })
+  })
+
+  return items
+    .filter((activity) => !!activity.timestamp)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 8)
 }

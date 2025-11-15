@@ -5,34 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { User, Mail, Phone, Building, MapPin, Calendar, Shield, Save, Edit } from 'lucide-react'
+import { User, Mail, Phone, Building, Calendar, Shield, Save, Edit } from 'lucide-react'
 import { format } from 'date-fns'
-
-interface UserProfile {
-  id: string
-  username: string
-  email: string
-  first_name: string
-  last_name: string
-  full_name: string
-  role: 'admin' | 'driver' | 'inspector' | 'staff' | 'viewer'
-  company: {
-    id: string
-    name: string
-    slug: string
-  }
-  phone?: string
-  address?: string
-  date_joined: string
-  last_login?: string
-  is_active: boolean
-}
+import type { User as FleetUser } from '@/lib/auth'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { fetchUserProfile, updateUserProfile } from '@/store/slices/authSlice'
+import { addNotification } from '@/store/slices/uiSlice'
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const dispatch = useAppDispatch()
+  const { user, isLoading: authLoading } = useAppSelector((state) => state.auth)
+
+  const [profile, setProfile] = useState<FleetUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -40,69 +26,91 @@ export default function ProfilePage() {
     first_name: '',
     last_name: '',
     email: '',
-    phone: '',
-    address: '',
+    phone_number: '',
   })
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchProfile()
-  }, [])
+    let isMounted = true
 
-  const fetchProfile = async () => {
-    try {
-      // Mock data for now - replace with actual API call
-      const mockProfile: UserProfile = {
-        id: '1',
-        username: 'johndoe',
-        email: 'john.doe@company.com',
-        first_name: 'John',
-        last_name: 'Doe',
-        full_name: 'John Doe',
-        role: 'driver',
-        company: {
-          id: '1',
-          name: 'Demo Company',
-          slug: 'demo-company'
-        },
-        phone: '+1 (555) 123-4567',
-        address: '123 Main Street, City, State 12345',
-        date_joined: '2024-01-01T00:00:00Z',
-        last_login: '2024-01-15T08:30:00Z',
-        is_active: true
+    const loadProfile = async () => {
+      if (user) {
+        if (!isMounted) return
+        setProfile(user)
+        setFormData({
+          first_name: user.first_name || '',
+          last_name: user.last_name || '',
+          email: user.email || '',
+          phone_number: user.phone_number || '',
+        })
+        setLoading(false)
+        return
       }
-      
-      setProfile(mockProfile)
-      setFormData({
-        first_name: mockProfile.first_name,
-        last_name: mockProfile.last_name,
-        email: mockProfile.email,
-        phone: mockProfile.phone || '',
-        address: mockProfile.address || '',
-      })
-    } catch (error) {
-      console.error('Error fetching profile:', error)
-    } finally {
-      setLoading(false)
+
+      try {
+        setLoading(true)
+        const fetched = await dispatch(fetchUserProfile()).unwrap()
+        if (!isMounted) return
+        setProfile(fetched)
+        setFormData({
+          first_name: fetched.first_name || '',
+          last_name: fetched.last_name || '',
+          email: fetched.email || '',
+          phone_number: fetched.phone_number || '',
+        })
+        setError(null)
+      } catch (err: any) {
+        if (!isMounted) return
+        console.error('Error fetching profile:', err)
+        setError(err?.message || 'Unable to load profile information')
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
     }
-  }
+
+    if (!authLoading) {
+      loadProfile()
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [user, authLoading, dispatch])
 
   const handleSave = async () => {
+    if (!profile) return
     setSaving(true)
     try {
-      // Mock save - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      if (profile) {
-        setProfile({
-          ...profile,
-          ...formData,
-          full_name: `${formData.first_name} ${formData.last_name}`,
-        })
+      const payload = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone_number: formData.phone_number,
       }
-      
+
+      const updatedUser = await dispatch(updateUserProfile(payload)).unwrap()
+      setProfile(updatedUser)
+      setFormData({
+        first_name: updatedUser.first_name || '',
+        last_name: updatedUser.last_name || '',
+        email: updatedUser.email || '',
+        phone_number: updatedUser.phone_number || '',
+      })
       setEditing(false)
-    } catch (error) {
-      console.error('Error saving profile:', error)
+      dispatch(addNotification({
+        type: 'success',
+        title: 'Profile updated',
+        message: 'Your profile changes have been saved',
+      }))
+    } catch (err: any) {
+      console.error('Error saving profile:', err)
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Update failed',
+        message: err?.message || 'Unable to update profile right now',
+      }))
     } finally {
       setSaving(false)
     }
@@ -111,11 +119,10 @@ export default function ProfilePage() {
   const handleCancel = () => {
     if (profile) {
       setFormData({
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        email: profile.email,
-        phone: profile.phone || '',
-        address: profile.address || '',
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        email: profile.email || '',
+        phone_number: profile.phone_number || '',
       })
     }
     setEditing(false)
@@ -181,7 +188,9 @@ export default function ProfilePage() {
           <CardContent className="flex flex-col items-center justify-center py-8">
             <User className="w-12 h-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Profile not found</h3>
-            <p className="text-gray-500">Unable to load your profile information.</p>
+            <p className="text-gray-500">
+              {error || 'Unable to load your profile information.'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -272,25 +281,10 @@ export default function ProfilePage() {
                 <Input
                   id="phone"
                   type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  value={formData.phone_number}
+                  onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
                   disabled={!editing}
                   className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  disabled={!editing}
-                  className="pl-10"
-                  rows={3}
                 />
               </div>
             </div>

@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Truck, Search, Filter, Plus, MapPin, Gauge, Fuel, Wrench, Calendar } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Truck, Search, Filter, Plus, Gauge, Wrench, Calendar, Loader2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
+import { API_CONFIG } from '@/config/api';
+import { apiClient, extractResults } from '@/lib/apiClient';
 
 interface VehicleData {
   id: number;
@@ -19,117 +20,65 @@ interface VehicleData {
   year: number;
   status: string;
   mileage: number;
-  fuel_level: number;
-  last_maintenance: string;
-  next_maintenance_km: number;
-  assigned_driver?: string;
+  updated_at?: string;
+  current_shift_driver?: string;
+  current_shift_started_at?: string;
 }
 
 export default function StaffVehiclesPage() {
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [filteredVehicles, setFilteredVehicles] = useState<VehicleData[]>([]);
 
   useEffect(() => {
     fetchVehicles();
   }, []);
 
-  useEffect(() => {
-    filterVehicles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicles, searchTerm, statusFilter]);
-
   const fetchVehicles = async () => {
     try {
-      // Mock data - replace with real API call
-      const mockVehicles: VehicleData[] = [
-        {
-          id: 1,
-          reg_number: 'VH-001',
-          make: 'Toyota',
-          model: 'Camry',
-          year: 2023,
-          status: 'ACTIVE',
-          mileage: 45231,
-          fuel_level: 75,
-          last_maintenance: '2024-12-15',
-          next_maintenance_km: 50000,
-          assigned_driver: 'James Driver',
-        },
-        {
-          id: 2,
-          reg_number: 'VH-002',
-          make: 'Ford',
-          model: 'Transit',
-          year: 2022,
-          status: 'ACTIVE',
-          mileage: 67890,
-          fuel_level: 45,
-          last_maintenance: '2024-12-10',
-          next_maintenance_km: 70000,
-          assigned_driver: 'Maria Garcia',
-        },
-        {
-          id: 3,
-          reg_number: 'VH-003',
-          make: 'Mercedes',
-          model: 'Sprinter',
-          year: 2021,
-          status: 'MAINTENANCE',
-          mileage: 89123,
-          fuel_level: 30,
-          last_maintenance: '2024-11-20',
-          next_maintenance_km: 90000,
-        },
-        {
-          id: 4,
-          reg_number: 'VH-004',
-          make: 'Isuzu',
-          model: 'F-150',
-          year: 2023,
-          status: 'ACTIVE',
-          mileage: 32456,
-          fuel_level: 90,
-          last_maintenance: '2024-12-18',
-          next_maintenance_km: 35000,
-          assigned_driver: 'David Chen',
-        },
-        {
-          id: 5,
-          reg_number: 'VH-005',
-          make: 'Volvo',
-          model: 'VNL',
-          year: 2020,
-          status: 'INACTIVE',
-          mileage: 125678,
-          fuel_level: 15,
-          last_maintenance: '2024-10-05',
-          next_maintenance_km: 130000,
-        },
-      ];
-      setVehicles(mockVehicles);
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
+      setLoading(true);
+      const data = await apiClient(`${API_CONFIG.ENDPOINTS.VEHICLES.LIST}?page=1`);
+      const results = extractResults<any>(data);
+
+      const mapped: VehicleData[] = results.map((vehicle) => ({
+        id: vehicle.id,
+        reg_number: vehicle.reg_number,
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        status: vehicle.status,
+        mileage: vehicle.mileage || 0,
+        updated_at: vehicle.updated_at,
+        current_shift_driver: vehicle.current_shift?.driver_name || vehicle.current_shift?.driver || '',
+        current_shift_started_at: vehicle.current_shift?.start_at || '',
+      }));
+
+      setVehicles(mapped);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching vehicles:', err);
+      setError(err?.message || 'Unable to load vehicles right now.');
     } finally {
       setLoading(false);
     }
   };
 
-  const filterVehicles = () => {
-    let filtered = vehicles.filter(vehicle =>
-      vehicle.reg_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.model.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredVehicles = useMemo(() => {
+    let filtered = vehicles.filter((vehicle) =>
+      [vehicle.reg_number, vehicle.make, vehicle.model]
+        .join(' ')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
     );
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(vehicle => vehicle.status === statusFilter);
+      filtered = filtered.filter((vehicle) => vehicle.status === statusFilter);
     }
 
-    setFilteredVehicles(filtered);
-  };
+    return filtered;
+  }, [vehicles, searchTerm, statusFilter]);
 
   const getStatusBadge = (status: string) => {
     const badges = {
@@ -140,14 +89,12 @@ export default function StaffVehiclesPage() {
     return badges[status as keyof typeof badges] || 'bg-gray-100 text-gray-800';
   };
 
-  const getFuelLevelColor = (level: number) => {
-    if (level > 60) return 'bg-green-500';
-    if (level > 30) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
-  const activeVehicles = vehicles.filter(v => v.status === 'ACTIVE').length;
-  const maintenanceVehicles = vehicles.filter(v => v.status === 'MAINTENANCE').length;
+  const activeVehicles = vehicles.filter((v) => v.status === 'ACTIVE').length;
+  const maintenanceVehicles = vehicles.filter((v) => v.status === 'MAINTENANCE').length;
+  const inactiveVehicles = vehicles.filter((v) => v.status === 'INACTIVE').length;
+  const averageMileage = vehicles.length
+    ? Math.round(vehicles.reduce((total, vehicle) => total + (vehicle.mileage || 0), 0) / vehicles.length)
+    : 0;
 
   return (
     <DashboardLayout>
@@ -204,14 +151,22 @@ export default function StaffVehiclesPage() {
 
           <Card className="border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg. Fuel</CardTitle>
-              <Fuel className="h-4 w-4 text-purple-600" />
+              <CardTitle className="text-sm font-medium">Avg. Mileage</CardTitle>
+              <Gauge className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.round(vehicles.reduce((acc, v) => acc + v.fuel_level, 0) / vehicles.length)}%
-              </div>
-              <p className="text-xs text-gray-600 mt-1">Fleet average</p>
+              <div className="text-2xl font-bold">{averageMileage.toLocaleString()} km</div>
+              <p className="text-xs text-gray-600 mt-1">Across all vehicles</p>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-gray-500 hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Inactive</CardTitle>
+              <Truck className="h-4 w-4 text-gray-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{inactiveVehicles}</div>
+              <p className="text-xs text-gray-600 mt-1">Awaiting assignment</p>
             </CardContent>
           </Card>
         </div>
@@ -246,6 +201,15 @@ export default function StaffVehiclesPage() {
         </Card>
 
         {/* Vehicles Grid */}
+        {error && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <p>{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredVehicles.map((vehicle) => (
             <Card key={vehicle.id} className="hover:shadow-xl transition-all hover:-translate-y-1">
@@ -268,19 +232,6 @@ export default function StaffVehiclesPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Fuel Level */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium flex items-center">
-                      <Fuel className="h-4 w-4 mr-2 text-gray-600" />
-                      Fuel Level
-                    </span>
-                    <span className="text-sm font-bold">{vehicle.fuel_level}%</span>
-                  </div>
-                  <Progress value={vehicle.fuel_level} className="h-2" />
-                </div>
-
-                {/* Mileage */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium flex items-center">
                     <Gauge className="h-4 w-4 mr-2 text-gray-600" />
@@ -289,47 +240,39 @@ export default function StaffVehiclesPage() {
                   <span className="text-sm font-bold">{vehicle.mileage.toLocaleString()} km</span>
                 </div>
 
-                {/* Next Maintenance */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium flex items-center">
                     <Wrench className="h-4 w-4 mr-2 text-gray-600" />
-                    Next Service
+                    Current Shift
                   </span>
                   <span className="text-sm font-bold">
-                    {vehicle.next_maintenance_km.toLocaleString()} km
-                    <span className="text-xs text-gray-600 ml-1">
-                      ({(vehicle.next_maintenance_km - vehicle.mileage).toLocaleString()} km left)
-                    </span>
+                    {vehicle.current_shift_driver || 'Not assigned'}
                   </span>
                 </div>
 
-                {/* Assigned Driver */}
-                {vehicle.assigned_driver && (
+                {vehicle.current_shift_started_at && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium flex items-center">
-                      <MapPin className="h-4 w-4 mr-2 text-gray-600" />
-                      Assigned Driver
+                      <Calendar className="h-4 w-4 mr-2 text-gray-600" />
+                      Shift Started
                     </span>
-                    <span className="text-sm font-bold">{vehicle.assigned_driver}</span>
+                    <span className="text-sm">{new Date(vehicle.current_shift_started_at).toLocaleString()}</span>
                   </div>
                 )}
 
-                {/* Last Maintenance */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium flex items-center">
-                    <Calendar className="h-4 w-4 mr-2 text-gray-600" />
-                    Last Service
-                  </span>
-                  <span className="text-sm">{vehicle.last_maintenance}</span>
-                </div>
+                {vehicle.updated_at && (
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Updated</span>
+                    <span>{new Date(vehicle.updated_at).toLocaleString()}</span>
+                  </div>
+                )}
 
-                {/* Actions */}
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" size="sm" className="flex-1">
                     View Details
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1">
-                    Schedule Service
+                    Manage Shift
                   </Button>
                 </div>
               </CardContent>
@@ -340,13 +283,13 @@ export default function StaffVehiclesPage() {
         {loading && (
           <Card>
             <CardContent className="p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading vehicles...</p>
+              <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Loading vehicles...</p>
             </CardContent>
           </Card>
         )}
 
-        {!loading && filteredVehicles.length === 0 && (
+        {!loading && filteredVehicles.length === 0 && !error && (
           <Card>
             <CardContent className="p-12 text-center">
               <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />

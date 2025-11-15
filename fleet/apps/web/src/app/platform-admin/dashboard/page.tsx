@@ -2292,8 +2292,8 @@ export default function PlatformAdminDashboard() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="user-role-select">Role</Label>
-                    <Select id="user-role-select" value={formUserRole} onValueChange={setFormUserRole}>
-                      <SelectTrigger>
+                    <Select value={formUserRole} onValueChange={setFormUserRole}>
+                      <SelectTrigger id="user-role-select">
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Wrench, Search, Filter, Plus, Calendar, DollarSign, CheckCircle, Clock } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Wrench, Search, Filter, Plus, Calendar, DollarSign, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,17 +9,19 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
+import { apiClient, extractResults } from '@/lib/apiClient';
+import { API_CONFIG } from '@/config/api';
 
 interface MaintenanceRecord {
   id: number;
   vehicle: {
-    reg_number: string;
-    make: string;
-    model: string;
+    reg_number?: string;
+    make?: string;
+    model?: string;
   };
-  type: string;
+  title: string;
   status: string;
-  scheduled_date: string;
+  scheduled_date?: string;
   completed_date?: string;
   cost?: number;
   description: string;
@@ -27,100 +29,81 @@ interface MaintenanceRecord {
   assigned_to?: string;
 }
 
+const STATUS_MAP: Record<string, string> = {
+  OPEN: 'SCHEDULED',
+  ASSIGNED: 'SCHEDULED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CLOSED: 'COMPLETED',
+};
+
 export default function StaffMaintenancePage() {
   const [maintenance, setMaintenance] = useState<MaintenanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [filteredMaintenance, setFilteredMaintenance] = useState<MaintenanceRecord[]>([]);
 
   useEffect(() => {
     fetchMaintenance();
   }, []);
 
-  useEffect(() => {
-    filterMaintenance();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maintenance, searchTerm, statusFilter]);
-
   const fetchMaintenance = async () => {
     try {
-      // Mock data - replace with real API call
-      const mockMaintenance: MaintenanceRecord[] = [
-        {
-          id: 1,
-          vehicle: { reg_number: 'VH-001', make: 'Toyota', model: 'Camry' },
-          type: 'Oil Change',
-          status: 'SCHEDULED',
-          scheduled_date: '2025-01-20',
-          description: 'Regular oil change service',
-          priority: 'medium',
-          assigned_to: 'Tech Team A',
-        },
-        {
-          id: 2,
-          vehicle: { reg_number: 'VH-003', make: 'Mercedes', model: 'Sprinter' },
-          type: 'Brake Repair',
-          status: 'IN_PROGRESS',
-          scheduled_date: '2025-01-15',
-          description: 'Replace brake pads and rotors',
-          priority: 'high',
-          cost: 450.00,
-          assigned_to: 'Tech Team B',
-        },
-        {
-          id: 3,
-          vehicle: { reg_number: 'VH-002', make: 'Ford', model: 'Transit' },
-          type: 'Tire Rotation',
-          status: 'COMPLETED',
-          scheduled_date: '2025-01-10',
-          completed_date: '2025-01-10',
-          description: 'Rotate all tires and check pressure',
-          priority: 'low',
-          cost: 120.00,
-          assigned_to: 'Tech Team A',
-        },
-        {
-          id: 4,
-          vehicle: { reg_number: 'VH-004', make: 'Isuzu', model: 'F-150' },
-          type: 'Engine Diagnostics',
-          status: 'SCHEDULED',
-          scheduled_date: '2025-01-25',
-          description: 'Check engine light diagnostic',
-          priority: 'high',
-          assigned_to: 'Tech Team C',
-        },
-        {
-          id: 5,
-          vehicle: { reg_number: 'VH-005', make: 'Volvo', model: 'VNL' },
-          type: 'Transmission Service',
-          status: 'PENDING',
-          scheduled_date: '2025-02-01',
-          description: 'Transmission fluid change',
-          priority: 'medium',
-        },
-      ];
-      setMaintenance(mockMaintenance);
-    } catch (error) {
-      console.error('Error fetching maintenance records:', error);
+      setLoading(true);
+      const data = await apiClient(`${API_CONFIG.ENDPOINTS.TICKETS.LIST}?page=1`);
+      const tickets = extractResults<any>(data);
+
+      const mapped: MaintenanceRecord[] = tickets
+        .filter((ticket) => ticket.type === 'MAINTENANCE')
+        .map((ticket) => ({
+          id: ticket.id,
+          vehicle: {
+            reg_number: ticket.vehicle_reg,
+            make: ticket.issue_data?.vehicle_data?.make,
+            model: ticket.issue_data?.vehicle_data?.model,
+          },
+          title: ticket.title,
+          status: STATUS_MAP[ticket.status] || ticket.status,
+          scheduled_date: ticket.due_at || ticket.created_at,
+          completed_date: ticket.completed_at,
+          description: ticket.description || 'No description provided.',
+          priority: (ticket.priority || 'medium').toLowerCase(),
+          cost: Number(ticket.actual_cost) || Number(ticket.estimated_cost) || undefined,
+          assigned_to: ticket.assignee_name,
+        }));
+
+      setMaintenance(mapped);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching maintenance records:', err);
+      setError(err?.message || 'Unable to load maintenance records right now.');
     } finally {
       setLoading(false);
     }
   };
 
-  const filterMaintenance = () => {
-    let filtered = maintenance.filter(record =>
-      record.vehicle.reg_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMaintenance = useMemo(() => {
+    let filtered = maintenance.filter((record) =>
+      [
+        record.vehicle.reg_number,
+        record.vehicle.make,
+        record.vehicle.model,
+        record.title,
+        record.description,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
     );
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(record => record.status === statusFilter);
+      filtered = filtered.filter((record) => record.status === statusFilter);
     }
 
-    setFilteredMaintenance(filtered);
-  };
+    return filtered;
+  }, [maintenance, searchTerm, statusFilter]);
 
   const getStatusBadge = (status: string) => {
     const badges = {
@@ -142,11 +125,11 @@ export default function StaffMaintenancePage() {
     return badges[priority as keyof typeof badges] || 'bg-gray-100 text-gray-800';
   };
 
-  const scheduledCount = maintenance.filter(m => m.status === 'SCHEDULED').length;
-  const inProgressCount = maintenance.filter(m => m.status === 'IN_PROGRESS').length;
-  const completedCount = maintenance.filter(m => m.status === 'COMPLETED').length;
+  const scheduledCount = maintenance.filter((m) => m.status === 'SCHEDULED').length;
+  const inProgressCount = maintenance.filter((m) => m.status === 'IN_PROGRESS').length;
+  const completedCount = maintenance.filter((m) => m.status === 'COMPLETED').length;
   const totalCost = maintenance
-    .filter(m => m.cost && m.status === 'COMPLETED')
+    .filter((m) => m.cost && m.status === 'COMPLETED')
     .reduce((sum, m) => sum + (m.cost || 0), 0);
 
   return (
@@ -244,6 +227,15 @@ export default function StaffMaintenancePage() {
           </CardContent>
         </Card>
 
+        {error && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <p>{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Maintenance List */}
         <div className="grid grid-cols-1 gap-4">
           {filteredMaintenance.map((record) => (
@@ -256,7 +248,7 @@ export default function StaffMaintenancePage() {
                         <Wrench className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg">{record.type}</h3>
+                        <h3 className="font-semibold text-lg">{record.title}</h3>
                         <p className="text-sm text-gray-600">
                           {record.vehicle.make} {record.vehicle.model} ({record.vehicle.reg_number})
                         </p>
@@ -282,12 +274,12 @@ export default function StaffMaintenancePage() {
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                       <span className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
-                        Scheduled: {record.scheduled_date}
+                        Scheduled: {record.scheduled_date ? new Date(record.scheduled_date).toLocaleDateString() : 'Not set'}
                       </span>
                       {record.completed_date && (
                         <span className="flex items-center">
                           <CheckCircle className="h-4 w-4 mr-1 text-green-600" />
-                          Completed: {record.completed_date}
+                          Completed: {new Date(record.completed_date).toLocaleDateString()}
                         </span>
                       )}
                       {record.cost && (
@@ -318,7 +310,7 @@ export default function StaffMaintenancePage() {
           </Card>
         )}
 
-        {!loading && filteredMaintenance.length === 0 && (
+        {!loading && filteredMaintenance.length === 0 && !error && (
           <Card>
             <CardContent className="p-12 text-center">
               <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />
