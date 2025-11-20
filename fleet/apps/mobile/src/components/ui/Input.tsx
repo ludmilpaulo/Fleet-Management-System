@@ -23,7 +23,9 @@ interface InputProps {
   multiline?: boolean;
   numberOfLines?: number;
   style?: ViewStyle;
+  className?: string;
   inputStyle?: TextStyle;
+  inputClassName?: string;
   leftIcon?: keyof typeof Ionicons.glyphMap;
   rightIcon?: keyof typeof Ionicons.glyphMap;
   onRightIconPress?: () => void;
@@ -43,63 +45,15 @@ export const Input: React.FC<InputProps> = ({
   multiline = false,
   numberOfLines = 1,
   style,
+  className = '',
   inputStyle,
+  inputClassName = '',
   leftIcon,
   rightIcon,
   onRightIconPress,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  const getContainerStyle = (): ViewStyle => ({
-    marginBottom: 16,
-    ...style,
-  });
-
-  const getInputContainerStyle = (): ViewStyle => ({
-    flexDirection: 'row',
-    alignItems: multiline ? 'flex-start' : 'center',
-    backgroundColor: '#ffffff',
-    borderWidth: 2,
-    borderColor: error ? '#ef4444' : isFocused ? '#3b82f6' : '#e5e7eb',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: multiline ? 12 : 0,
-    minHeight: multiline ? 80 : 48,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    ...(disabled && {
-      backgroundColor: '#f9fafb',
-      opacity: 0.6,
-    }),
-  });
-
-  const getInputStyle = (): TextStyle => ({
-    flex: 1,
-    fontSize: 16,
-    color: '#1f2937',
-    ...(multiline && {
-      textAlignVertical: 'top',
-      paddingTop: 12,
-    }),
-    ...inputStyle,
-  });
-
-  const getLabelStyle = (): TextStyle => ({
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  });
-
-  const getErrorStyle = (): TextStyle => ({
-    fontSize: 12,
-    color: '#ef4444',
-    marginTop: 4,
-  });
 
   const handleRightIconPress = () => {
     if (secureTextEntry) {
@@ -109,11 +63,15 @@ export const Input: React.FC<InputProps> = ({
     }
   };
 
+  const inputContainerClasses = `flex-row items-${multiline ? 'start' : 'center'} bg-white border-2 rounded-xl px-4 ${multiline ? 'py-3' : ''} ${multiline ? 'min-h-[80px]' : 'min-h-[48px]'} shadow-sm ${error ? 'border-red-500' : isFocused ? 'border-primary-500' : 'border-gray-200'} ${disabled ? 'bg-gray-50 opacity-60' : ''}`;
+
   return (
-    <View style={getContainerStyle()}>
-      {label && <Text style={getLabelStyle()}>{label}</Text>}
+    <View className={`mb-4 ${className}`} style={style}>
+      {label && (
+        <Text className="text-sm font-semibold text-gray-700 mb-2">{label}</Text>
+      )}
       
-      <View style={getInputContainerStyle()}>
+      <View className={inputContainerClasses}>
         {leftIcon && (
           <Ionicons
             name={leftIcon}
@@ -124,7 +82,8 @@ export const Input: React.FC<InputProps> = ({
         )}
         
         <TextInput
-          style={getInputStyle()}
+          className={`flex-1 text-base text-gray-900 ${multiline ? 'text-top pt-3' : ''} ${inputClassName}`}
+          style={inputStyle}
           placeholder={placeholder}
           placeholderTextColor="#9ca3af"
           value={value}
@@ -143,7 +102,7 @@ export const Input: React.FC<InputProps> = ({
         {(rightIcon || secureTextEntry) && (
           <TouchableOpacity
             onPress={handleRightIconPress}
-            style={{ padding: 4 }}
+            className="p-1"
             disabled={disabled}
           >
             <Ionicons
@@ -161,7 +120,9 @@ export const Input: React.FC<InputProps> = ({
         )}
       </View>
       
-      {error && <Text style={getErrorStyle()}>{error}</Text>}
+      {error && (
+        <Text className="text-xs text-red-500 mt-1">{error}</Text>
+      )}
     </View>
   );
 };

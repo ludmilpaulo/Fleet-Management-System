@@ -14,7 +14,7 @@ const initialState: AuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true, // Start with loading=true so we don't redirect before auth is initialized
   error: null,
 };
 
@@ -64,7 +64,48 @@ export const registerUser = createAsyncThunk(
       const response = await authAPI.register(userData);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Registration failed');
+      // Extract error message from API response
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Check for non_field_errors (Django REST Framework format)
+        if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors) && errorData.non_field_errors.length > 0) {
+          errorMessage = errorData.non_field_errors[0];
+        }
+        // Check for detail field
+        else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        }
+        // Check for error field
+        else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+        // Check if it's a string
+        else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+        // Check for field-specific errors
+        else {
+          const fieldErrors = Object.entries(errorData)
+            .map(([field, errors]) => {
+              const errorList = Array.isArray(errors) ? errors : [errors];
+              return `${field}: ${errorList.join(', ')}`;
+            })
+            .join('; ');
+          if (fieldErrors) {
+            errorMessage = fieldErrors;
+          }
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else if (error.request && !error.response) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      console.error('Registration error:', error);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -128,6 +169,9 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    clearLoading: (state) => {
+      state.isLoading = false;
+    },
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
@@ -143,6 +187,15 @@ const authSlice = createSlice({
     },
     initializeAuth: (state) => {
       // This will be called on app initialization to check for existing auth
+      // Set loading to false so components know auth state is ready
+      state.isLoading = false;
+      
+      // Only access localStorage on client-side (prevents SSR hydration mismatch)
+      if (typeof window === 'undefined') {
+        state.isAuthenticated = false;
+        return;
+      }
+      
       const token = localStorage.getItem('auth_token');
       const userStr = localStorage.getItem('current_user');
       
@@ -156,7 +209,10 @@ const authSlice = createSlice({
           // Clear invalid data
           localStorage.removeItem('auth_token');
           localStorage.removeItem('current_user');
+          state.isAuthenticated = false;
         }
+      } else {
+        state.isAuthenticated = false;
       }
     },
   },
@@ -313,6 +369,7 @@ const authSlice = createSlice({
 
 export const {
   clearError,
+  clearLoading,
   setUser,
   clearUser,
   setToken,

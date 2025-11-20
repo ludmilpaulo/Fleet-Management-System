@@ -1,0 +1,60 @@
+============================================================
+Fleet Management System - Comprehensive Test Suite
+============================================================
+
+🔍 Checking if servers are running...
+[0;31m❌ FAIL[0m: Backend server is running
+   Cannot connect to http://localhost:8000/api
+   Please make sure the Django server is running on port 8000
+[0;32m✅ PASS[0m: Web app server is running
+
+🔐 Testing Authentication...
+[0;32m✅ PASS[0m: Admin login
+[0;31m❌ FAIL[0m: Driver login
+   Failed to get token
+[0;32m✅ PASS[0m: Staff login
+[0;31m❌ FAIL[0m: Inspector login
+   Failed to get token
+
+👥 Testing User Management...
+[0;32m✅ PASS[0m: List users
+
+🚗 Testing Vehicle Management...
+[0;32m✅ PASS[0m: List vehicles
+[0;32m✅ PASS[0m: Create vehicle
+
+⏰ Testing Shift Management...
+[0;32m✅ PASS[0m: List shifts
+
+🎫 Testing Ticket Management...
+[0;32m✅ PASS[0m: List tickets
+
+🔍 Testing Inspection Management...
+[0;32m✅ PASS[0m: List inspections
+
+📊 Testing Dashboard Stats...
+[0;32m✅ PASS[0m: Get dashboard stats
+
+🌐 Testing Web App Pages...
+[0;32m✅ PASS[0m: Sign in page
+[0;32m✅ PASS[0m: Sign up page
+
+============================================================
+Test Summary
+============================================================
+Total Tests: 15
+[0;32m✅ Passed: 12[0m
+[0;31m❌ Failed: 3[0m
+Success Rate: 80%
+
+[1;33m📝 Test Credentials:[0m
+  Admin: admin / admin123
+  Driver: driver1 / driver123
+  Staff: staff1 / staff123
+  Inspector: inspector1 / inspector123
+
+[1;33m🌐 Test URLs:[0m
+  Web App: http://localhost:3000
+  API: http://localhost:8000/api
+
+[0;31m❌ Some tests failed. Please check the output above.[0m

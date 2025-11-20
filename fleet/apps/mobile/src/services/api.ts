@@ -1,7 +1,24 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { User, Company, CompanyStats } from '../types';
 
-const API_BASE_URL = 'http://localhost:8001/api';
+// API Base URL - automatically uses network IP for physical devices
+const API_BASE_URL = (() => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  if (__DEV__) {
+    // Use network IP for physical devices (Android/iOS on real devices)
+    const networkIP = process.env.EXPO_PUBLIC_NETWORK_IP || '192.168.1.110';
+    const isPhysicalDevice = Platform.OS === 'ios' || Platform.OS === 'android';
+    const apiURL = isPhysicalDevice 
+      ? `http://${networkIP}:8000/api`
+      : 'http://localhost:8000/api';
+    console.log(`[ApiService] Using API URL: ${apiURL} (Device: ${Platform.OS}, Physical: ${isPhysicalDevice})`);
+    return apiURL;
+  }
+  return 'https://www.fleetia.online/api';
+})();
 
 class ApiService {
   private baseURL: string;

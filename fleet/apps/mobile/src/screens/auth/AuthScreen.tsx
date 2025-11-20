@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Animated,
-  Dimensions,
+  ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -18,8 +16,6 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { authService } from '../../services/authService'
 import { analytics } from '../../services/mixpanel'
-
-const { width, height } = Dimensions.get('window')
 
 interface AuthScreenProps {
   onAuthSuccess: () => void
@@ -40,28 +36,11 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricEnabled, setBiometricEnabled] = useState(false)
   const [faceRecognitionAvailable, setFaceRecognitionAvailable] = useState(false)
-  
-  const fadeAnim = new Animated.Value(0)
-  const slideAnim = new Animated.Value(50)
 
   useEffect(() => {
     checkBiometricAvailability()
     checkFaceRecognitionAvailability()
     checkBiometricEnabled()
-    
-    // Animate screen entrance
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-    ]).start()
   }, [])
 
   const checkBiometricAvailability = async () => {
@@ -81,7 +60,11 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      Alert.alert('Error', 'Please fill in all required fields')
+      Alert.alert(
+        'Missing Information',
+        'Please enter both username and password to continue.',
+        [{ text: 'OK', style: 'default' }]
+      )
       return
     }
 
@@ -90,15 +73,77 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       const result = await authService.login(username, password)
       
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      
       analytics.track('Manual Login Success', {
         username,
         method: 'password'
       })
       
       onAuthSuccess()
-    } catch (error) {
+    } catch (error: any) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-      Alert.alert('Login Failed', error instanceof Error ? error.message : 'Unknown error occurred')
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      const errorType = error?.errorType || 'unknown'
+      
+      // Provide specific, user-friendly alerts based on error type
+      switch (errorType) {
+        case 'username_not_found':
+          Alert.alert(
+            'Account Not Found',
+            'The username or email you entered does not exist. Please check your credentials and try again.\n\nIf you don\'t have an account, please register first.',
+            [
+              { text: 'Try Again', style: 'cancel' },
+              { 
+                text: 'Register', 
+                onPress: () => setIsLogin(false),
+                style: 'default'
+              }
+            ]
+          )
+          break
+          
+        case 'incorrect_password':
+          Alert.alert(
+            'Incorrect Password',
+            'The password you entered is incorrect. Please try again.\n\nIf you\'ve forgotten your password, please contact your administrator or use the "Forgot Password" feature.',
+            [
+              { text: 'Try Again', style: 'cancel' },
+              { 
+                text: 'Forgot Password?', 
+                onPress: () => {
+                  Alert.alert('Forgot Password', 'Please contact your administrator to reset your password.')
+                },
+                style: 'default'
+              }
+            ]
+          )
+          break
+          
+        case 'account_disabled':
+          Alert.alert(
+            'Account Disabled',
+            'Your account has been disabled. Please contact your administrator or support team for assistance.',
+            [{ text: 'OK', style: 'default' }]
+          )
+          break
+          
+        case 'network_error':
+          Alert.alert(
+            'Connection Error',
+            'Unable to connect to the server. Please check:\n\n• Your internet connection\n• That the backend server is running\n• That your device is on the same network as the server',
+            [{ text: 'OK', style: 'default' }]
+          )
+          break
+          
+        default:
+          Alert.alert(
+            'Login Failed',
+            errorMessage,
+            [{ text: 'OK', style: 'default' }]
+          )
+      }
     } finally {
       setLoading(false)
     }
@@ -158,7 +203,6 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     if (success) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       
-      // Get stored credentials for biometric login
       const user = await authService.getCurrentUser()
       if (user) {
         analytics.track('Biometric Login Success', {
@@ -179,7 +223,6 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     if (success) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       
-      // Get stored credentials for face recognition login
       const user = await authService.getCurrentUser()
       if (user) {
         analytics.track('Face Recognition Login Success', {
@@ -204,10 +247,10 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     secureTextEntry = false,
     keyboardType: 'default' | 'email-address' = 'default'
   ) => (
-    <View style={styles.inputContainer}>
-      <Text style={styles.inputLabel}>{label}</Text>
+    <View className="mb-5">
+      <Text className="text-sm font-semibold text-white mb-2">{label}</Text>
       <TextInput
-        style={styles.input}
+        className="bg-white/10 rounded-xl px-4 py-3.5 text-base text-white border border-white/20"
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -220,22 +263,16 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   )
 
   const renderRoleSelector = () => (
-    <View style={styles.inputContainer}>
-      <Text style={styles.inputLabel}>Role</Text>
-      <View style={styles.roleContainer}>
+    <View className="mb-5">
+      <Text className="text-sm font-semibold text-white mb-2">Role</Text>
+      <View className="flex-row flex-wrap gap-2.5">
         {(['admin', 'driver', 'staff', 'inspector'] as const).map((roleOption) => (
           <TouchableOpacity
             key={roleOption}
-            style={[
-              styles.roleButton,
-              role === roleOption && styles.roleButtonSelected
-            ]}
+            className={`px-4 py-2 rounded-full border ${role === roleOption ? 'bg-emerald-500 border-emerald-500' : 'bg-white/10 border-white/20'}`}
             onPress={() => setRole(roleOption)}
           >
-            <Text style={[
-              styles.roleButtonText,
-              role === roleOption && styles.roleButtonTextSelected
-            ]}>
+            <Text className={`text-sm font-medium ${role === roleOption ? 'text-black font-semibold' : 'text-white'}`}>
               {roleOption.charAt(0).toUpperCase() + roleOption.slice(1)}
             </Text>
           </TouchableOpacity>
@@ -247,50 +284,42 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   return (
     <LinearGradient
       colors={['#1a1a2e', '#16213e', '#0f3460']}
-      style={styles.container}
+      className="flex-1"
     >
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView className="flex-1">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          className="flex-1"
         >
           <ScrollView
-            contentContainerStyle={styles.scrollContainer}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20, minHeight: '100%' }}
             showsVerticalScrollIndicator={false}
           >
-            <Animated.View
-              style={[
-                styles.content,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }]
-                }
-              ]}
-            >
+            <View className="w-full justify-center">
               {/* Header */}
-              <View style={styles.header}>
-                <View style={styles.logoContainer}>
+              <View className="items-center mb-10">
+                <View className="w-25 h-25 rounded-full bg-emerald-500/10 justify-center items-center mb-5">
                   <Ionicons name="car-sport" size={60} color="#4ade80" />
                 </View>
-                <Text style={styles.title}>Fleet Management</Text>
-                <Text style={styles.subtitle}>
+                <Text className="text-3xl font-bold text-white mb-2">Fleet Management</Text>
+                <Text className="text-base text-gray-400">
                   {isLogin ? 'Welcome Back' : 'Create Account'}
                 </Text>
               </View>
 
               {/* Biometric Authentication Options */}
               {(biometricAvailable || faceRecognitionAvailable) && (
-                <View style={styles.biometricContainer}>
-                  <Text style={styles.biometricTitle}>Quick Access</Text>
+                <View className="mb-8">
+                  <Text className="text-base font-semibold text-white text-center mb-4">Quick Access</Text>
                   
                   {biometricAvailable && (
                     <TouchableOpacity
-                      style={[styles.biometricButton, styles.fingerprintButton]}
+                      className="flex-row items-center justify-center p-4 rounded-xl mb-2.5 bg-emerald-500/20 border border-emerald-500"
                       onPress={handleBiometricLogin}
                       disabled={loading}
                     >
                       <Ionicons name="finger-print" size={24} color="#fff" />
-                      <Text style={styles.biometricButtonText}>
+                      <Text className="text-white text-base font-semibold ml-2.5">
                         {biometricEnabled ? 'Use Biometric' : 'Setup Biometric'}
                       </Text>
                     </TouchableOpacity>
@@ -298,26 +327,26 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
                   {faceRecognitionAvailable && (
                     <TouchableOpacity
-                      style={[styles.biometricButton, styles.faceButton]}
+                      className="flex-row items-center justify-center p-4 rounded-xl bg-primary-500/20 border border-primary-500"
                       onPress={handleFaceRecognitionLogin}
                       disabled={loading}
                     >
                       <Ionicons name="camera" size={24} color="#fff" />
-                      <Text style={styles.biometricButtonText}>Face Recognition</Text>
+                      <Text className="text-white text-base font-semibold ml-2.5">Face Recognition</Text>
                     </TouchableOpacity>
                   )}
                 </View>
               )}
 
               {/* Divider */}
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>OR</Text>
-                <View style={styles.dividerLine} />
+              <View className="flex-row items-center mb-8">
+                <View className="flex-1 h-px bg-white/20" />
+                <Text className="text-gray-400 text-sm mx-4">OR</Text>
+                <View className="flex-1 h-px bg-white/20" />
               </View>
 
               {/* Form */}
-              <View style={styles.form}>
+              <View className="mb-8">
                 {renderInput('Username', username, setUsername, 'Enter username')}
                 
                 {!isLogin && (
@@ -342,197 +371,38 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                 )}
 
                 <TouchableOpacity
-                  style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+                  className={`bg-emerald-500 rounded-xl p-4.5 items-center mt-2.5 ${loading ? 'opacity-50' : ''}`}
                   onPress={isLogin ? handleLogin : handleRegister}
                   disabled={loading}
                 >
-                  <Text style={styles.submitButtonText}>
-                    {loading ? 'Please Wait...' : (isLogin ? 'Login' : 'Register')}
-                  </Text>
+                  {loading ? (
+                    <ActivityIndicator size="small" color="#000000" />
+                  ) : (
+                    <Text className="text-black text-lg font-bold">
+                      {isLogin ? 'Login' : 'Register'}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
 
               {/* Toggle Auth Mode */}
               <TouchableOpacity
-                style={styles.toggleButton}
+                className="items-center"
                 onPress={() => {
                   setIsLogin(!isLogin)
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                 }}
               >
-                <Text style={styles.toggleButtonText}>
+                <Text className="text-emerald-500 text-base font-medium">
                   {isLogin
                     ? "Don't have an account? Register"
                     : 'Already have an account? Login'}
                 </Text>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(74, 222, 128, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#a0a0a0',
-  },
-  biometricContainer: {
-    marginBottom: 30,
-  },
-  biometricTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  biometricButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  fingerprintButton: {
-    backgroundColor: 'rgba(74, 222, 128, 0.2)',
-    borderWidth: 1,
-    borderColor: '#4ade80',
-  },
-  faceButton: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderWidth: 1,
-    borderColor: '#3b82f6',
-  },
-  biometricButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 10,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  dividerText: {
-    color: '#a0a0a0',
-    fontSize: 14,
-    marginHorizontal: 15,
-  },
-  form: {
-    marginBottom: 30,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#ffffff',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    padding: 15,
-    fontSize: 16,
-    color: '#ffffff',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  roleContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  roleButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  roleButtonSelected: {
-    backgroundColor: '#4ade80',
-    borderColor: '#4ade80',
-  },
-  roleButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  roleButtonTextSelected: {
-    color: '#000000',
-    fontWeight: '600',
-  },
-  submitButton: {
-    backgroundColor: '#4ade80',
-    borderRadius: 12,
-    padding: 18,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  submitButtonDisabled: {
-    backgroundColor: 'rgba(74, 222, 128, 0.5)',
-  },
-  submitButtonText: {
-    color: '#000000',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  toggleButton: {
-    alignItems: 'center',
-  },
-  toggleButtonText: {
-    color: '#4ade80',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-})

@@ -84,8 +84,8 @@ export default function PlatformAdminPage() {
   const fetchData = async () => {
     try {
       const [companiesRes, statsRes] = await Promise.all([
-        apiClient('/platform-admin/companies/?page_size=100'),
-        apiClient('/platform-admin/stats/')
+        apiClient('platform-admin/companies/?page_size=100'),
+        apiClient('platform-admin/stats/')
       ])
 
       setCompanies(extractResults(companiesRes))

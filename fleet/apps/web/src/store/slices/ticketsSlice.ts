@@ -5,11 +5,14 @@ export interface Ticket {
   id: number
   issue: number
   assignee?: number
-  status: 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'ON_HOLD' | 'RESOLVED' | 'CLOSED'
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+  status: 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'ON_HOLD' | 'RESOLVED' | 'CLOSED' | 'PENDING_PARTS' | 'PENDING_APPROVAL' | 'COMPLETED' | 'CANCELLED'
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'CRITICAL'
   due_at?: string
   created_at: string
   updated_at: string
+  title?: string
+  description?: string
+  type?: 'REPAIR' | 'MAINTENANCE' | 'INSPECTION' | 'CLEANING' | 'UPGRADE' | 'OTHER'
 }
 
 export interface TicketStats {
@@ -65,6 +68,14 @@ export const updateTicket = createAsyncThunk(
   async ({ id, data }: { id: number; data: Partial<Ticket> }) => {
     const response = await ticketAPI.update(id.toString(), data)
     return response.data
+  }
+)
+
+export const deleteTicket = createAsyncThunk(
+  'tickets/deleteTicket',
+  async (id: number) => {
+    await ticketAPI.delete(id.toString())
+    return id
   }
 )
 
@@ -138,6 +149,20 @@ const ticketsSlice = createSlice({
       .addCase(updateTicket.rejected, (state, action) => {
         state.loading = false
         state.error = action.error.message || 'Failed to update ticket'
+      })
+      
+      // Delete ticket
+      .addCase(deleteTicket.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(deleteTicket.fulfilled, (state, action) => {
+        state.loading = false
+        state.tickets = state.tickets.filter(t => t.id !== action.payload)
+      })
+      .addCase(deleteTicket.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.error.message || 'Failed to delete ticket'
       })
   },
 })

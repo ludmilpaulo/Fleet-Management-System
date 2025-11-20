@@ -44,6 +44,11 @@ export default function SignInPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
+    // Don't redirect while loading auth state to prevent loops
+    if (isLoading) {
+      return;
+    }
+    
     if (isAuthenticated && user) {
       // Check if user is a superuser/platform admin
       if (user.is_superuser || user.company?.slug === 'system') {
@@ -68,7 +73,7 @@ export default function SignInPage() {
           router.push('/dashboard');
       }
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, isLoading, router]);
 
   const onSubmit = async (data: SignInForm) => {
     try {

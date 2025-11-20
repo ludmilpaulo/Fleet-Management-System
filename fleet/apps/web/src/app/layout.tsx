@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from '@/providers/ReduxProvider';
 import { MixpanelProvider } from '@/components/providers/mixpanel-provider';
+import { ApolloProviderWrapper } from "@/providers/ApolloProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,17 +70,6 @@ export const metadata: Metadata = {
     description: "Modern fleet management system with role-based access for comprehensive fleet operations.",
     images: ["/og-image.jpg"],
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-    viewportFit: "cover",
-  },
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#3b82f6" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
-  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -91,6 +81,18 @@ export const metadata: Metadata = {
   category: "Business",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#3b82f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -100,11 +102,14 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <ReduxProvider>
-          <MixpanelProvider>
-            {children}
-          </MixpanelProvider>
+          <ApolloProviderWrapper>
+            <MixpanelProvider>
+              {children}
+            </MixpanelProvider>
+          </ApolloProviderWrapper>
         </ReduxProvider>
       </body>
     </html>

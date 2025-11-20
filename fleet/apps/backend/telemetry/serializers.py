@@ -59,19 +59,55 @@ class VehicleLocationSerializer(serializers.ModelSerializer):
     vehicle_reg = serializers.CharField(source='vehicle.reg_number', read_only=True)
     vehicle_make_model = serializers.SerializerMethodField()
     recorded_by_name = serializers.CharField(source='recorded_by.full_name', read_only=True)
+    driver_name = serializers.SerializerMethodField()
+    driver_id = serializers.SerializerMethodField()
+    shift_id = serializers.SerializerMethodField()
     
     class Meta:
         model = VehicleLocation
         fields = [
             'id', 'vehicle', 'vehicle_reg', 'vehicle_make_model', 'lat', 'lng',
             'address', 'accuracy', 'speed', 'heading', 'altitude', 'recorded_at',
-            'recorded_by', 'recorded_by_name'
+            'recorded_by', 'recorded_by_name', 'driver_name', 'driver_id', 'shift_id'
         ]
         read_only_fields = ['id', 'recorded_at']
     
     def get_vehicle_make_model(self, obj):
         """Get vehicle make and model"""
         return f"{obj.vehicle.make} {obj.vehicle.model}"
+    
+    def get_driver_name(self, obj):
+        """Get driver name from active shift"""
+        from fleet_app.models import Shift
+        shift = Shift.objects.filter(
+            vehicle=obj.vehicle,
+            status='ACTIVE'
+        ).first()
+        if shift:
+            return shift.driver.full_name or shift.driver.username
+        return None
+    
+    def get_driver_id(self, obj):
+        """Get driver ID from active shift"""
+        from fleet_app.models import Shift
+        shift = Shift.objects.filter(
+            vehicle=obj.vehicle,
+            status='ACTIVE'
+        ).first()
+        if shift:
+            return shift.driver.id
+        return None
+    
+    def get_shift_id(self, obj):
+        """Get shift ID from active shift"""
+        from fleet_app.models import Shift
+        shift = Shift.objects.filter(
+            vehicle=obj.vehicle,
+            status='ACTIVE'
+        ).first()
+        if shift:
+            return shift.id
+        return None
 
 
 class VehicleLocationCreateSerializer(serializers.ModelSerializer):

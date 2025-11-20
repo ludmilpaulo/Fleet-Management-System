@@ -111,3 +111,41 @@ class Shift(models.Model):
     def __str__(self):
         return f"{self.driver.username} - {self.vehicle.reg_number} ({self.start_at.date()})"
 
+
+class ShiftEndChecklist(models.Model):
+    """Checklist completed when driver ends a shift"""
+    
+    shift = models.OneToOneField(Shift, on_delete=models.CASCADE, related_name='end_checklist')
+    
+    # Location where car was left
+    parking_lat = models.FloatField(null=True, blank=True)
+    parking_lng = models.FloatField(null=True, blank=True)
+    parking_address = models.TextField(blank=True)
+    
+    # Fuel level
+    fuel_level_photo = models.ImageField(upload_to='shift_end/fuel/', null=True, blank=True)
+    fuel_level_detected = models.FloatField(null=True, blank=True, help_text="Detected fuel level percentage (0-100)")
+    fuel_level_manual = models.FloatField(null=True, blank=True, help_text="Manual fuel level entry if ML fails")
+    
+    # Vehicle condition photos (4 sides)
+    photo_front = models.ImageField(upload_to='shift_end/condition/', null=True, blank=True)
+    photo_back = models.ImageField(upload_to='shift_end/condition/', null=True, blank=True)
+    photo_left = models.ImageField(upload_to='shift_end/condition/', null=True, blank=True)
+    photo_right = models.ImageField(upload_to='shift_end/condition/', null=True, blank=True)
+    
+    # Condition notes
+    scratches_noted = models.BooleanField(default=False)
+    damage_description = models.TextField(blank=True, help_text="Description of any damage or scratches found")
+    
+    # Metadata
+    completed_at = models.DateTimeField(auto_now_add=True)
+    completed_by = models.ForeignKey('account.User', on_delete=models.PROTECT, related_name='completed_checklists')
+    
+    class Meta:
+        ordering = ['-completed_at']
+        verbose_name = 'Shift End Checklist'
+        verbose_name_plural = 'Shift End Checklists'
+    
+    def __str__(self):
+        return f"Checklist for {self.shift.vehicle.reg_number} - {self.completed_at.strftime('%Y-%m-%d %H:%M')}"
+

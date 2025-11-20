@@ -18,6 +18,9 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.decorators.csrf import csrf_exempt
+from graphene_django.views import GraphQLView
+from .schema import schema
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,7 +33,8 @@ urlpatterns = [
     path('api/telemetry/', include('telemetry.urls')),
     path('api/platform-admin/', include('platform_admin.urls')),
     path('api/billing/', include('billing.urls')),
-    # path('api/schema/', include('drf_spectacular.urls')),
+    # GraphQL endpoint
+    path('graphql/', csrf_exempt(GraphQLView.as_view(schema=schema, graphiql=True))),
 ]
 
 # Serve media files in development

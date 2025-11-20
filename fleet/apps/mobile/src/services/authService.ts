@@ -3,19 +3,27 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { analytics } from './mixpanel';
 
+// Helper to detect if running on physical device
+const isPhysicalDevice = Platform.OS === 'ios' || Platform.OS === 'android';
+
 export interface AuthUser {
-  id: number;
+  id: number | string;
   username: string;
   email: string;
-  first_name: string;
-  last_name: string;
-  full_name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   role: 'admin' | 'driver' | 'staff' | 'inspector';
-  role_display: string;
+  role_display?: string;
   phone_number?: string;
   employee_id?: string;
   department?: string;
-  is_active: boolean;
+  is_active?: boolean;
+  company?: {
+    id?: number;
+    name: string;
+    slug?: string;
+  } | string; // Can be object or string depending on backend response
 }
 
 export interface AuthResponse {
@@ -25,7 +33,26 @@ export interface AuthResponse {
 }
 
 class AuthService {
-  private baseURL = 'https://www.fleetia.online/api/account';
+  // For physical devices, use network IP instead of localhost
+  // Check EXPO_PUBLIC_API_URL environment variable first, then use network IP for physical devices
+  private baseURL = (() => {
+    if (process.env.EXPO_PUBLIC_API_URL) {
+      return `${process.env.EXPO_PUBLIC_API_URL}/account`;
+    }
+    if (__DEV__) {
+      // Use network IP for physical devices (Android/iOS on real devices)
+      // Default to 192.168.1.110 - change this to your computer's network IP
+      // You can also set EXPO_PUBLIC_API_URL=http://YOUR_IP:8000/api in .env
+      const networkIP = process.env.EXPO_PUBLIC_NETWORK_IP || '192.168.1.110';
+      const apiURL = isPhysicalDevice 
+        ? `http://${networkIP}:8000/api`
+        : 'http://localhost:8000/api';
+      const fullURL = `${apiURL}/account`;
+      console.log(`[AuthService] Using API URL: ${fullURL} (Device: ${Platform.OS}, Physical: ${isPhysicalDevice}, Network IP: ${networkIP})`);
+      return fullURL;
+    }
+    return 'https://taki.pythonanywhere.com/api/account';
+  })();
   private token: string | null = null;
   private user: AuthUser | null = null;
 
@@ -40,8 +67,63 @@ class AuthService {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Login failed');
+        let errorMessage = 'Login failed';
+        let errorType: 'username_not_found' | 'incorrect_password' | 'account_disabled' | 'network_error' | 'unknown' = 'unknown';
+        
+        try {
+          const errorData = await response.json();
+          
+          // Handle Django REST Framework error format
+          // Errors can be: { detail: "..." }, { non_field_errors: [...] }, or { username: [...], password: [...] }
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+            // Check for specific error types
+            if (errorMessage.toLowerCase().includes('does not exist') || 
+                errorMessage.toLowerCase().includes('username or email does not exist')) {
+              errorType = 'username_not_found';
+            } else if (errorMessage.toLowerCase().includes('incorrect password') ||
+                       errorMessage.toLowerCase().includes('password')) {
+              errorType = 'incorrect_password';
+            } else if (errorMessage.toLowerCase().includes('disabled')) {
+              errorType = 'account_disabled';
+            }
+          } else if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors)) {
+            errorMessage = errorData.non_field_errors[0];
+            // Check for specific error types in non_field_errors (Django REST Framework format)
+            const lowerMessage = errorMessage.toLowerCase();
+            if (lowerMessage.includes('does not exist') || 
+                lowerMessage.includes('username or email does not exist')) {
+              errorType = 'username_not_found';
+            } else if (lowerMessage.includes('incorrect password') ||
+                       (lowerMessage.includes('password') && !lowerMessage.includes('required'))) {
+              errorType = 'incorrect_password';
+            } else if (lowerMessage.includes('disabled')) {
+              errorType = 'account_disabled';
+            }
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          } else {
+            // Try to extract first error message from any field
+            const firstError = Object.values(errorData)[0];
+            if (Array.isArray(firstError) && firstError.length > 0) {
+              errorMessage = firstError[0];
+            } else if (typeof firstError === 'string') {
+              errorMessage = firstError;
+            }
+          }
+        } catch (parseError) {
+          // If JSON parsing fails, it might be a network error
+          if (response.status === 0 || !response.status) {
+            errorMessage = 'Network error. Please check your internet connection and ensure the backend server is running.';
+            errorType = 'network_error';
+          } else {
+            errorMessage = `Login failed (HTTP ${response.status})`;
+          }
+        }
+
+        const error = new Error(errorMessage) as any;
+        error.errorType = errorType;
+        throw error;
       }
 
       const data: AuthResponse = await response.json();
@@ -60,10 +142,11 @@ class AuthService {
       });
 
       return data;
-    } catch (error) {
+    } catch (error: any) {
       analytics.track('Login Failed', {
         username,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        errorType: error?.errorType || 'unknown'
       });
       throw error;
     }
@@ -144,6 +227,13 @@ class AuthService {
     }
 
     try {
+      // Initialize auth from stored data first
+      await this.initializeAuth();
+      
+      if (this.user) {
+        return this.user;
+      }
+
       const token = await this.getStoredToken();
       if (!token) return null;
 
@@ -156,10 +246,19 @@ class AuthService {
       if (response.ok) {
         const user = await response.json();
         this.user = user;
+        await SecureStore.setItemAsync('user_data', JSON.stringify(user));
         return user;
+      } else {
+        // Token is invalid, clear stored data
+        await this.clearAuthData();
+        this.token = null;
+        this.user = null;
       }
     } catch (error) {
       console.error('Get current user error:', error);
+      await this.clearAuthData();
+      this.token = null;
+      this.user = null;
     }
 
     return null;

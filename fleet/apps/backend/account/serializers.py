@@ -88,9 +88,14 @@ class UserLoginSerializer(serializers.Serializer):
         password = attrs.get('password')
         
         if username and password:
-            # Check if user exists first
+            # Check if user exists first (by username or email)
             try:
-                user = User.objects.get(username=username)
+                # Try to get user by username first
+                try:
+                    user = User.objects.get(username=username)
+                except User.DoesNotExist:
+                    # If not found, try by email
+                    user = User.objects.get(email=username)
                 
                 # Check if password is correct
                 if not user.check_password(password):
@@ -103,6 +108,9 @@ class UserLoginSerializer(serializers.Serializer):
                 attrs['user'] = user
             except User.DoesNotExist:
                 raise serializers.ValidationError('Username or email does not exist. Please check and try again.')
+            except User.MultipleObjectsReturned:
+                # Should not happen, but handle it
+                raise serializers.ValidationError('Multiple accounts found. Please contact support.')
                 
         else:
             raise serializers.ValidationError('Username and password are required.')
@@ -135,13 +143,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     """
-    Serializer for updating user information
+    Serializer for updating user information (admin/staff can also update role)
     """
     class Meta:
         model = User
         fields = (
             'email', 'first_name', 'last_name', 'phone_number',
-            'department', 'hire_date', 'is_active'
+            'department', 'hire_date', 'is_active', 'role',
+            'employee_id'
         )
     
     def validate_email(self, value):

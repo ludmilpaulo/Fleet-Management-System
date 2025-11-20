@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { registerUser, clearError } from '@/store/slices/authSlice';
+import { registerUser, clearError, clearLoading } from '@/store/slices/authSlice';
 import { addNotification } from '@/store/slices/uiSlice';
 import { CompanySelector } from '@/components/ui/company-selector';
 import { Company } from '@/lib/auth';
@@ -49,10 +49,18 @@ export default function SignUpPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<SignUpForm>({
     resolver: zodResolver(signUpSchema),
   });
+
+  // Sync selectedCompany with form field
+  useEffect(() => {
+    if (selectedCompany) {
+      setValue('company_slug', selectedCompany.slug, { shouldValidate: true });
+    }
+  }, [selectedCompany, setValue]);
 
   // Clear error when component mounts
   useEffect(() => {
@@ -82,7 +90,14 @@ export default function SignUpPage() {
   }, [isAuthenticated, user, router]);
 
   const onSubmit = async (data: SignUpForm) => {
+    console.log('=== FORM SUBMISSION STARTED ===');
+    console.log('Form data:', { ...data, password: '***', password_confirm: '***' });
+    console.log('Selected company:', selectedCompany);
+    console.log('Form errors:', errors);
+    console.log('Is loading:', isLoading);
+    
     if (!selectedCompany) {
+      console.warn('No company selected, showing error');
       dispatch(addNotification({
         type: 'error',
         title: 'Company Required',
@@ -97,42 +112,103 @@ export default function SignUpPage() {
         company_slug: selectedCompany.slug,
       };
       
-      const result = await dispatch(registerUser(registrationData)).unwrap();
-      setSuccess(true);
+      console.log('=== SUBMITTING REGISTRATION ===');
+      console.log('Registration data:', { ...registrationData, password: '***', password_confirm: '***' });
       
-      // Add success notification
-      dispatch(addNotification({
-        type: 'success',
-        title: 'Registration Successful',
-        message: `Welcome to ${selectedCompany.name}, ${result.user.first_name || result.user.username}!`,
-      }));
+      // Dispatch the registration action
+      const registrationPromise = dispatch(registerUser(registrationData));
       
-      // Redirect after a short delay
-      setTimeout(() => {
-        switch (result.user.role) {
-          case 'admin':
-            router.push('/dashboard/admin');
-            break;
-          case 'staff':
-            router.push('/dashboard/staff');
-            break;
-          case 'driver':
-            router.push('/dashboard/driver');
-            break;
-          case 'inspector':
-            router.push('/dashboard/inspector');
-            break;
-          default:
-            router.push('/dashboard');
+      // Add a timeout promise to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Registration request timed out after 35 seconds')), 35000);
+      });
+      
+      let resultAction: any;
+      let isTimeout = false;
+      
+      try {
+        resultAction = await Promise.race([
+          registrationPromise,
+          timeoutPromise,
+        ]) as any;
+      } catch (raceError: any) {
+        // If it's a timeout, the registration promise might still be pending
+        if (raceError.message?.includes('timed out')) {
+          isTimeout = true;
+          // Try to get the result from the registration promise if it completed
+          try {
+            resultAction = await registrationPromise;
+          } catch (promiseError) {
+            // Registration failed, use the timeout error
+            throw raceError;
+          }
+        } else {
+          throw raceError;
         }
-      }, 2000);
-    } catch (err: unknown) {
-      // Error is handled by Redux slice
+      }
+      
+      // Handle timeout case
+      if (isTimeout && !registerUser.fulfilled.match(resultAction) && !registerUser.rejected.match(resultAction)) {
+        throw new Error('Registration request timed out after 35 seconds');
+      }
+      
+      // Check if the action was rejected
+      if (registerUser.rejected.match(resultAction)) {
+        const errorMessage = resultAction.payload || error || 'Registration failed. Please try again.';
+        dispatch(addNotification({
+          type: 'error',
+          title: 'Registration Failed',
+          message: String(errorMessage),
+        }));
+        console.error('Registration rejected:', resultAction);
+        return;
+      }
+      
+      // Check if the action was fulfilled
+      if (registerUser.fulfilled.match(resultAction)) {
+        const result = resultAction.payload;
+        setSuccess(true);
+        
+        // Add success notification
+        dispatch(addNotification({
+          type: 'success',
+          title: 'Registration Successful',
+          message: `Welcome to ${selectedCompany.name}, ${result.user.first_name || result.user.username}!`,
+        }));
+        
+        // Redirect after a short delay
+        setTimeout(() => {
+          switch (result.user.role) {
+            case 'admin':
+              router.push('/dashboard/admin');
+              break;
+            case 'staff':
+              router.push('/dashboard/staff');
+              break;
+            case 'driver':
+              router.push('/dashboard/driver');
+              break;
+            case 'inspector':
+              router.push('/dashboard/inspector');
+              break;
+            default:
+              router.push('/dashboard');
+          }
+        }, 2000);
+      }
+    } catch (err: any) {
+      // Fallback error handling - ensure loading state is cleared
+      const errorMessage = err?.message || error || 'Registration failed. Please try again.';
       dispatch(addNotification({
         type: 'error',
         title: 'Registration Failed',
-        message: err instanceof Error ? err.message : 'Registration failed',
+        message: String(errorMessage),
       }));
+      console.error('Registration catch error:', err);
+      
+      // Force clear loading state on error
+      dispatch(clearError());
+      dispatch(clearLoading());
     }
   };
 
@@ -261,14 +337,24 @@ export default function SignUpPage() {
                 )}
               </div>
 
-              {/* Company Selection */}
+              {/* Company Selection - Required */}
               <div className="space-y-4">
-                <CompanySelector
-                  onCompanySelect={setSelectedCompany}
-                  selectedCompany={selectedCompany}
-                />
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">
+                    Company <span className="text-red-500">*</span>
+                  </Label>
+                  <CompanySelector
+                    onCompanySelect={setSelectedCompany}
+                    selectedCompany={selectedCompany}
+                  />
+                </div>
                 {errors.company_slug && (
                   <p className="text-sm text-red-600">{errors.company_slug.message}</p>
+                )}
+                {!selectedCompany && (
+                  <p className="text-sm text-amber-600">
+                    Please select an existing company or create a new one to continue
+                  </p>
                 )}
               </div>
 
@@ -354,7 +440,15 @@ export default function SignUpPage() {
               <Button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isLoading}
+                disabled={isLoading || !selectedCompany}
+                onClick={(e) => {
+                  console.log('=== BUTTON CLICKED ===');
+                  console.log('Button disabled?', isLoading || !selectedCompany);
+                  console.log('isLoading:', isLoading);
+                  console.log('selectedCompany:', selectedCompany);
+                  console.log('Form errors:', errors);
+                  // Don't prevent default - let form submit normally
+                }}
               >
                 {isLoading ? (
                   <>

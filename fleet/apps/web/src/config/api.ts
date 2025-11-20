@@ -15,7 +15,8 @@ const detectProdApiBase = (): string => {
   const host = window.location.hostname;
   // Local development - prioritize localhost
   if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.')) {
-    return 'http://localhost:8000/api';
+    // Use the same hostname as the frontend but port 8000
+    return `http://${host}:8000/api`;
   }
   
   // Known production frontends mapped to backend API
@@ -80,80 +81,80 @@ export const API_CONFIG = {
   ENDPOINTS: {
     // Authentication
     AUTH: {
-      LOGIN: '/account/login/',
-      REGISTER: '/account/register/',
-      REFRESH: '/account/refresh/',
-      LOGOUT: '/account/logout/',
-      ME: '/account/profile/',
+      LOGIN: 'account/login/',
+      REGISTER: 'account/register/',
+      REFRESH: 'account/refresh/',
+      LOGOUT: 'account/logout/',
+      ME: 'account/profile/',
     },
     
     // Vehicles
     VEHICLES: {
-      LIST: '/fleet/vehicles/',
-      CREATE: '/fleet/vehicles/',
-      DETAIL: (id: number) => `/fleet/vehicles/${id}/`,
-      UPDATE: (id: number) => `/fleet/vehicles/${id}/`,
-      DELETE: (id: number) => `/fleet/vehicles/${id}/`,
+      LIST: 'fleet/vehicles/',
+      CREATE: 'fleet/vehicles/',
+      DETAIL: (id: number) => `fleet/vehicles/${id}/`,
+      UPDATE: (id: number) => `fleet/vehicles/${id}/`,
+      DELETE: (id: number) => `fleet/vehicles/${id}/`,
     },
     
     // Fleet Stats
     FLEET_STATS: {
-      DASHBOARD: '/fleet/stats/dashboard/',
-      VEHICLES: '/fleet/stats/vehicles/',
-      SHIFTS: '/fleet/stats/shifts/',
+      DASHBOARD: 'fleet/stats/dashboard/',
+      VEHICLES: 'fleet/stats/vehicles/',
+      SHIFTS: 'fleet/stats/shifts/',
     },
     
     // Shifts
     SHIFTS: {
-      LIST: '/fleet/shifts/',
-      CREATE: '/fleet/shifts/',
-      DETAIL: (id: number) => `/fleet/shifts/${id}/`,
-      START: '/fleet/shifts/start/',
-      END: (id: number) => `/fleet/shifts/${id}/end/`,
+      LIST: 'fleet/shifts/',
+      CREATE: 'fleet/shifts/',
+      DETAIL: (id: number) => `fleet/shifts/${id}/`,
+      START: 'fleet/shifts/start/',
+      END: (id: number) => `fleet/shifts/${id}/end/`,
     },
     
     // Inspections
     INSPECTIONS: {
-      LIST: '/inspections/',
-      CREATE: '/inspections/',
-      DETAIL: (id: number) => `/inspections/${id}/`,
-      COMPLETE: (id: number) => `/inspections/${id}/complete/`,
+      LIST: 'inspections/inspections/',
+      CREATE: 'inspections/inspections/',
+      DETAIL: (id: number) => `inspections/inspections/${id}/`,
+      COMPLETE: (id: number) => `inspections/inspections/${id}/complete/`,
     },
     
     // Uploads
     UPLOADS: {
-      SIGN: '/uploads/sign/',
-      CONFIRM: '/uploads/confirm/',
+      SIGN: 'uploads/sign/',
+      CONFIRM: 'uploads/confirm/',
     },
     
     // Issues & Tickets
     ISSUES: {
-      LIST: '/issues/issues/',
-      CREATE: '/issues/issues/',
-      DETAIL: (id: number) => `/issues/issues/${id}/`,
+      LIST: 'issues/issues/',
+      CREATE: 'issues/issues/',
+      DETAIL: (id: number) => `issues/issues/${id}/`,
     },
     
     TICKETS: {
-      LIST: '/tickets/tickets/',
-      CREATE: '/tickets/tickets/',
-      DETAIL: (id: number) => `/tickets/tickets/${id}/`,
-      UPDATE: (id: number) => `/tickets/tickets/${id}/`,
+      LIST: 'tickets/tickets/',
+      CREATE: 'tickets/tickets/',
+      DETAIL: (id: number) => `tickets/tickets/${id}/`,
+      UPDATE: (id: number) => `tickets/tickets/${id}/`,
     },
     
     // Telemetry
     TELEMETRY: {
-      PARKING: '/telemetry/parking/',
+      PARKING: 'telemetry/parking/',
     },
     
     // Billing
     BILLING: {
-      PLANS: '/billing/plans/',
-      PLAN_DETAIL: (id: number) => `/billing/plans/${id}/`,
-      CHECKOUT_SESSION: '/billing/checkout-session/',
-      SUBSCRIPTION_CURRENT: '/billing/subscriptions/current/',
-      SUBSCRIPTIONS: '/billing/subscriptions/',
-      PAYMENTS: '/billing/payments/',
-      WEBHOOK: (provider: string) => `/billing/webhooks/${provider}/`,
+      PLANS: 'billing/plans/',
+      PLAN_DETAIL: (id: number) => `billing/plans/${id}/`,
+      CHECKOUT_SESSION: 'billing/checkout-session/',
+      SUBSCRIPTION_CURRENT: 'billing/subscriptions/current/',
+      SUBSCRIPTIONS: 'billing/subscriptions/',
+      PAYMENTS: 'billing/payments/',
+      WEBHOOK: (provider: string) => `billing/webhooks/${provider}/`,
     },
   },
   

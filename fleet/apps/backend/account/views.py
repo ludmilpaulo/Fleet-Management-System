@@ -168,9 +168,9 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
-class UserListView(generics.ListAPIView):
+class UserListView(generics.ListCreateAPIView):
     """
-    API view for listing users (admin and staff only)
+    API view for listing and creating users (admin and staff only)
     """
     serializer_class = UserListSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -207,6 +207,51 @@ class UserListView(generics.ListAPIView):
             )
         
         return queryset.order_by('-date_joined')
+    
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return UserRegistrationSerializer
+        return UserListSerializer
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new user for the company (admin and staff only)
+        """
+        user = request.user
+        
+        # Only admin and staff can create users
+        if user.role not in [User.Role.ADMIN, User.Role.STAFF]:
+            return Response(
+                {'detail': 'You do not have permission to create users.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Ensure the user belongs to a company
+        if not user.company:
+            return Response(
+                {'detail': 'You must belong to a company to create users.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Automatically set company_slug to current user's company
+        data = request.data.copy()
+        data['company_slug'] = user.company.slug
+        
+        serializer = UserRegistrationSerializer(data=data)
+        if serializer.is_valid():
+            try:
+                new_user = serializer.save()
+                return Response(
+                    UserProfileSerializer(new_user).data,
+                    status=status.HTTP_201_CREATED
+                )
+            except Exception as e:
+                return Response(
+                    {'detail': f'Error creating user: {str(e)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):

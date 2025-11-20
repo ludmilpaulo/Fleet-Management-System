@@ -70,11 +70,14 @@ export interface CheckoutSessionResponse {
   session_id?: string;
 }
 
+// Helper to remove leading slash for axios (which ignores baseURL path when path starts with /)
+const normalizePath = (path: string) => path.startsWith('/') ? path.slice(1) : path;
+
 /**
  * Get all available subscription plans
  */
 export const getPlans = async (): Promise<Plan[]> => {
-  const response = await api.get<Plan[]>(API_CONFIG.ENDPOINTS.BILLING.PLANS);
+  const response = await api.get<Plan[]>(normalizePath(API_CONFIG.ENDPOINTS.BILLING.PLANS));
   return response.data;
 };
 
@@ -82,7 +85,7 @@ export const getPlans = async (): Promise<Plan[]> => {
  * Get plan details by ID
  */
 export const getPlan = async (id: number): Promise<Plan> => {
-  const response = await api.get<Plan>(API_CONFIG.ENDPOINTS.BILLING.PLAN_DETAIL(id));
+  const response = await api.get<Plan>(normalizePath(API_CONFIG.ENDPOINTS.BILLING.PLAN_DETAIL(id)));
   return response.data;
 };
 
@@ -91,7 +94,7 @@ export const getPlan = async (id: number): Promise<Plan> => {
  */
 export const getCurrentSubscription = async (): Promise<CompanySubscription | null> => {
   try {
-    const response = await api.get<CompanySubscription>(API_CONFIG.ENDPOINTS.BILLING.SUBSCRIPTION_CURRENT);
+    const response = await api.get<CompanySubscription>(normalizePath(API_CONFIG.ENDPOINTS.BILLING.SUBSCRIPTION_CURRENT));
     return response.data;
   } catch (error: any) {
     if (error.response?.status === 404) {
@@ -108,7 +111,7 @@ export const createCheckoutSession = async (
   request: CheckoutSessionRequest
 ): Promise<CheckoutSessionResponse> => {
   const response = await api.post<CheckoutSessionResponse>(
-    API_CONFIG.ENDPOINTS.BILLING.CHECKOUT_SESSION,
+    normalizePath(API_CONFIG.ENDPOINTS.BILLING.CHECKOUT_SESSION),
     request
   );
   return response.data;
@@ -118,7 +121,7 @@ export const createCheckoutSession = async (
  * Get payment history
  */
 export const getPayments = async (): Promise<Payment[]> => {
-  const response = await api.get<Payment[]>(API_CONFIG.ENDPOINTS.BILLING.PAYMENTS);
+  const response = await api.get<Payment[]>(normalizePath(API_CONFIG.ENDPOINTS.BILLING.PAYMENTS));
   return response.data;
 };
 
@@ -126,7 +129,7 @@ export const getPayments = async (): Promise<Payment[]> => {
  * Cancel subscription
  */
 export const cancelSubscription = async (subscriptionId: number, atPeriodEnd: boolean = true): Promise<void> => {
-  await api.post(`/billing/subscriptions/${subscriptionId}/cancel/`, {
+  await api.post(`billing/subscriptions/${subscriptionId}/cancel/`, {
     at_period_end: atPeriodEnd,
   });
 };

@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -101,10 +100,47 @@ export const SignInScreen: React.FC = () => {
         message: `Welcome back, ${user?.first_name || user?.username}!`,
       }));
     } catch (err: any) {
+      // Extract error type and message
+      const errorPayload = typeof err === 'object' && err !== null ? err : { message: err, errorType: 'unknown' };
+      const errorMessage = errorPayload.message || typeof err === 'string' ? err : 'Login failed';
+      const errorType = errorPayload.errorType || 'unknown';
+      
+      // Provide specific, user-friendly alerts based on error type
+      let alertTitle = 'Login Failed';
+      let alertMessage = errorMessage;
+      let alertButtons: any[] = [{ text: 'OK', style: 'default' }];
+      
+      if (errorMessage.toLowerCase().includes('does not exist') || 
+          errorMessage.toLowerCase().includes('username or email does not exist')) {
+        alertTitle = 'Account Not Found';
+        alertMessage = 'The username or email you entered does not exist. Please check your credentials and try again.\n\nIf you don\'t have an account, please register first.';
+        alertButtons = [
+          { text: 'Try Again', style: 'cancel' },
+          { 
+            text: 'Register', 
+            onPress: () => navigation.navigate('SignUp'),
+            style: 'default'
+          }
+        ];
+      } else if (errorMessage.toLowerCase().includes('incorrect password')) {
+        alertTitle = 'Incorrect Password';
+        alertMessage = 'The password you entered is incorrect. Please try again.\n\nIf you\'ve forgotten your password, please contact your administrator.';
+      } else if (errorMessage.toLowerCase().includes('disabled')) {
+        alertTitle = 'Account Disabled';
+        alertMessage = 'Your account has been disabled. Please contact your administrator or support team for assistance.';
+      } else if (errorMessage.toLowerCase().includes('network') || 
+                 errorMessage.toLowerCase().includes('connection') ||
+                 errorMessage.toLowerCase().includes('fetch')) {
+        alertTitle = 'Connection Error';
+        alertMessage = 'Unable to connect to the server. Please check:\n\n• Your internet connection\n• That the backend server is running\n• That your device is on the same network as the server';
+      }
+      
+      Alert.alert(alertTitle, alertMessage, alertButtons);
+      
       dispatch(addNotification({
         type: 'error',
-        title: 'Login Failed',
-        message: err || 'Invalid credentials',
+        title: alertTitle,
+        message: alertMessage,
       }));
     }
   };
@@ -140,37 +176,44 @@ export const SignInScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1">
       <LinearGradient
         colors={['#eff6ff', '#ffffff', '#f0f9ff']}
-        style={styles.gradient}
+        className="flex-1"
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          className="flex-1"
         >
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}
             showsVerticalScrollIndicator={false}
           >
             {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.logoContainer}>
+            <View className="items-center mb-8">
+              <View className="mb-4">
                 <LinearGradient
                   colors={['#3b82f6', '#2563eb']}
-                  style={styles.logo}
+                  className="w-16 h-16 rounded-3xl items-center justify-center"
+                  style={{
+                    shadowColor: '#3b82f6',
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 12,
+                    elevation: 8,
+                  }}
                 >
                   <Ionicons name="car" size={32} color="#ffffff" />
                 </LinearGradient>
               </View>
-              <Text style={styles.title}>Fleet Management</Text>
-              <Text style={styles.subtitle}>Sign in to your account</Text>
+              <Text className="text-3xl font-bold text-slate-900 mb-2">Fleet Management</Text>
+              <Text className="text-base text-slate-600 text-center">Sign in to your account</Text>
             </View>
 
             {/* Sign In Form */}
-            <Card style={styles.formCard} variant="elevated">
-              <Text style={styles.formTitle}>Welcome Back</Text>
-              <Text style={styles.formSubtitle}>
+            <Card className="mb-6 p-5 rounded-3xl shadow-lg bg-white dark:bg-slate-800" variant="elevated">
+              <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100 text-center mb-2">Welcome Back</Text>
+              <Text className="text-sm text-slate-600 dark:text-slate-400 text-center mb-6">
                 Enter your credentials to access your dashboard
               </Text>
 
@@ -197,9 +240,9 @@ export const SignInScreen: React.FC = () => {
               />
 
               {error && (
-                <View style={styles.errorContainer}>
+                <View className="flex-row items-center bg-red-50 dark:bg-red-900/20 p-3 rounded-lg mb-4">
                   <Ionicons name="alert-circle" size={20} color="#ef4444" />
-                  <Text style={styles.errorText}>{error}</Text>
+                  <Text className="text-sm text-red-500 ml-2 flex-1">{error}</Text>
                 </View>
               )}
 
@@ -208,11 +251,11 @@ export const SignInScreen: React.FC = () => {
                 onPress={handleSignIn}
                 loading={isLoading}
                 disabled={isLoading}
-                style={styles.signInButton}
+                className="mb-4"
               />
 
-              <View style={styles.signUpContainer}>
-                <Text style={styles.signUpText}>Don't have an account? </Text>
+              <View className="flex-row justify-center items-center">
+                <Text className="text-sm text-slate-600 dark:text-slate-400">Don't have an account? </Text>
                 <Button
                   title="Sign Up"
                   onPress={handleSignUp}
@@ -222,33 +265,34 @@ export const SignInScreen: React.FC = () => {
               </View>
 
               {/* Biometric Authentication */}
-              <BiometricAuth
-                onAuthenticate={handleBiometricAuth}
-                onError={handleBiometricError}
-                disabled={isLoading}
-                style={styles.biometricContainer}
-              />
+              <View className="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700">
+                <BiometricAuth
+                  onAuthenticate={handleBiometricAuth}
+                  onError={handleBiometricError}
+                  disabled={isLoading}
+                />
+              </View>
             </Card>
 
             {/* Demo Credentials */}
-            <Card style={styles.demoCard} variant="outlined">
-              <Text style={styles.demoTitle}>Demo Credentials</Text>
-              <View style={styles.demoGrid}>
-                <View style={styles.demoItem}>
-                  <Text style={styles.demoRole}>Admin</Text>
-                  <Text style={styles.demoCreds}>admin / admin123</Text>
+            <Card className="p-5 rounded-3xl bg-gray-50 dark:bg-slate-800" variant="outlined">
+              <Text className="text-base font-semibold text-slate-900 dark:text-slate-100 text-center mb-4">Demo Credentials</Text>
+              <View className="flex-row flex-wrap justify-between">
+                <View className="w-[48%] mb-3">
+                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Admin</Text>
+                  <Text className="text-xs text-slate-600 dark:text-slate-400" style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>admin / admin123</Text>
                 </View>
-                <View style={styles.demoItem}>
-                  <Text style={styles.demoRole}>Staff</Text>
-                  <Text style={styles.demoCreds}>staff1 / staff123</Text>
+                <View className="w-[48%] mb-3">
+                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Staff</Text>
+                  <Text className="text-xs text-slate-600 dark:text-slate-400" style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>staff1 / staff123</Text>
                 </View>
-                <View style={styles.demoItem}>
-                  <Text style={styles.demoRole}>Driver</Text>
-                  <Text style={styles.demoCreds}>driver1 / driver123</Text>
+                <View className="w-[48%] mb-3">
+                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Driver</Text>
+                  <Text className="text-xs text-slate-600 dark:text-slate-400" style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>driver1 / driver123</Text>
                 </View>
-                <View style={styles.demoItem}>
-                  <Text style={styles.demoRole}>Inspector</Text>
-                  <Text style={styles.demoCreds}>inspector1 / inspector123</Text>
+                <View className="w-[48%] mb-3">
+                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Inspector</Text>
+                  <Text className="text-xs text-slate-600 dark:text-slate-400" style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>inspector1 / inspector123</Text>
                 </View>
               </View>
             </Card>
@@ -258,128 +302,3 @@ export const SignInScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logoContainer: {
-    marginBottom: 16,
-  },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  formCard: {
-    marginBottom: 24,
-  },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  formSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef2f2',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#ef4444',
-    marginLeft: 8,
-    flex: 1,
-  },
-  signInButton: {
-    marginBottom: 16,
-  },
-  signUpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  signUpText: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  biometricContainer: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  demoCard: {
-    backgroundColor: '#f9fafb',
-  },
-  demoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  demoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  demoItem: {
-    width: '48%',
-    marginBottom: 12,
-  },
-  demoRole: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 4,
-  },
-  demoCreds: {
-    fontSize: 12,
-    color: '#6b7280',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-});

@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Building2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Search, Building2, CheckCircle, AlertCircle, Plus, X } from 'lucide-react';
 import { Input } from './input';
 import { Card, CardContent } from './card';
 import { Badge } from './badge';
+import { Button } from './button';
+import { Label } from './label';
 import { companyAPI, Company } from '@/lib/auth';
 
 interface CompanySelectorProps {
@@ -17,6 +19,15 @@ export function CompanySelector({ onCompanySelect, selectedCompany }: CompanySel
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [newCompany, setNewCompany] = useState({
+    name: '',
+    description: '',
+    email: '',
+    phone: '',
+  });
 
   useEffect(() => {
     fetchCompanies();
@@ -41,6 +52,38 @@ export function CompanySelector({ onCompanySelect, selectedCompany }: CompanySel
     company.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleCreateCompany = async () => {
+    if (!newCompany.name || !newCompany.email) {
+      setCreateError('Company name and email are required');
+      return;
+    }
+
+    setCreating(true);
+    setCreateError('');
+    
+    try {
+      const createdCompany = await companyAPI.createCompany({
+        name: newCompany.name,
+        description: newCompany.description || undefined,
+        email: newCompany.email,
+        phone: newCompany.phone || undefined,
+      });
+      
+      // Add to companies list
+      setCompanies([...companies, createdCompany]);
+      // Select the new company
+      onCompanySelect(createdCompany);
+      // Reset form
+      setNewCompany({ name: '', description: '', email: '', phone: '' });
+      setShowCreateForm(false);
+      setSearchQuery('');
+    } catch (err: any) {
+      setCreateError(err.response?.data?.detail || err.message || 'Failed to create company');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const getPlanColor = (plan: string) => {
     switch (plan) {
       case 'enterprise':
@@ -63,17 +106,117 @@ export function CompanySelector({ onCompanySelect, selectedCompany }: CompanySel
         </p>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="Search companies..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and Create Button */}
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search companies..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {!showCreateForm && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowCreateForm(true)}
+            className="w-full"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create New Company
+          </Button>
+        )}
       </div>
+
+      {/* Create Company Form */}
+      {showCreateForm && (
+        <Card className="border-2 border-blue-200 bg-blue-50/50">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold text-gray-900">Create New Company</h4>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setCreateError('');
+                  setNewCompany({ name: '', description: '', email: '', phone: '' });
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {createError && (
+              <div className="flex items-center gap-2 p-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                <AlertCircle className="w-4 h-4" />
+                {createError}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="company_name">Company Name *</Label>
+                <Input
+                  id="company_name"
+                  type="text"
+                  placeholder="Enter company name"
+                  value={newCompany.name}
+                  onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="company_email">Company Email *</Label>
+                <Input
+                  id="company_email"
+                  type="email"
+                  placeholder="company@example.com"
+                  value={newCompany.email}
+                  onChange={(e) => setNewCompany({ ...newCompany, email: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="company_phone">Phone (Optional)</Label>
+                <Input
+                  id="company_phone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  value={newCompany.phone}
+                  onChange={(e) => setNewCompany({ ...newCompany, phone: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="company_description">Description (Optional)</Label>
+                <textarea
+                  id="company_description"
+                  placeholder="Brief description of your company"
+                  value={newCompany.description}
+                  onChange={(e) => setNewCompany({ ...newCompany, description: e.target.value })}
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleCreateCompany}
+                disabled={creating || !newCompany.name || !newCompany.email}
+                className="w-full"
+              >
+                {creating ? 'Creating...' : 'Create Company'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Error State */}
       {error && (

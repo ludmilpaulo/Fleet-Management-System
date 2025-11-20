@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Vehicle, KeyTracker, Shift
+from .models import Vehicle, KeyTracker, Shift, ShiftEndChecklist
 from account.serializers import CompanySerializer
 
 User = get_user_model()
@@ -152,7 +152,8 @@ class ShiftCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shift
         fields = [
-            'vehicle', 'start_at', 'start_lat', 'start_lng', 'start_address', 'notes'
+            'vehicle', 'driver', 'start_at', 'end_at', 'start_lat', 'start_lng', 
+            'start_address', 'end_lat', 'end_lng', 'end_address', 'status', 'notes'
         ]
     
     def validate_vehicle(self, value):
@@ -160,6 +161,13 @@ class ShiftCreateSerializer(serializers.ModelSerializer):
         user_org = self.context['request'].user.company
         if value.org != user_org:
             raise serializers.ValidationError("Vehicle does not belong to your organization.")
+        return value
+    
+    def validate_driver(self, value):
+        """Validate driver belongs to user's organization"""
+        user_org = self.context['request'].user.company
+        if value.company != user_org:
+            raise serializers.ValidationError("Driver does not belong to your organization.")
         return value
 
 
@@ -175,6 +183,80 @@ class ShiftEndSerializer(serializers.ModelSerializer):
         from django.utils import timezone
         instance.end_at = timezone.now()
         return super().update(instance, validated_data)
+
+
+class ShiftEndChecklistSerializer(serializers.ModelSerializer):
+    """Serializer for shift end checklist with photo uploads"""
+    
+    class Meta:
+        model = ShiftEndChecklist
+        fields = [
+            'id', 'shift', 'parking_lat', 'parking_lng', 'parking_address',
+            'fuel_level_photo', 'fuel_level_detected', 'fuel_level_manual',
+            'photo_front', 'photo_back', 'photo_left', 'photo_right',
+            'scratches_noted', 'damage_description', 'completed_at', 'completed_by'
+        ]
+        read_only_fields = ['id', 'completed_at', 'completed_by']
+    
+    def create(self, validated_data):
+        """Create checklist and process fuel level photo with ML"""
+        checklist = ShiftEndChecklist.objects.create(**validated_data)
+        
+        # Process fuel level photo with ML if provided
+        if checklist.fuel_level_photo:
+            from .ml_services import detect_fuel_level
+            try:
+                fuel_level = detect_fuel_level(checklist.fuel_level_photo.path)
+                checklist.fuel_level_detected = fuel_level
+                checklist.save()
+            except Exception as e:
+                # Log error but don't fail the checklist creation
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Fuel level detection failed: {str(e)}")
+        
+        return checklist
+
+
+class ShiftEndChecklistCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating shift end checklist from mobile app"""
+    
+    class Meta:
+        model = ShiftEndChecklist
+        fields = [
+            'shift', 'parking_lat', 'parking_lng', 'parking_address',
+            'fuel_level_photo', 'fuel_level_manual',
+            'photo_front', 'photo_back', 'photo_left', 'photo_right',
+            'scratches_noted', 'damage_description'
+        ]
+    
+    def validate_shift(self, value):
+        """Validate shift belongs to user's organization and is active"""
+        user = self.context['request'].user
+        if value.vehicle.org != user.company:
+            raise serializers.ValidationError("Shift does not belong to your organization.")
+        if value.status != 'ACTIVE':
+            raise serializers.ValidationError("Shift is not active.")
+        return value
+    
+    def create(self, validated_data):
+        """Create checklist and process photos"""
+        validated_data['completed_by'] = self.context['request'].user
+        checklist = ShiftEndChecklist.objects.create(**validated_data)
+        
+        # Process fuel level photo with ML if provided
+        if checklist.fuel_level_photo:
+            from .ml_services import detect_fuel_level
+            try:
+                fuel_level = detect_fuel_level(checklist.fuel_level_photo.path)
+                checklist.fuel_level_detected = fuel_level
+                checklist.save()
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Fuel level detection failed: {str(e)}")
+        
+        return checklist
 
 
 

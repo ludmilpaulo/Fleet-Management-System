@@ -3,7 +3,28 @@ import Cookies from 'js-cookie';
 
 import { API_CONFIG } from '@/config/api';
 
-const API_BASE_URL = API_CONFIG.BASE_URL;
+// Ensure API_BASE_URL always ends with /api for consistency
+// Use direct backend URL, not Next.js proxy, to avoid hanging requests
+let API_BASE_URL = API_CONFIG.BASE_URL;
+if (typeof window !== 'undefined') {
+  // Client-side: always use direct backend URL
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.')) {
+    API_BASE_URL = `http://${host}:8000/api`;
+  } else {
+    // Ensure it ends with /api
+    API_BASE_URL = API_BASE_URL.endsWith('/api') 
+      ? API_BASE_URL 
+      : `${API_BASE_URL.replace(/\/$/, '')}/api`;
+  }
+} else {
+  // Server-side: ensure it ends with /api
+  API_BASE_URL = API_BASE_URL.endsWith('/api') 
+    ? API_BASE_URL 
+    : `${API_BASE_URL.replace(/\/$/, '')}/api`;
+}
+
+console.log('API_BASE_URL configured as:', API_BASE_URL);
 
 export interface Company {
   id: number;
@@ -90,6 +111,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 seconds timeout
 });
 
 // Add token to requests
@@ -127,13 +149,49 @@ export const authAPI = {
 
   // Register
   register: async (data: RegisterData): Promise<LoginResponse> => {
-    const response = await api.post(API_CONFIG.ENDPOINTS.AUTH.REGISTER, data);
-    const { token } = response.data;
+    const fullUrl = `${API_BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REGISTER}`;
+    const startTime = Date.now();
     
-    // Store token in cookie
-    Cookies.set('auth_token', token, { expires: 7 }); // 7 days
+    console.log('=== REGISTRATION REQUEST START ===');
+    console.log('Registering user with data:', { ...data, password: '***', password_confirm: '***' });
+    console.log('API_BASE_URL:', API_BASE_URL);
+    console.log('Endpoint:', API_CONFIG.ENDPOINTS.AUTH.REGISTER);
+    console.log('Full URL:', fullUrl);
+    console.log('Axios baseURL:', api.defaults.baseURL);
     
-    return response.data;
+    try {
+      console.log('Sending POST request...');
+      
+      const response = await api.post(API_CONFIG.ENDPOINTS.AUTH.REGISTER, data);
+      
+      const duration = Date.now() - startTime;
+      console.log(`✓ Request completed in ${duration}ms`);
+      console.log('Response status:', response.status);
+      console.log('Response data keys:', Object.keys(response.data || {}));
+      
+      const { token } = response.data;
+      
+      // Store token in cookie
+      Cookies.set('auth_token', token, { expires: 7 }); // 7 days
+      
+      console.log('=== REGISTRATION REQUEST SUCCESS ===');
+      return response.data;
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      console.error('=== REGISTRATION REQUEST FAILED ===');
+      console.error(`✗ Request failed after ${duration}ms`);
+      console.error('Error type:', error?.constructor?.name || 'Unknown');
+      console.error('Error message:', error?.message);
+      console.error('Error code:', error?.code);
+      console.error('Response status:', error?.response?.status);
+      console.error('Response data:', error?.response?.data);
+      console.error('Request URL:', error?.config?.url || fullUrl);
+      console.error('Request method:', error?.config?.method);
+      console.error('Is network error:', !error?.response && error?.request);
+      console.error('Full error object:', error);
+      
+      throw error;
+    }
   },
 
   // Logout
@@ -214,19 +272,22 @@ export const authAPI = {
   },
 };
 
-// Company API functions
+// Company API functions - use the same API_BASE_URL as the main api instance
 export const companyAPI = {
   // Get companies list
   getCompanies: async (params?: {
     search?: string;
   }): Promise<Company[]> => {
-    const response = await axios.get(`${API_CONFIG.BASE_URL}/companies/companies/`, { params });
-    return response.data.results;
+    const url = `${API_BASE_URL}/companies/companies/`;
+    console.log('Fetching companies from:', url);
+    const response = await axios.get(url, { params });
+    // Handle both paginated and non-paginated responses
+    return Array.isArray(response.data) ? response.data : (response.data.results || []);
   },
 
   // Get company by slug
   getCompany: async (slug: string): Promise<Company> => {
-    const response = await axios.get(`${API_CONFIG.BASE_URL}/companies/companies/${slug}/`);
+    const response = await axios.get(`${API_BASE_URL}/companies/companies/${slug}/`);
     return response.data;
   },
 
@@ -237,7 +298,7 @@ export const companyAPI = {
     description?: string;
     subscription_plan?: string;
   }> => {
-    const response = await axios.get(`${API_CONFIG.BASE_URL}/companies/companies/exists/`, {
+    const response = await axios.get(`${API_BASE_URL}/companies/companies/exists/`, {
       params: { slug }
     });
     return response.data;
@@ -258,7 +319,30 @@ export const companyAPI = {
     users_by_role: Record<string, number>;
     recent_registrations: number;
   }> => {
-    const response = await api.get(`${API_CONFIG.BASE_URL}/companies/companies/stats/`);
+    const response = await api.get(`${API_BASE_URL}/companies/companies/stats/`);
+    return response.data;
+  },
+
+  // Create a new company (public, for signup)
+  createCompany: async (data: {
+    name: string;
+    description?: string;
+    email: string;
+    phone?: string;
+    website?: string;
+    address_line1?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+  }): Promise<Company> => {
+    const url = `${API_BASE_URL}/companies/companies/create-public/`;
+    console.log('Creating company at:', url);
+    const response = await axios.post(url, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   },
 };

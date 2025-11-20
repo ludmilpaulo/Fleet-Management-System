@@ -32,12 +32,21 @@ export default function Home() {
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // Initialize auth state from localStorage
-    dispatch(initializeAuth());
+    // Initialize auth state from localStorage (client-side only)
+    // This ensures SSR doesn't try to access localStorage
+    if (typeof window !== 'undefined') {
+      dispatch(initializeAuth());
+    }
   }, [dispatch]);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user) {
+    // Only redirect if we're sure about auth state (not loading) AND user is authenticated
+    // This prevents redirect loops by ensuring we wait for auth initialization
+    if (isLoading) {
+      return; // Don't do anything while loading
+    }
+    
+    if (isAuthenticated && user) {
       // Redirect to appropriate dashboard based on role
       switch (user.role) {
         case 'admin':
@@ -56,6 +65,7 @@ export default function Home() {
           router.push('/dashboard');
       }
     }
+    // If not authenticated, just show the homepage (don't redirect)
   }, [isAuthenticated, user, isLoading, router]);
 
   const featureCards = [
@@ -157,6 +167,15 @@ export default function Home() {
     { role: 'Admin', access: 'Full system access', creds: 'admin / admin123' },
     { role: 'Staff', access: 'Operations management', creds: 'staff1 / staff123' },
   ];
+
+  // Show loading state while auth is initializing
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-white overflow-hidden">

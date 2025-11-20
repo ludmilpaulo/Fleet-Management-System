@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 import { 
   Truck, 
   Users, 
@@ -70,10 +71,20 @@ export default function AdminDashboard() {
   const { user, isLoading: authLoading } = useAppSelector((state) => state.auth)
 
   const fetchStats = useCallback(async () => {
+    if (!user) return; // Don't fetch if no user
+    
     try {
+      setLoading(true);
+      setError(null);
+      
+      // Optimize: Fetch critical data first, then secondary
+      const [dashboardData, userStatsData] = await Promise.all([
+        apiClient(API_CONFIG.ENDPOINTS.FLEET_STATS.DASHBOARD),
+        apiClient('account/stats/'),
+      ])
+
+      // Fetch secondary data in parallel but don't block
       const [
-        dashboardData,
-        userStatsData,
         subscriptionData,
         paymentsData,
         userListData,
@@ -81,19 +92,25 @@ export default function AdminDashboard() {
         ticketsData,
         inspectionsData,
         shiftsData,
-      ] = await Promise.all([
-        apiClient(API_CONFIG.ENDPOINTS.FLEET_STATS.DASHBOARD),
-        apiClient('/account/stats/'),
+      ] = await Promise.allSettled([
         apiClient(API_CONFIG.ENDPOINTS.BILLING.SUBSCRIPTION_CURRENT).catch(() => null),
         apiClient(API_CONFIG.ENDPOINTS.BILLING.PAYMENTS).catch(() => null),
-        apiClient('/account/users/?page_size=5'),
-        apiClient(`${API_CONFIG.ENDPOINTS.ISSUES.LIST}?page=1`),
-        apiClient(`${API_CONFIG.ENDPOINTS.TICKETS.LIST}?page=1`),
-        apiClient(`${API_CONFIG.ENDPOINTS.INSPECTIONS.LIST}?page=1`),
-        apiClient(`${API_CONFIG.ENDPOINTS.SHIFTS.LIST}?page=1`),
+        apiClient('account/users/?page_size=5').catch(() => null),
+        apiClient(`${API_CONFIG.ENDPOINTS.ISSUES.LIST}?page=1`).catch(() => null),
+        apiClient(`${API_CONFIG.ENDPOINTS.TICKETS.LIST}?page=1`).catch(() => null),
+        apiClient(`${API_CONFIG.ENDPOINTS.INSPECTIONS.LIST}?page=1`).catch(() => null),
+        apiClient(`${API_CONFIG.ENDPOINTS.SHIFTS.LIST}?page=1`).catch(() => null),
       ])
 
-      const payments = extractResults<any>(paymentsData).filter((payment) => {
+      const paymentsPayload = paymentsData.status === 'fulfilled' ? paymentsData.value : null;
+      const subscriptionPayload = subscriptionData.status === 'fulfilled' ? subscriptionData.value : null;
+      const userListPayload = userListData.status === 'fulfilled' ? userListData.value : null;
+      const issuesPayload = issuesData.status === 'fulfilled' ? issuesData.value : null;
+      const ticketsPayload = ticketsData.status === 'fulfilled' ? ticketsData.value : null;
+      const inspectionsPayload = inspectionsData.status === 'fulfilled' ? inspectionsData.value : null;
+      const shiftsPayload = shiftsData.status === 'fulfilled' ? shiftsData.value : null;
+
+      const payments = extractResults<any>(paymentsPayload || []).filter((payment) => {
         if (!payment?.paid_at) return false
         const paidDate = new Date(payment.paid_at).getTime()
         const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
@@ -106,7 +123,7 @@ export default function AdminDashboard() {
         : 0
 
       const companySubscriptionStatus =
-        subscriptionData?.status ||
+        subscriptionPayload?.status ||
         ((user?.company as { subscription_status?: string } | undefined)?.subscription_status) ||
         'unknown'
 
@@ -118,7 +135,7 @@ export default function AdminDashboard() {
         users_by_role: userStatsData.users_by_role || {},
         recent_registrations: userStatsData.recent_registrations || 0,
         subscription_status: companySubscriptionStatus,
-        trial_days_remaining: subscriptionData?.days_until_period_end ?? trialDaysFromCompany,
+        trial_days_remaining: subscriptionPayload?.days_until_period_end ?? trialDaysFromCompany,
         monthly_revenue: monthlyRevenue,
         total_vehicles: dashboardData.total_vehicles || 0,
         active_shifts: dashboardData.active_shifts || 0,
@@ -127,11 +144,12 @@ export default function AdminDashboard() {
       }
       
       setStats(combinedStats)
-      setRecentActivity(buildRecentActivity(userListData, issuesData, ticketsData, inspectionsData, shiftsData))
+      setRecentActivity(buildRecentActivity(userListPayload, issuesPayload, ticketsPayload, inspectionsPayload, shiftsPayload))
       setError(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching stats:', error)
-      setError('Unable to load dashboard data. Please try again later.')
+      const errorMessage = error?.detail || error?.message || 'Unable to load dashboard data. Please try again later.'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -171,22 +189,29 @@ export default function AdminDashboard() {
     }
   }
 
+  const subscriptionBadge = useMemo(() => stats ? getSubscriptionBadge(stats.subscription_status) : null, [stats])
+  const roleBreakdown = useMemo(() => stats ? Object.entries(stats.users_by_role || {}) : [], [stats])
+
   if (loading || authLoading) {
     return (
       <DashboardLayout>
-        <div className="space-y-6">
+        <div className="space-y-4 animate-in fade-in duration-500">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-64" />
+              <Skeleton className="h-6 w-96" />
+            </div>
           </div>
           <div className="grid gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <Card key={i} className="border-t-4">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-10 w-10 rounded-lg" />
                 </CardHeader>
                 <CardContent>
-                  <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-3 w-32" />
                 </CardContent>
               </Card>
             ))}
@@ -199,14 +224,14 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout>
       <HelpButton role="admin" page="dashboard" />
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between slide-up">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-1">
               Admin Dashboard
             </h1>
-            <p className="text-gray-600 text-lg">Welcome back, <span className="font-semibold text-gray-900">{user?.full_name || 'Admin'}</span></p>
+            <p className="text-gray-600 text-sm sm:text-base">Welcome back, <span className="font-semibold text-gray-900">{user?.full_name || 'Admin'}</span></p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="hover:border-blue-600 hover:text-blue-600 transition-all duration-300">
@@ -221,143 +246,128 @@ export default function AdminDashboard() {
         </div>
 
         {/* Company Status Banner */}
-        {stats ? (
-          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-purple-50">
+        <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-100 rounded-full">
+                <div className="p-3 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full shadow-md">
                     <Building2 className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{stats.company_name}</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{stats?.company_name || user?.company?.name || 'Your Company'}</h3>
                     <p className="text-sm text-gray-600">Fleet Management Platform</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  {getSubscriptionBadge(stats.subscription_status)}
-                  {stats.trial_days_remaining > 0 && (
-                    <div className="text-sm text-gray-600">
-                      <Clock className="w-4 h-4 inline mr-1" />
-                      {stats.trial_days_remaining} days left in trial
+              <div className="flex flex-wrap items-center gap-4">
+                {subscriptionBadge}
+                {stats && stats.trial_days_remaining > 0 && (
+                  <div className="flex items-center text-sm text-gray-700 bg-white px-3 py-1.5 rounded-full shadow-sm">
+                    <Clock className="w-4 h-4 mr-1.5 text-blue-600" />
+                    <span className="font-medium">{stats.trial_days_remaining} days left in trial</span>
                     </div>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
-        ) : (
-          /* Fallback Company Status Banner */
-          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-purple-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <Building2 className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Loading Company Data...</h3>
-                    <p className="text-sm text-gray-600">Fleet Management Platform</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Badge className="bg-blue-100 text-blue-800">
-                    <Clock className="w-3 h-3 mr-1" />
-                    Loading...
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Key Metrics */}
         {error && (
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              <p>{error}</p>
+          <Card className="border-red-200 bg-red-50 animate-in slide-in-from-top-2 duration-300">
+            <CardContent className="p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 text-red-700">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <p className="font-medium">{error}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => fetchStats()}
+                className="text-red-700 hover:text-red-900 hover:bg-red-100"
+              >
+                Retry
+              </Button>
             </CardContent>
           </Card>
         )}
 
         {stats ? (
-          <div className="grid gap-4 md:grid-cols-4 fade-in">
-            <Card className="card-hover border-t-4 border-t-blue-500">
+          <div className="grid gap-3 md:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Card className="card-hover border-t-4 border-t-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Total Users</CardTitle>
-                <div className="p-2 bg-blue-100 rounded-lg">
+                <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Total Users</CardTitle>
+                <div className="p-2.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl shadow-sm">
                   <Users className="h-5 w-5 text-blue-600" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.total_users}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stats.total_users}</div>
+                <div className="flex items-center text-xs text-muted-foreground mb-2">
                   <ArrowUpRight className="w-3 h-3 text-green-500 mr-1" />
-                  <span className="text-green-500">+{stats.recent_registrations} this week</span>
+                  <span className="text-green-600 font-medium">+{stats.recent_registrations} this week</span>
                 </div>
-                <Progress value={(stats.active_users / stats.total_users) * 100} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-1">
+                <Progress value={(stats.active_users / stats.total_users) * 100} className="mt-2 h-2" />
+                <p className="text-xs text-gray-600 mt-2 font-medium">
                   {stats.active_users} active users
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-hover border-t-4 border-t-green-500">
+            <Card className="card-hover border-t-4 border-t-green-500 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Fleet Size</CardTitle>
-                <div className="p-2 bg-green-100 rounded-lg">
+                <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Fleet Size</CardTitle>
+                <div className="p-2.5 bg-gradient-to-br from-green-100 to-green-200 rounded-xl shadow-sm">
                   <Truck className="h-5 w-5 text-green-600" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.total_vehicles}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stats.total_vehicles}</div>
+                <div className="flex items-center text-xs text-muted-foreground mb-2">
                   <Activity className="w-3 h-3 text-blue-500 mr-1" />
-                  <span className="text-blue-500">{stats.active_shifts} active shifts</span>
+                  <span className="text-blue-600 font-medium">{stats.active_shifts} active shifts</span>
                 </div>
-                <Progress value={75} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-1">
+                <Progress value={75} className="mt-2 h-2" />
+                <p className="text-xs text-gray-600 mt-2 font-medium">
                   75% utilization rate
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-hover border-t-4 border-t-purple-500">
+            <Card className="card-hover border-t-4 border-t-purple-500 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Inspections</CardTitle>
-                <div className="p-2 bg-purple-100 rounded-lg">
+                <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Inspections</CardTitle>
+                <div className="p-2.5 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl shadow-sm">
                   <CheckCircle className="h-5 w-5 text-purple-600" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.completed_inspections}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stats.completed_inspections}</div>
+                <div className="flex items-center text-xs text-muted-foreground mb-2">
                   <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-                  <span className="text-green-500">+12% from last month</span>
+                  <span className="text-green-600 font-medium">+12% from last month</span>
                 </div>
-                <Progress value={85} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-1">
+                <Progress value={85} className="mt-2 h-2" />
+                <p className="text-xs text-gray-600 mt-2 font-medium">
                   85% pass rate
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-hover border-t-4 border-t-yellow-500">
+            <Card className="card-hover border-t-4 border-t-yellow-500 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Monthly Revenue</CardTitle>
-                <div className="p-2 bg-yellow-100 rounded-lg">
+                <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Monthly Revenue</CardTitle>
+                <div className="p-2.5 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl shadow-sm">
                   <DollarSign className="h-5 w-5 text-yellow-600" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString()}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
+                <div className="text-3xl font-bold text-gray-900 mb-1">${stats.monthly_revenue.toLocaleString()}</div>
+                <div className="flex items-center text-xs text-muted-foreground mb-2">
                   <ArrowUpRight className="w-3 h-3 text-green-500 mr-1" />
-                  <span className="text-green-500">+8% from last month</span>
+                  <span className="text-green-600 font-medium">+8% from last month</span>
                 </div>
-                <Progress value={80} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-1">
+                <Progress value={80} className="mt-2 h-2" />
+                <p className="text-xs text-gray-600 mt-2 font-medium">
                   80% of target achieved
                 </p>
               </CardContent>
@@ -367,7 +377,7 @@ export default function AdminDashboard() {
 
         {/* User Roles Breakdown */}
         {stats ? (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -377,24 +387,26 @@ export default function AdminDashboard() {
                 <CardDescription>Breakdown of users by role</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(stats.users_by_role).map(([role, count]) => (
-                    <div key={role} className="flex items-center justify-between">
+                <div className="space-y-2">
+                  {roleBreakdown.length > 0 ? roleBreakdown.map(([role, count]) => (
+                    <div key={role} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
                       <div className="flex items-center gap-3">
                         {getRoleIcon(role)}
-                        <span className="font-medium capitalize">{role}s</span>
+                        <span className="font-semibold capitalize text-gray-900">{role}s</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">{count}</span>
-                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-gray-700 min-w-[2rem] text-right">{count}</span>
+                        <div className="w-24 bg-gray-200 rounded-full h-2.5 overflow-hidden">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${(count / stats.total_users) * 100}%` }}
+                            className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-500" 
+                            style={{ width: `${(Number(count) / stats.total_users) * 100}%` }}
                           ></div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-gray-500 text-center py-4">No role data available</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -445,56 +457,19 @@ export default function AdminDashboard() {
             </Card>
           </div>
         ) : (
-          /* Fallback when stats are not available */
-          <div className="grid gap-4 md:grid-cols-4 fade-in">
-            <Card className="card-hover border-t-4 border-t-blue-500">
+          <div className="grid gap-3 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-t-4">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-10 w-10 rounded-lg" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">--</div>
-                <p className="text-xs text-gray-500">Fetching data...</p>
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-3 w-32" />
               </CardContent>
             </Card>
-            <Card className="card-hover border-t-4 border-t-green-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Truck className="h-5 w-5 text-green-600" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">--</div>
-                <p className="text-xs text-gray-500">Fetching data...</p>
-              </CardContent>
-            </Card>
-            <Card className="card-hover border-t-4 border-t-purple-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Shield className="h-5 w-5 text-purple-600" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">--</div>
-                <p className="text-xs text-gray-500">Fetching data...</p>
-              </CardContent>
-            </Card>
-            <Card className="card-hover border-t-4 border-t-orange-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-orange-600" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">--</div>
-                <p className="text-xs text-gray-500">Fetching data...</p>
-              </CardContent>
-            </Card>
+            ))}
           </div>
         )}
 
@@ -508,38 +483,38 @@ export default function AdminDashboard() {
             <CardDescription>Common administrative tasks</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-4">
               <Button 
                 variant="outline" 
-                className="h-20 flex flex-col gap-2"
+                className="h-24 flex flex-col gap-2 group hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 hover:border-blue-400 hover:shadow-lg transition-all duration-300"
                 onClick={() => router.push('/dashboard/staff/users')}
               >
-                <Users className="w-6 h-6" />
-                <span>Manage Users</span>
+                <Users className="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold">Manage Users</span>
               </Button>
               <Button 
                 variant="outline" 
-                className="h-20 flex flex-col gap-2"
+                className="h-24 flex flex-col gap-2 group hover:bg-gradient-to-br hover:from-green-50 hover:to-green-100 hover:border-green-400 hover:shadow-lg transition-all duration-300"
                 onClick={() => router.push('/dashboard/vehicles')}
               >
-                <Truck className="w-6 h-6" />
-                <span>Add Vehicle</span>
+                <Truck className="w-7 h-7 text-green-600 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold">Add Vehicle</span>
               </Button>
               <Button 
                 variant="outline" 
-                className="h-20 flex flex-col gap-2"
+                className="h-24 flex flex-col gap-2 group hover:bg-gradient-to-br hover:from-purple-50 hover:to-purple-100 hover:border-purple-400 hover:shadow-lg transition-all duration-300"
                 onClick={() => router.push('/dashboard/admin/reports')}
               >
-                <BarChart3 className="w-6 h-6" />
-                <span>View Reports</span>
+                <BarChart3 className="w-7 h-7 text-purple-600 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold">View Reports</span>
               </Button>
               <Button 
                 variant="outline" 
-                className="h-20 flex flex-col gap-2"
+                className="h-24 flex flex-col gap-2 group hover:bg-gradient-to-br hover:from-gray-50 hover:to-gray-100 hover:border-gray-400 hover:shadow-lg transition-all duration-300"
                 onClick={() => router.push('/dashboard/admin/settings')}
               >
-                <Settings className="w-6 h-6" />
-                <span>System Settings</span>
+                <Settings className="w-7 h-7 text-gray-600 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold">System Settings</span>
               </Button>
             </div>
           </CardContent>
@@ -564,21 +539,31 @@ export default function AdminDashboard() {
             {!loading && recentActivity.length === 0 && (
               <p className="text-sm text-gray-500">No activity available yet.</p>
             )}
-            <div className="space-y-4">
-              {recentActivity.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${
-                      item.indicator === 'success' ? 'bg-green-500' :
-                      item.indicator === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+            <div className="space-y-2">
+              {recentActivity.map((item, index) => (
+                <div 
+                  key={item.id} 
+                  className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200 animate-in fade-in slide-in-from-right"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-3 h-3 rounded-full flex-shrink-0 shadow-sm ${
+                      item.indicator === 'success' ? 'bg-green-500 ring-2 ring-green-200' :
+                      item.indicator === 'warning' ? 'bg-yellow-500 ring-2 ring-yellow-200' : 
+                      'bg-blue-500 ring-2 ring-blue-200'
                     }`}></div>
-                    <div>
-                      <p className="font-medium text-sm">{item.title}</p>
-                      <p className="text-xs text-gray-600">{item.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900 truncate">{item.title}</p>
+                      <p className="text-xs text-gray-600 truncate mt-0.5">{item.description}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500">
-                    {new Date(item.timestamp).toLocaleString()}
+                  <span className="text-xs text-gray-500 font-medium whitespace-nowrap ml-4">
+                    {new Date(item.timestamp).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </span>
                 </div>
               ))}

@@ -57,6 +57,37 @@ class CompanyCreateView(generics.CreateAPIView):
         serializer.save()
 
 
+class PublicCompanyCreateView(generics.CreateAPIView):
+    """
+    API view for creating companies during signup (public)
+    Allows anyone to create a company when registering
+    """
+    serializer_class = CompanyCreateSerializer
+    permission_classes = [permissions.AllowAny]
+    
+    def perform_create(self, serializer):
+        # Set default trial settings for new companies
+        company = serializer.save()
+        company.subscription_status = 'trial'
+        # is_trial_active is a property, so we can't set it directly
+        # The property is calculated based on trial_ends_at, so we just need to set that
+        company.trial_started_at = timezone.now()
+        # Set trial to 14 days
+        company.trial_ends_at = timezone.now() + timezone.timedelta(days=14)
+        company.save()
+        return company
+    
+    def create(self, request, *args, **kwargs):
+        """Override create to return full company data"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        company = self.perform_create(serializer)
+        # Return full company serializer data
+        output_serializer = CompanySerializer(company)
+        headers = self.get_success_headers(output_serializer.data)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
 class CompanyUpdateView(generics.RetrieveUpdateAPIView):
     """
     API view for updating company information (company admin only)

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchUserProfile } from '../store/slices/authSlice';
 import { RootStackParamList } from '../types';
@@ -21,8 +22,23 @@ export const AppNavigator: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // Try to fetch user profile on app start
-    dispatch(fetchUserProfile());
+    // Initialize auth service and fetch user profile on app start
+    const initializeAuth = async () => {
+      try {
+        // Initialize auth from stored data
+        const { authService } = await import('../services/authService');
+        await authService.initializeAuth();
+        
+        // Fetch user profile to verify token
+        dispatch(fetchUserProfile());
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        // If initialization fails, still try to fetch profile
+        dispatch(fetchUserProfile());
+      }
+    };
+    
+    initializeAuth();
   }, [dispatch]);
 
   if (isLoading) {
@@ -30,17 +46,19 @@ export const AppNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated && user ? (
-          <Stack.Screen name="Main">
-            {() => <MainTabNavigator userRole={user.role} />}
-          </Stack.Screen>
-        ) : (
-          <Stack.Screen name="Auth" component={AuthStack} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {isAuthenticated && user ? (
+            <Stack.Screen name="Main">
+              {() => <MainTabNavigator userRole={user.role} />}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen name="Auth" component={AuthStack} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 };
 

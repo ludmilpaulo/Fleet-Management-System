@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { View, Text, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
@@ -9,6 +10,7 @@ import { store } from './src/store/store'
 import * as Notifications from 'expo-notifications'
 import { analytics } from './src/services/mixpanel'
 import { authService, AuthUser } from './src/services/authService'
+import { notificationService } from './src/services/notificationService'
 
 // Import screens
 import AuthScreen from './src/screens/auth/AuthScreen'
@@ -30,6 +32,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 })
 
@@ -151,6 +155,9 @@ export default function App() {
       // Initialize authentication
       await authService.initializeAuth()
       
+      // Initialize notification service
+      await notificationService.initialize()
+      
       // Check if user is authenticated
       const isAuth = await authService.isAuthenticated()
       const userData = await authService.getCurrentUser()
@@ -158,14 +165,8 @@ export default function App() {
       setIsAuthenticated(isAuth)
       setUser(userData)
       
-      // Request notification permissions
-      const { status } = await Notifications.requestPermissionsAsync()
-      if (status !== 'granted') {
-        console.log('Notification permission not granted')
-        analytics.track('Notification Permission Denied', { platform: 'mobile' })
-      } else {
-        analytics.track('Notification Permission Granted', { platform: 'mobile' })
-      }
+      // Notification service will handle permission requests
+      // This is done in notificationService.initialize()
       
       // Track app launch
       analytics.track('App Launched', {
@@ -208,7 +209,14 @@ export default function App() {
   }
 
   if (isLoading) {
-    return null // Or a loading screen
+    return (
+      <Provider store={store}>
+        <View style={styles.loadingContainer}>
+          <StatusBar style="dark" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </Provider>
+    )
   }
 
   if (!isAuthenticated) {
@@ -229,3 +237,17 @@ export default function App() {
     </Provider>
   )
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+})

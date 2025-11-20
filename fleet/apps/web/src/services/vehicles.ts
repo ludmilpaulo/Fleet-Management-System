@@ -1,43 +1,108 @@
-import { baseApi } from '@/lib/baseApi';
-import { API_CONFIG } from '@/config/api';
+import { gql } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
 
-export const vehiclesApi = baseApi.injectEndpoints({
-  endpoints: (b) => ({
-    listVehicles: b.query<unknown, { page?: number; search?: string } | void>({
-      query: (args) => {
-        const params = new URLSearchParams();
-        if (args && 'page' in args && args.page) params.set('page', String(args.page));
-        if (args && 'search' in args && args.search) params.set('search', String(args.search));
-        const qs = params.toString();
-        return `${API_CONFIG.ENDPOINTS.VEHICLES.LIST}${qs ? `?${qs}` : ''}`;
-      },
-      providesTags: ['Vehicle'],
-    }),
-    createVehicle: b.mutation<unknown, Record<string, unknown>>({
-      query: (body) => ({ url: API_CONFIG.ENDPOINTS.VEHICLES.CREATE, method: 'POST', body }),
-      invalidatesTags: ['Vehicle'],
-    }),
-    updateVehicle: b.mutation<unknown, { id: number; body: Record<string, unknown> }>({
-      query: ({ id, body }) => ({ url: API_CONFIG.ENDPOINTS.VEHICLES.UPDATE(id), method: 'PATCH', body }),
-      invalidatesTags: ['Vehicle'],
-    }),
-    getVehicle: b.query<unknown, { id: number }>({
-      query: ({ id }) => ({ url: API_CONFIG.ENDPOINTS.VEHICLES.DETAIL(id) }),
-      providesTags: ['Vehicle'],
-    }),
-    deleteVehicle: b.mutation<unknown, { id: number }>({
-      query: ({ id }) => ({ url: API_CONFIG.ENDPOINTS.VEHICLES.DELETE(id), method: 'DELETE' }),
-      invalidatesTags: ['Vehicle'],
-    }),
-  }),
-});
+export type Vehicle = {
+  id: string;
+  regNumber: string;
+  make: string;
+  model: string;
+  year?: number | null;
+  status?: string | null;
+};
 
-export const { 
-  useListVehiclesQuery, 
-  useCreateVehicleMutation, 
-  useUpdateVehicleMutation,
-  useGetVehicleQuery,
-  useDeleteVehicleMutation
-} = vehiclesApi;
+type VehiclesQueryData = {
+  vehicles: Vehicle[];
+};
 
+type VehiclesQueryVars = {
+  search?: string;
+};
+
+type VehicleQueryData = {
+  vehicle: Vehicle;
+};
+
+type VehicleQueryVars = {
+  id: string;
+};
+
+export const VEHICLES_QUERY = gql`
+  query Vehicles($search: String) {
+    vehicles(search: $search) {
+      id
+      regNumber
+      make
+      model
+      year
+      status
+    }
+  }
+`;
+
+export const VEHICLE_QUERY = gql`
+  query Vehicle($id: ID!) {
+    vehicle(id: $id) {
+      id
+      regNumber
+      make
+      model
+      year
+      status
+    }
+  }
+`;
+
+export const CREATE_VEHICLE_MUTATION = gql`
+  mutation CreateVehicle($regNumber: String!, $make: String, $model: String, $year: Int) {
+    createVehicle(regNumber: $regNumber, make: $make, model: $model, year: $year) {
+      vehicle {
+        id
+        regNumber
+        make
+        model
+        year
+        status
+      }
+    }
+  }
+`;
+
+export const UPDATE_VEHICLE_MUTATION = gql`
+  mutation UpdateVehicle($id: ID!, $regNumber: String, $make: String, $model: String, $year: Int) {
+    updateVehicle(id: $id, regNumber: $regNumber, make: $make, model: $model, year: $year) {
+      vehicle {
+        id
+        regNumber
+        make
+        model
+        year
+        status
+      }
+    }
+  }
+`;
+
+export const DELETE_VEHICLE_MUTATION = gql`
+  mutation DeleteVehicle($id: ID!) {
+    deleteVehicle(id: $id) {
+      ok
+    }
+  }
+`;
+
+export const useVehiclesQuery = (search?: string) =>
+  useQuery<VehiclesQueryData, VehiclesQueryVars>(VEHICLES_QUERY, {
+    variables: { search },
+  });
+
+export const useVehicleQuery = (id: string) =>
+  useQuery<VehicleQueryData, VehicleQueryVars>(VEHICLE_QUERY, {
+    variables: { id },
+  });
+
+export const useCreateVehicleMutation = () => useMutation(CREATE_VEHICLE_MUTATION);
+
+export const useUpdateVehicleMutation = () => useMutation(UPDATE_VEHICLE_MUTATION);
+
+export const useDeleteVehicleMutation = () => useMutation(DELETE_VEHICLE_MUTATION);
 

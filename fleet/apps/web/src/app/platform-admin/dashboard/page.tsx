@@ -51,6 +51,18 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 
+const getApiBase = () => {
+  const base = API_CONFIG.BASE_URL
+  // Ensure base ends with /api for correct URL construction
+  if (base.endsWith('/api')) {
+    return `${base}/`  // Add trailing slash to avoid double slashes
+  }
+  const cleanBase = base.replace(/\/$/, '')
+  return `${cleanBase}/api/`  // Ensure trailing slash
+}
+
+const API_BASE = getApiBase()
+
 interface PlatformStats {
   total_companies: number
   active_companies: number
@@ -222,7 +234,7 @@ export default function PlatformAdminDashboard() {
   const fetchCompanies = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/companies/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/companies/`, {
         headers: {
           'Authorization': `Token ${token}`,
         },
@@ -241,7 +253,7 @@ export default function PlatformAdminDashboard() {
   const fetchAllUsers = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/users/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/users/`, {
         headers: {
           'Authorization': `Token ${token}`,
         },
@@ -262,13 +274,13 @@ export default function PlatformAdminDashboard() {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
       
       const [companiesRes, usersRes, vehiclesRes] = await Promise.all([
-        fetch(`${API_CONFIG.BASE_URL}/platform-admin/companies/`, {
+        fetch(`${API_BASE}/platform-admin/companies/`, {
           headers: { 'Authorization': `Token ${token}` },
         }),
-        fetch(`${API_CONFIG.BASE_URL}/platform-admin/users/`, {
+        fetch(`${API_BASE}/platform-admin/users/`, {
           headers: { 'Authorization': `Token ${token}` },
         }),
-        fetch(`${API_CONFIG.BASE_URL}/platform-admin/vehicles/`, {
+        fetch(`${API_BASE}/platform-admin/vehicles/`, {
           headers: { 'Authorization': `Token ${token}` },
         }),
       ])
@@ -305,7 +317,7 @@ export default function PlatformAdminDashboard() {
   const fetchSubscriptions = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/subscriptions/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/subscriptions/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -320,7 +332,7 @@ export default function PlatformAdminDashboard() {
   const fetchSubscriptionPlans = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/plans/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/plans/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -335,7 +347,7 @@ export default function PlatformAdminDashboard() {
   const fetchVehicles = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/vehicles/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/vehicles/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -355,7 +367,7 @@ export default function PlatformAdminDashboard() {
   const fetchShifts = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/shifts/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/shifts/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -370,7 +382,7 @@ export default function PlatformAdminDashboard() {
   const fetchInspections = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/inspections/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/inspections/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -385,7 +397,7 @@ export default function PlatformAdminDashboard() {
   const fetchIssues = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/issues/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/issues/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -400,7 +412,7 @@ export default function PlatformAdminDashboard() {
   const fetchSystemConfigs = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/configurations/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/configurations/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -415,7 +427,7 @@ export default function PlatformAdminDashboard() {
   const fetchAllMaintenances = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/maintenance/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/maintenance/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -430,7 +442,7 @@ export default function PlatformAdminDashboard() {
   const fetchPlatformSettings = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/settings/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/settings/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
@@ -445,7 +457,7 @@ export default function PlatformAdminDashboard() {
   const handleSavePlatformSettings = async () => {
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/settings/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/settings/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Token ${token}`,
@@ -479,7 +491,7 @@ export default function PlatformAdminDashboard() {
 
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const endpoint = `${API_CONFIG.BASE_URL}/platform-admin/${editingEntityType}/${editingEntity.id}/`
+      const endpoint = `${API_BASE}/platform-admin/${editingEntityType}/${editingEntity.id}/`
       
       const response = await fetch(endpoint, {
         method: 'PATCH',
@@ -532,7 +544,7 @@ export default function PlatformAdminDashboard() {
 
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/configurations/${configId}/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/configurations/${configId}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Token ${token}` },
       })
@@ -555,7 +567,7 @@ export default function PlatformAdminDashboard() {
       
       if (editingConfig?.id) {
         // Update existing config
-        const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/configurations/${editingConfig.id}/`, {
+        const response = await fetch(`${API_BASE}/platform-admin/configurations/${editingConfig.id}/`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Token ${token}`,
@@ -575,7 +587,7 @@ export default function PlatformAdminDashboard() {
         }
       } else {
         // Create new config
-        const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/configurations/`, {
+        const response = await fetch(`${API_BASE}/platform-admin/configurations/`, {
           method: 'POST',
           headers: {
             'Authorization': `Token ${token}`,
@@ -607,7 +619,7 @@ export default function PlatformAdminDashboard() {
 
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
-      const endpoint = `${API_CONFIG.BASE_URL}/platform-admin/${type}/${entityId}/`
+      const endpoint = `${API_BASE}/platform-admin/${type}/${entityId}/`
       
       const response = await fetch(endpoint, {
         method: 'DELETE',
@@ -669,7 +681,7 @@ export default function PlatformAdminDashboard() {
       const planObj = subscriptionPlans.find(p => String(p.id) === String(selectedPlan))
       const planName = planObj?.name || selectedPlan
 
-      const response = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/companies/${company.id}/upgrade-plan/`, {
+      const response = await fetch(`${API_BASE}/platform-admin/companies/${company.id}/upgrade-plan/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -729,7 +741,7 @@ export default function PlatformAdminDashboard() {
 
   const handleCreateEntity = async () => {
     try {
-      const API_BASE = API_CONFIG.BASE_URL;
+      const API_BASE = getApiBase();
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token');
       
       if (!token) {
@@ -975,7 +987,7 @@ export default function PlatformAdminDashboard() {
           return;
         }
 
-        const response = await fetch(`${API_BASE}/fleet/vehicles/`, {
+        const response = await fetch(`${API_BASE}fleet/vehicles/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1262,7 +1274,7 @@ export default function PlatformAdminDashboard() {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
       
       // Fetch comprehensive stats from backend API
-      const statsRes = await fetch(`${API_CONFIG.BASE_URL}/platform-admin/stats/`, {
+      const statsRes = await fetch(`${API_BASE}/platform-admin/stats/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       

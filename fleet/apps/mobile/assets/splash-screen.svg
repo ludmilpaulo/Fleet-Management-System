@@ -1,0 +1,69 @@
+<svg width="1242" height="2208" viewBox="0 0 1242 2208" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="splashGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#030712;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#1e3a5f;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#4c1d95;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#831843;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#9333ea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="glowGradient" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:0.6" />
+      <stop offset="50%" style="stop-color:#9333ea;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background gradient -->
+  <rect width="1242" height="2208" fill="url(#splashGradient)"/>
+  
+  <!-- Glow effect -->
+  <circle cx="621" cy="1104" r="400" fill="url(#glowGradient)"/>
+  
+  <!-- Logo centered -->
+  <g transform="translate(621, 1104)">
+    <!-- Outer glow -->
+    <circle cx="0" cy="0" r="280" fill="url(#logoGradient)" opacity="0.2" blur="20"/>
+    
+    <!-- Logo background circle -->
+    <circle cx="0" cy="0" r="200" fill="url(#logoGradient)" opacity="0.15"/>
+    
+    <!-- Truck icon -->
+    <g>
+      <!-- Truck body -->
+      <rect x="-180" y="-100" width="240" height="140" rx="16" fill="#ffffff" opacity="0.95"/>
+      <!-- Truck cabin -->
+      <rect x="-80" y="-145" width="120" height="105" rx="12" fill="url(#logoGradient)" opacity="0.9"/>
+      <!-- Windows -->
+      <rect x="-60" y="-125" width="40" height="32" rx="4" fill="#ffffff" opacity="0.25"/>
+      <rect x="-8" y="-125" width="40" height="32" rx="4" fill="#ffffff" opacity="0.25"/>
+      <!-- Wheels -->
+      <circle cx="-125" cy="50" r="32" fill="#1e293b"/>
+      <circle cx="40" cy="50" r="32" fill="#1e293b"/>
+      <circle cx="-125" cy="50" r="20" fill="#64748b"/>
+      <circle cx="40" cy="50" r="20" fill="#64748b"/>
+      <!-- Container lines -->
+      <line x1="-160" y1="-60" x2="40" y2="-60" stroke="#2563eb" stroke-width="6" opacity="0.4"/>
+      <line x1="-160" y1="-20" x2="40" y2="-20" stroke="#2563eb" stroke-width="6" opacity="0.4"/>
+    </g>
+  </g>
+  
+  <!-- App name at bottom -->
+  <text x="621" y="1950" font-family="Arial, sans-serif" font-size="72" font-weight="bold" text-anchor="middle" fill="#ffffff">
+    Fleet
+  </text>
+  <text x="621" y="2020" font-family="Arial, sans-serif" font-size="32" text-anchor="middle" fill="#cbd5e1" opacity="0.8">
+    Management System
+  </text>
+  
+  <!-- Decorative elements -->
+  <circle cx="200" cy="400" r="3" fill="#2563eb" opacity="0.3"/>
+  <circle cx="1042" cy="600" r="4" fill="#9333ea" opacity="0.3"/>
+  <circle cx="150" cy="1800" r="3" fill="#ec4899" opacity="0.3"/>
+  <circle cx="1092" cy="1600" r="4" fill="#3b82f6" opacity="0.3"/>
+</svg>
+

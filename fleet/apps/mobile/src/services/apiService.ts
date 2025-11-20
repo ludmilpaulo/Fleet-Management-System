@@ -1,8 +1,30 @@
 import { authService, AuthUser } from './authService'
 import { analytics } from './mixpanel'
 
+import { Platform } from 'react-native';
+
 // Base API configuration
-const BASE_URL = 'https://www.fleetia.online/api'
+// For physical devices, automatically uses network IP instead of localhost
+// Check EXPO_PUBLIC_API_URL environment variable first
+const BASE_URL = (() => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  if (__DEV__) {
+    // Use network IP for physical devices (Android/iOS on real devices)
+    // Default to 192.168.1.110 - change this to your computer's network IP
+    // You can also set EXPO_PUBLIC_API_URL=http://YOUR_IP:8000/api in .env
+    const networkIP = process.env.EXPO_PUBLIC_NETWORK_IP || '192.168.1.110';
+    const isPhysicalDevice = Platform.OS === 'ios' || Platform.OS === 'android';
+    const apiURL = isPhysicalDevice 
+      ? `http://${networkIP}:8000/api`
+      : 'http://localhost:8000/api';
+    console.log(`[ApiService] Using API URL: ${apiURL} (Device: ${Platform.OS}, Physical: ${isPhysicalDevice}, Network IP: ${networkIP})`);
+    return apiURL;
+  }
+  // Production API URL
+  return 'https://taki.pythonanywhere.com/api';
+})()
 
 // Types for API responses
 export interface Vehicle {
@@ -98,17 +120,26 @@ export interface Ticket {
 
 export interface Shift {
   id: number
-  vehicle: Vehicle
-  driver: AuthUser
-  start_time: string
-  end_time?: string
+  vehicle: Vehicle | number
+  vehicle_reg?: string
+  vehicle_make_model?: string
+  driver: AuthUser | number
+  driver_name?: string
+  driver_username?: string
+  start_at: string
+  start_time?: string // Legacy support
+  end_at?: string
+  end_time?: string // Legacy support
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
-  start_location: string
-  end_location?: string
+  start_address?: string
+  start_location?: string // Legacy support
+  end_address?: string
+  end_location?: string // Legacy support
   start_lat?: number
   start_lng?: number
   end_lat?: number
   end_lng?: number
+  notes?: string
   created_at: string
   updated_at: string
 }
@@ -155,8 +186,21 @@ class ApiService {
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
-      throw new Error(error.detail || `HTTP ${response.status}`)
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const error = await response.json();
+        errorMessage = error.detail || error.message || error.error || errorMessage;
+        // Handle non_field_errors from Django
+        if (error.non_field_errors && Array.isArray(error.non_field_errors)) {
+          errorMessage = error.non_field_errors.join(', ');
+        }
+      } catch {
+        // If JSON parsing fails, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      const error = new Error(errorMessage);
+      (error as any).status = response.status;
+      throw error;
     }
     return response.json()
   }
@@ -167,14 +211,18 @@ class ApiService {
       const response = await fetch(`${BASE_URL}/fleet/vehicles/`, {
         headers: this.getHeaders(),
       })
-      const data = await this.handleResponse<{ results: Vehicle[] }>(response)
+      const data = await this.handleResponse<any>(response)
+      
+      // Handle both paginated and non-paginated responses
+      const vehicles = Array.isArray(data) ? data : (data.results || [])
       
       analytics.track('Vehicles Fetched', {
-        count: data.results.length
+        count: vehicles.length
       })
       
-      return data.results
+      return vehicles
     } catch (error) {
+      console.error('[ApiService] Error fetching vehicles:', error);
       analytics.track('Vehicles Fetch Failed', {
         error: error instanceof Error ? error.message : 'unknown'
       })
@@ -224,14 +272,18 @@ class ApiService {
       const response = await fetch(`${BASE_URL}/inspections/inspections/`, {
         headers: this.getHeaders(),
       })
-      const data = await this.handleResponse<{ results: Inspection[] }>(response)
+      const data = await this.handleResponse<any>(response)
+      
+      // Handle both paginated and non-paginated responses
+      const inspections = Array.isArray(data) ? data : (data.results || [])
       
       analytics.track('Inspections Fetched', {
-        count: data.results.length
+        count: inspections.length
       })
       
-      return data.results
+      return inspections
     } catch (error) {
+      console.error('[ApiService] Error fetching inspections:', error);
       analytics.track('Inspections Fetch Failed', {
         error: error instanceof Error ? error.message : 'unknown'
       })
@@ -427,14 +479,18 @@ class ApiService {
       const response = await fetch(`${BASE_URL}/fleet/shifts/`, {
         headers: this.getHeaders(),
       })
-      const data = await this.handleResponse<{ results: Shift[] }>(response)
+      const data = await this.handleResponse<any>(response)
+      
+      // Handle both paginated and non-paginated responses
+      const shifts = Array.isArray(data) ? data : (data.results || [])
       
       analytics.track('Shifts Fetched', {
-        count: data.results.length
+        count: shifts.length
       })
       
-      return data.results
+      return shifts
     } catch (error) {
+      console.error('[ApiService] Error fetching shifts:', error);
       analytics.track('Shifts Fetch Failed', {
         error: error instanceof Error ? error.message : 'unknown'
       })
@@ -442,25 +498,39 @@ class ApiService {
     }
   }
 
-  async startShift(vehicleId: number, startLocation?: string, lat?: number, lng?: number): Promise<Shift> {
+  async startShift(vehicleId: number, startAddress?: string, lat?: number, lng?: number): Promise<Shift> {
     try {
+      const payload: any = {
+        vehicle: vehicleId,
+      };
+      
+      // Add optional fields if provided
+      if (startAddress) {
+        payload.start_address = startAddress;
+      }
+      if (lat !== undefined) {
+        payload.start_lat = lat;
+      }
+      if (lng !== undefined) {
+        payload.start_lng = lng;
+      }
+      // Add start_at timestamp
+      payload.start_at = new Date().toISOString();
+      
       const response = await fetch(`${BASE_URL}/fleet/shifts/start/`, {
         method: 'POST',
         headers: this.getHeaders(),
-        body: JSON.stringify({
-          vehicle: vehicleId,
-          start_location: startLocation,
-          start_lat: lat,
-          start_lng: lng,
-        }),
+        body: JSON.stringify(payload),
       })
       
       analytics.track('Shift Started', {
         vehicle_id: vehicleId,
-        has_location: !!(lat && lng)
+        has_location: !!(lat && lng),
+        has_address: !!startAddress,
       })
       return this.handleResponse<Shift>(response)
     } catch (error) {
+      console.error('[ApiService] Error starting shift:', error);
       analytics.track('Shift Start Failed', {
         vehicle_id: vehicleId,
         error: error instanceof Error ? error.message : 'unknown'
@@ -469,21 +539,107 @@ class ApiService {
     }
   }
 
-  async endShift(shiftId: number, endLocation?: string, lat?: number, lng?: number): Promise<Shift> {
+  async endShift(
+    shiftId: number,
+    endLocation?: string,
+    lat?: number,
+    lng?: number,
+    photos?: {
+      fuelLevelPhoto?: { uri: string; type: string; name: string }
+      photoFront?: { uri: string; type: string; name: string }
+      photoBack?: { uri: string; type: string; name: string }
+      photoLeft?: { uri: string; type: string; name: string }
+      photoRight?: { uri: string; type: string; name: string }
+    },
+    checklistData?: {
+      parkingAddress?: string
+      fuelLevelManual?: number
+      scratchesNoted?: boolean
+      damageDescription?: string
+    }
+  ): Promise<Shift> {
     try {
+      const formData = new FormData()
+      
+      // Add location data
+      if (endLocation) formData.append('end_address', endLocation)
+      if (lat !== undefined) formData.append('end_lat', lat.toString())
+      if (lng !== undefined) formData.append('end_lng', lng.toString())
+      
+      // Add checklist location
+      if (lat !== undefined) formData.append('parking_lat', lat.toString())
+      if (lng !== undefined) formData.append('parking_lng', lng.toString())
+      if (checklistData?.parkingAddress) {
+        formData.append('parking_address', checklistData.parkingAddress)
+      }
+      
+      // Add photos
+      if (photos?.fuelLevelPhoto) {
+        formData.append('fuel_level_photo', {
+          uri: photos.fuelLevelPhoto.uri,
+          type: photos.fuelLevelPhoto.type || 'image/jpeg',
+          name: photos.fuelLevelPhoto.name || 'fuel_level.jpg',
+        } as any)
+      }
+      if (photos?.photoFront) {
+        formData.append('photo_front', {
+          uri: photos.photoFront.uri,
+          type: photos.photoFront.type || 'image/jpeg',
+          name: photos.photoFront.name || 'front.jpg',
+        } as any)
+      }
+      if (photos?.photoBack) {
+        formData.append('photo_back', {
+          uri: photos.photoBack.uri,
+          type: photos.photoBack.type || 'image/jpeg',
+          name: photos.photoBack.name || 'back.jpg',
+        } as any)
+      }
+      if (photos?.photoLeft) {
+        formData.append('photo_left', {
+          uri: photos.photoLeft.uri,
+          type: photos.photoLeft.type || 'image/jpeg',
+          name: photos.photoLeft.name || 'left.jpg',
+        } as any)
+      }
+      if (photos?.photoRight) {
+        formData.append('photo_right', {
+          uri: photos.photoRight.uri,
+          type: photos.photoRight.type || 'image/jpeg',
+          name: photos.photoRight.name || 'right.jpg',
+        } as any)
+      }
+      
+      // Add checklist data
+      if (checklistData?.fuelLevelManual !== undefined) {
+        formData.append('fuel_level_manual', checklistData.fuelLevelManual.toString())
+      }
+      if (checklistData?.scratchesNoted !== undefined) {
+        formData.append('scratches_noted', checklistData.scratchesNoted.toString())
+      }
+      if (checklistData?.damageDescription) {
+        formData.append('damage_description', checklistData.damageDescription)
+      }
+      
+      // Get auth token
+      const token = authService.getToken()
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Token ${token}`
+      }
+      // Don't set Content-Type - let FormData set it with boundary
+      
       const response = await fetch(`${BASE_URL}/fleet/shifts/${shiftId}/end/`, {
         method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          end_location: endLocation,
-          end_lat: lat,
-          end_lng: lng,
-        }),
+        headers,
+        body: formData,
       })
       
       analytics.track('Shift Ended', {
         shift_id: shiftId,
-        has_location: !!(lat && lng)
+        has_location: !!(lat && lng),
+        has_photos: !!(photos?.fuelLevelPhoto || photos?.photoFront),
+        has_checklist: !!checklistData,
       })
       return this.handleResponse<Shift>(response)
     } catch (error) {
@@ -501,14 +657,18 @@ class ApiService {
       const response = await fetch(`${BASE_URL}/telemetry/notifications/`, {
         headers: this.getHeaders(),
       })
-      const data = await this.handleResponse<{ results: Notification[] }>(response)
+      const data = await this.handleResponse<any>(response)
+      
+      // Handle both paginated and non-paginated responses
+      const notifications = Array.isArray(data) ? data : (data.results || [])
       
       analytics.track('Notifications Fetched', {
-        count: data.results.length
+        count: notifications.length
       })
       
-      return data.results
+      return notifications
     } catch (error) {
+      console.error('[ApiService] Error fetching notifications:', error);
       analytics.track('Notifications Fetch Failed', {
         error: error instanceof Error ? error.message : 'unknown'
       })
@@ -528,6 +688,87 @@ class ApiService {
     } catch (error) {
       analytics.track('Notification Read Failed', {
         notification_id: id,
+        error: error instanceof Error ? error.message : 'unknown'
+      })
+      throw error
+    }
+  }
+
+  // Vehicle Location Management
+  async createVehicleLocation(data: {
+    vehicle: number;
+    lat: number;
+    lng: number;
+    address?: string;
+    accuracy?: number;
+    speed?: number;
+    heading?: number;
+    altitude?: number;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${BASE_URL}/telemetry/vehicle-locations/`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(data),
+      });
+      
+      analytics.track('Vehicle Location Created', {
+        vehicle_id: data.vehicle,
+        has_address: !!data.address,
+        has_speed: data.speed !== undefined,
+      });
+      return this.handleResponse<any>(response);
+    } catch (error) {
+      analytics.track('Vehicle Location Creation Failed', {
+        vehicle_id: data.vehicle,
+        error: error instanceof Error ? error.message : 'unknown',
+      });
+      throw error;
+    }
+  }
+
+  // User Management
+  async getUsers(params?: { role?: string; search?: string }): Promise<AuthUser[]> {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params?.role) queryParams.append('role', params.role)
+      if (params?.search) queryParams.append('search', params.search)
+      
+      const url = `${BASE_URL}/account/users/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+      const response = await fetch(url, {
+        headers: this.getHeaders(),
+      })
+      
+      const data = await this.handleResponse<any>(response)
+      const users = Array.isArray(data) ? data : (data.results || [])
+      
+      analytics.track('Users Fetched', {
+        count: users.length,
+        role: params?.role || 'all'
+      })
+      
+      return users
+    } catch (error) {
+      console.error('[ApiService] Error fetching users:', error);
+      analytics.track('Users Fetch Failed', {
+        error: error instanceof Error ? error.message : 'unknown'
+      })
+      throw error
+    }
+  }
+
+  // Company Statistics
+  async getCompanyStats(): Promise<any> {
+    try {
+      const response = await fetch(`${BASE_URL}/account/stats/`, {
+        headers: this.getHeaders(),
+      })
+      
+      analytics.track('Company Stats Fetched')
+      return this.handleResponse<any>(response)
+    } catch (error) {
+      console.error('[ApiService] Error fetching company stats:', error);
+      analytics.track('Company Stats Fetch Failed', {
         error: error instanceof Error ? error.message : 'unknown'
       })
       throw error

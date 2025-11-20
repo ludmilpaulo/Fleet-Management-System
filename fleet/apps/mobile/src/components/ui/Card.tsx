@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
+  className?: string;
   onPress?: () => void;
   variant?: 'default' | 'elevated' | 'outlined' | 'gradient';
   padding?: 'sm' | 'md' | 'lg';

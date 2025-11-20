@@ -148,7 +148,17 @@ const vehiclesSlice = createSlice({
       })
       .addCase(createVehicle.rejected, (state, action) => {
         state.loading = false
-        state.error = action.error.message || 'Failed to create vehicle'
+        const errorMessage = (action.error as any)?.response?.data?.detail || 
+                             (action.error as any)?.response?.data?.message || 
+                             action.error.message || 
+                             'Failed to create vehicle'
+        state.error = errorMessage
+        console.error('[Redux] createVehicle rejected:', {
+          error: action.error,
+          payload: action.payload,
+          type: action.type,
+          message: errorMessage
+        })
       })
       
       // Update vehicle

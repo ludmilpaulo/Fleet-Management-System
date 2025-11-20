@@ -8,30 +8,22 @@ import {
   SafeAreaView,
   ScrollView,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import * as Notifications from 'expo-notifications'
 
+import { apiService, Notification } from '../../services/apiService'
+
 interface NotificationsScreenProps {
   navigation: any
 }
 
-interface NotificationData {
-  id: string
-  title: string
-  message: string
-  type: string
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
-  status: 'PENDING' | 'SENT' | 'DELIVERED' | 'FAILED' | 'READ'
-  timestamp: Date
-  vehicleReg?: string
-  isRead: boolean
-}
-
 export default function NotificationsScreen({ navigation }: NotificationsScreenProps) {
-  const [notifications, setNotifications] = useState<NotificationData[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [permissionStatus, setPermissionStatus] = useState<string>('unknown')
 
   useEffect(() => {
@@ -60,118 +52,63 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
     // Listen for incoming notifications
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification)
-      // Add to local state
-      const newNotification: NotificationData = {
-        id: notification.request.identifier,
-        title: notification.request.content.title || '',
-        message: notification.request.content.body || '',
-        type: 'SYSTEM_ALERT',
-        priority: 'MEDIUM',
-        status: 'DELIVERED',
-        timestamp: new Date(),
-        isRead: false,
-      }
-      setNotifications(prev => [newNotification, ...prev])
+      // Reload notifications when a new one arrives
+      loadNotifications()
     })
 
     return () => subscription.remove()
   }
 
   const loadNotifications = async () => {
-    setIsLoading(true)
-    
-    // Simulate API call - in real app, fetch from backend
-    setTimeout(() => {
-      const mockNotifications: NotificationData[] = [
-        {
-          id: '1',
-          title: 'Inspection Failed',
-          message: 'Vehicle ABC123 failed inspection. Critical issues found.',
-          type: 'INSPECTION_FAILED',
-          priority: 'HIGH',
-          status: 'DELIVERED',
-          timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-          vehicleReg: 'ABC123',
-          isRead: false,
-        },
-        {
-          id: '2',
-          title: 'Shift Started',
-          message: 'Driver John Doe started shift with vehicle XYZ789',
-          type: 'SHIFT_STARTED',
-          priority: 'MEDIUM',
-          status: 'DELIVERED',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-          vehicleReg: 'XYZ789',
-          isRead: true,
-        },
-        {
-          id: '3',
-          title: 'Maintenance Due',
-          message: 'Vehicle DEF456 is due for scheduled maintenance',
-          type: 'MAINTENANCE_DUE',
-          priority: 'MEDIUM',
-          status: 'DELIVERED',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-          vehicleReg: 'DEF456',
-          isRead: true,
-        },
-        {
-          id: '4',
-          title: 'Ticket Assigned',
-          message: 'New maintenance ticket assigned to you',
-          type: 'TICKET_ASSIGNED',
-          priority: 'HIGH',
-          status: 'DELIVERED',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-          isRead: true,
-        },
-        {
-          id: '5',
-          title: 'System Alert',
-          message: 'System maintenance scheduled for tonight',
-          type: 'SYSTEM_ALERT',
-          priority: 'LOW',
-          status: 'DELIVERED',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
-          isRead: true,
-        },
-      ]
+    try {
+      setIsLoading(true)
+      const data = await apiService.getNotifications()
       
-      setNotifications(mockNotifications)
+      // Sort by created_at (most recent first)
+      const sorted = data.sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime()
+        const dateB = new Date(b.created_at).getTime()
+        return dateB - dateA
+      })
+      
+      setNotifications(sorted)
+    } catch (error: any) {
+      console.error('Failed to load notifications:', error)
+      Alert.alert('Error', 'Failed to load notifications. Please try again.')
+    } finally {
       setIsLoading(false)
-    }, 1000)
+      setRefreshing(false)
+    }
   }
 
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev =>
-      prev.map(notif =>
-        notif.id === notificationId ? { ...notif, isRead: true } : notif
+  const handleRefresh = () => {
+    setRefreshing(true)
+    loadNotifications()
+  }
+
+  const markAsRead = async (notificationId: number) => {
+    try {
+      await apiService.markNotificationAsRead(notificationId)
+      // Update local state
+      setNotifications(prev =>
+        prev.map(notif =>
+          notif.id === notificationId ? { ...notif, status: 'READ' as any, read_at: new Date().toISOString() } : notif
+        )
       )
-    )
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error)
+    }
   }
 
-  const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notif => ({ ...notif, isRead: true }))
-    )
-  }
-
-  const deleteNotification = (notificationId: string) => {
-    Alert.alert(
-      'Delete Notification',
-      'Are you sure you want to delete this notification?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            setNotifications(prev => prev.filter(notif => notif.id !== notificationId))
-          }
-        }
-      ]
-    )
+  const markAllAsRead = async () => {
+    try {
+      // Mark all unread notifications as read
+      const unreadNotifications = notifications.filter(n => n.status !== 'READ')
+      await Promise.all(unreadNotifications.map(n => apiService.markNotificationAsRead(n.id)))
+      loadNotifications()
+    } catch (error) {
+      console.error('Failed to mark all as read:', error)
+    }
   }
 
   const getPriorityColor = (priority: string) => {
@@ -201,25 +138,31 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
       case 'SHIFT_ENDED': return 'stop-circle'
       case 'MAINTENANCE_DUE': return 'construct'
       case 'TICKET_ASSIGNED': return 'ticket'
+      case 'TICKET_OVERDUE': return 'alert'
       case 'VEHICLE_LOCATION': return 'location'
       case 'SYSTEM_ALERT': return 'settings'
       default: return 'notifications'
     }
   }
 
-  const formatTimestamp = (timestamp: Date) => {
-    const now = new Date()
-    const diff = now.getTime() - timestamp.getTime()
-    const minutes = Math.floor(diff / (1000 * 60))
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp)
+      const now = new Date()
+      const diff = now.getTime() - date.getTime()
+      const minutes = Math.floor(diff / (1000 * 60))
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
-    if (minutes < 60) return `${minutes}m ago`
-    if (hours < 24) return `${hours}h ago`
-    return `${days}d ago`
+      if (minutes < 60) return `${minutes}m ago`
+      if (hours < 24) return `${hours}h ago`
+      return `${days}d ago`
+    } catch {
+      return 'Unknown'
+    }
   }
 
-  const unreadCount = notifications.filter(n => !n.isRead).length
+  const unreadCount = notifications.filter(n => n.status !== 'READ').length
 
   return (
     <SafeAreaView style={styles.container}>
@@ -265,85 +208,86 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
         </View>
 
         {/* Notifications List */}
-        <ScrollView
-          style={styles.notificationsContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isLoading}
-              onRefresh={loadNotifications}
-              tintColor="white"
-            />
-          }
-        >
-          {notifications.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="notifications-outline" size={60} color="rgba(255,255,255,0.5)" />
-              <Text style={styles.emptyText}>No notifications</Text>
-              <Text style={styles.emptySubtext}>
-                You're all caught up! New notifications will appear here.
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.notificationsList}>
-              {notifications.map((notification) => (
-                <TouchableOpacity
-                  key={notification.id}
-                  style={[
-                    styles.notificationItem,
-                    !notification.isRead && styles.unreadNotification
-                  ]}
-                  onPress={() => markAsRead(notification.id)}
-                >
-                  <View style={styles.notificationContent}>
-                    <View style={styles.notificationHeader}>
-                      <View style={styles.notificationIcon}>
-                        <Ionicons
-                          name={getTypeIcon(notification.type) as any}
-                          size={20}
-                          color="white"
-                        />
+        {isLoading && notifications.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="white" />
+            <Text style={styles.loadingText}>Loading notifications...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.notificationsContainer}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor="white"
+              />
+            }
+          >
+            {notifications.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="notifications-outline" size={60} color="rgba(255,255,255,0.5)" />
+                <Text style={styles.emptyText}>No notifications</Text>
+                <Text style={styles.emptySubtext}>
+                  You're all caught up! New notifications will appear here.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.notificationsList}>
+                {notifications.map((notification) => (
+                  <TouchableOpacity
+                    key={notification.id}
+                    style={[
+                      styles.notificationItem,
+                      notification.status !== 'READ' && styles.unreadNotification
+                    ]}
+                    onPress={() => markAsRead(notification.id)}
+                  >
+                    <View style={styles.notificationContent}>
+                      <View style={styles.notificationHeader}>
+                        <View style={styles.notificationIcon}>
+                          <Ionicons
+                            name={getTypeIcon(notification.type) as any}
+                            size={20}
+                            color="white"
+                          />
+                        </View>
+                        <View style={styles.notificationInfo}>
+                          <Text style={styles.notificationTitle}>
+                            {notification.title}
+                          </Text>
+                          <Text style={styles.notificationTime}>
+                            {formatTimestamp(notification.created_at)}
+                          </Text>
+                        </View>
+                        <View style={styles.notificationActions}>
+                          <View style={[
+                            styles.priorityIndicator,
+                            { backgroundColor: getPriorityColor(notification.priority) }
+                          ]} />
+                        </View>
                       </View>
-                      <View style={styles.notificationInfo}>
-                        <Text style={styles.notificationTitle}>
-                          {notification.title}
-                        </Text>
-                        <Text style={styles.notificationTime}>
-                          {formatTimestamp(notification.timestamp)}
-                        </Text>
-                      </View>
-                      <View style={styles.notificationActions}>
-                        <View style={[
-                          styles.priorityIndicator,
-                          { backgroundColor: getPriorityColor(notification.priority) }
-                        ]} />
-                        <TouchableOpacity
-                          style={styles.deleteButton}
-                          onPress={() => deleteNotification(notification.id)}
-                        >
-                          <Ionicons name="close" size={16} color="rgba(255,255,255,0.6)" />
-                        </TouchableOpacity>
-                      </View>
+                      
+                      <Text style={styles.notificationMessage}>
+                        {notification.message}
+                      </Text>
+                      
+                      {notification.vehicle && (
+                        <View style={styles.vehicleInfo}>
+                          <Ionicons name="car" size={14} color="rgba(255,255,255,0.6)" />
+                          <Text style={styles.vehicleText}>
+                            Vehicle ID: {notification.vehicle}
+                          </Text>
+                        </View>
+                      )}
                     </View>
-                    
-                    <Text style={styles.notificationMessage}>
-                      {notification.message}
-                    </Text>
-                    
-                    {notification.vehicleReg && (
-                      <View style={styles.vehicleInfo}>
-                        <Ionicons name="car" size={14} color="rgba(255,255,255,0.6)" />
-                        <Text style={styles.vehicleText}>
-                          {notification.vehicleReg}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </ScrollView>
+        )}
 
         {/* Instructions */}
         <View style={styles.instructionsContainer}>
@@ -410,6 +354,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 15,
   },
   notificationsContainer: {
     flex: 1,
@@ -484,14 +439,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-  },
-  deleteButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   notificationMessage: {
     color: 'white',

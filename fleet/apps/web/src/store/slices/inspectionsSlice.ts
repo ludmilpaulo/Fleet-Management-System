@@ -96,6 +96,22 @@ export const uploadPhoto = createAsyncThunk(
   }
 )
 
+export const updateInspection = createAsyncThunk(
+  'inspections/updateInspection',
+  async ({ id, data }: { id: number; data: Partial<Inspection> }) => {
+    const response = await inspectionAPI.update(id.toString(), data)
+    return response.data
+  }
+)
+
+export const deleteInspection = createAsyncThunk(
+  'inspections/deleteInspection',
+  async (id: number) => {
+    await inspectionAPI.delete(id.toString())
+    return id
+  }
+)
+
 const inspectionsSlice = createSlice({
   name: 'inspections',
   initialState,
@@ -175,6 +191,37 @@ const inspectionsSlice = createSlice({
       .addCase(uploadPhoto.rejected, (state, action) => {
         state.loading = false
         state.error = action.error.message || 'Failed to upload photo'
+      })
+      
+      // Update inspection
+      .addCase(updateInspection.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(updateInspection.fulfilled, (state, action) => {
+        state.loading = false
+        const index = state.inspections.findIndex(i => i.id === action.payload.id)
+        if (index !== -1) {
+          state.inspections[index] = action.payload
+        }
+      })
+      .addCase(updateInspection.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.error.message || 'Failed to update inspection'
+      })
+      
+      // Delete inspection
+      .addCase(deleteInspection.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(deleteInspection.fulfilled, (state, action) => {
+        state.loading = false
+        state.inspections = state.inspections.filter(i => i.id !== action.payload)
+      })
+      .addCase(deleteInspection.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.error.message || 'Failed to delete inspection'
       })
   },
 })

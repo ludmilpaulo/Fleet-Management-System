@@ -12,6 +12,12 @@ urlpatterns = [
     path('audit-logs/', views.AuditLogListView.as_view(), name='audit-log-list'),
     path('audit-logs/<int:id>/', views.AuditLogDetailView.as_view(), name='audit-log-detail'),
     
+    # Vehicle location endpoints
+    path('vehicle-locations/', views.VehicleLocationListView.as_view(), name='vehicle-location-list'),
+    path('vehicle-locations/<int:id>/', views.VehicleLocationDetailView.as_view(), name='vehicle-location-detail'),
+    path('vehicle-locations/current/', views.VehicleLocationCurrentView.as_view(), name='vehicle-location-current'),
+    path('vehicle-locations/drivers/', views.DriverLocationTrackingView.as_view(), name='driver-location-tracking'),
+    
     # Statistics endpoints
     path('stats/', views.AuditLogStatsView.as_view(), name='audit-log-stats'),
 ]

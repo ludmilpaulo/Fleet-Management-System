@@ -10,16 +10,24 @@ export interface ApiError extends Error {
   detail?: unknown;
 }
 
+const ensureApiBase = (base: string) => {
+  if (!base) return 'http://localhost:8000/api';
+  if (base.endsWith('/api')) return base;
+  return `${base.replace(/\/$/, '')}/api`;
+};
+
 const buildUrl = (endpoint: string) => {
   if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
     return endpoint;
   }
 
+  const base = ensureApiBase(API_CONFIG.BASE_URL);
+
   if (endpoint.startsWith('/')) {
-    return `${API_CONFIG.BASE_URL}${endpoint}`;
+    return `${base}${endpoint}`;
   }
 
-  return `${API_CONFIG.BASE_URL}/${endpoint}`;
+  return `${base}/${endpoint}`;
 };
 
 const buildHeaders = (options?: ApiClientOptions) => {

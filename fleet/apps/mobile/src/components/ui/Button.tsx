@@ -5,8 +5,10 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 interface ButtonProps {
   title: string;
@@ -16,7 +18,9 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
+  className?: string;
   textStyle?: TextStyle;
+  textClassName?: string;
   fullWidth?: boolean;
 }
 
@@ -28,90 +32,67 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   loading = false,
   style,
+  className = '',
   textStyle,
+  textClassName = '',
   fullWidth = false,
 }) => {
-  const getButtonStyle = (): ViewStyle => {
-    const baseStyle: ViewStyle = {
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'row',
-      ...(fullWidth && { width: '100%' }),
-    };
-
-    const sizeStyles: Record<string, ViewStyle> = {
-      sm: { paddingHorizontal: 16, paddingVertical: 8, minHeight: 36 },
-      md: { paddingHorizontal: 24, paddingVertical: 12, minHeight: 48 },
-      lg: { paddingHorizontal: 32, paddingVertical: 16, minHeight: 56 },
-    };
-
-    const variantStyles: Record<string, ViewStyle> = {
-      primary: {
-        backgroundColor: '#3b82f6',
-        shadowColor: '#3b82f6',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
-      },
-      secondary: {
-        backgroundColor: '#6b7280',
-        shadowColor: '#6b7280',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
-      },
-      outline: {
-        backgroundColor: 'transparent',
-        borderWidth: 2,
-        borderColor: '#3b82f6',
-      },
-      ghost: {
-        backgroundColor: 'transparent',
-      },
-    };
-
-    return {
-      ...baseStyle,
-      ...sizeStyles[size],
-      ...variantStyles[variant],
-      ...(disabled && {
-        opacity: 0.5,
-        shadowOpacity: 0,
-        elevation: 0,
-      }),
-      ...style,
-    };
+  const getSizeClasses = () => {
+    switch (size) {
+      case 'sm':
+        return 'px-4 py-2 min-h-[36px]';
+      case 'md':
+        return 'px-6 py-3 min-h-[48px]';
+      case 'lg':
+        return 'px-8 py-4 min-h-[56px]';
+      default:
+        return 'px-6 py-3 min-h-[48px]';
+    }
   };
 
-  const getTextStyle = (): TextStyle => {
-    const baseStyle: TextStyle = {
-      fontWeight: '600',
-      textAlign: 'center',
-    };
-
-    const sizeStyles: Record<string, TextStyle> = {
-      sm: { fontSize: 14 },
-      md: { fontSize: 16 },
-      lg: { fontSize: 18 },
-    };
-
-    const variantStyles: Record<string, TextStyle> = {
-      primary: { color: '#ffffff' },
-      secondary: { color: '#ffffff' },
-      outline: { color: '#3b82f6' },
-      ghost: { color: '#3b82f6' },
-    };
-
-    return {
-      ...baseStyle,
-      ...sizeStyles[size],
-      ...variantStyles[variant],
-      ...textStyle,
-    };
+  const getVariantClasses = () => {
+    switch (variant) {
+      case 'primary':
+        return 'bg-primary-500 shadow-lg shadow-primary-500/30';
+      case 'secondary':
+        return 'bg-gray-500 shadow-lg shadow-gray-500/30';
+      case 'outline':
+        return 'bg-transparent border-2 border-primary-500';
+      case 'ghost':
+        return 'bg-transparent';
+      default:
+        return 'bg-primary-500 shadow-lg shadow-primary-500/30';
+    }
   };
+
+  const getTextSizeClasses = () => {
+    switch (size) {
+      case 'sm':
+        return 'text-sm';
+      case 'md':
+        return 'text-base';
+      case 'lg':
+        return 'text-lg';
+      default:
+        return 'text-base';
+    }
+  };
+
+  const getTextVariantClasses = () => {
+    switch (variant) {
+      case 'primary':
+      case 'secondary':
+        return 'text-white';
+      case 'outline':
+      case 'ghost':
+        return 'text-primary-500';
+      default:
+        return 'text-white';
+    }
+  };
+
+  const baseClasses = `rounded-xl items-center justify-center flex-row ${fullWidth ? 'w-full' : ''} ${getSizeClasses()} ${getVariantClasses()} ${disabled ? 'opacity-50' : ''} ${className}`;
+  const textClasses = `font-semibold text-center ${getTextSizeClasses()} ${getTextVariantClasses()} ${textClassName}`;
 
   const ButtonContent = () => (
     <>
@@ -122,28 +103,42 @@ export const Button: React.FC<ButtonProps> = ({
           style={{ marginRight: 8 }}
         />
       )}
-      <Text style={getTextStyle()}>{title}</Text>
+      <Text className={textClasses} style={textStyle}>{title}</Text>
     </>
   );
+
+  const handlePress = () => {
+    if (disabled || loading || !onPress) return;
+    
+    // Haptic feedback for better UX (iOS only)
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+        // Ignore haptic errors
+      });
+    }
+    
+    try {
+      console.log('[Button] Press handler called for:', title);
+      onPress();
+    } catch (error) {
+      console.error('[Button] Error in onPress handler:', error);
+    }
+  };
 
   if (variant === 'primary' && !disabled) {
     return (
       <TouchableOpacity
-        onPress={onPress}
+        onPress={handlePress}
         disabled={disabled || loading}
-        style={getButtonStyle()}
-        activeOpacity={0.8}
+        className={baseClasses}
+        style={style}
+        activeOpacity={0.7}
       >
         <LinearGradient
           colors={['#3b82f6', '#2563eb']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={{
-            ...getButtonStyle(),
-            backgroundColor: 'transparent',
-            shadowOpacity: 0,
-            elevation: 0,
-          }}
+          className="absolute inset-0 rounded-xl"
         >
           <ButtonContent />
         </LinearGradient>
@@ -153,10 +148,11 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={handlePress}
       disabled={disabled || loading}
-      style={getButtonStyle()}
-      activeOpacity={0.8}
+      className={baseClasses}
+      style={style}
+      activeOpacity={0.7}
     >
       <ButtonContent />
     </TouchableOpacity>

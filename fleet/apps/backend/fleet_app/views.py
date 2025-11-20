@@ -4,10 +4,12 @@ from rest_framework.response import Response
 from django.db.models import Q, Count, Avg
 from django.utils import timezone
 from datetime import timedelta
-from .models import Vehicle, KeyTracker, Shift
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from .models import Vehicle, KeyTracker, Shift, ShiftEndChecklist
 from .serializers import (
     VehicleSerializer, VehicleCreateSerializer, KeyTrackerSerializer, KeyTrackerCreateSerializer,
-    ShiftSerializer, ShiftCreateSerializer, ShiftEndSerializer, VehicleStatsSerializer, ShiftStatsSerializer
+    ShiftSerializer, ShiftCreateSerializer, ShiftEndSerializer, VehicleStatsSerializer, ShiftStatsSerializer,
+    ShiftEndChecklistSerializer, ShiftEndChecklistCreateSerializer
 )
 from .permissions import IsOrgMember, IsOrgAdminOrReadOnly
 
@@ -96,9 +98,14 @@ class ShiftListView(generics.ListCreateAPIView):
         return ShiftSerializer
     
     def perform_create(self, serializer):
-        """Set driver if not provided"""
-        if not serializer.validated_data.get('driver'):
+        """Set driver if not provided, otherwise use the provided driver"""
+        driver = serializer.validated_data.get('driver')
+        if not driver:
+            # If no driver provided, default to the requesting user (for driver-initiated shifts)
             serializer.save(driver=self.request.user)
+        else:
+            # Driver was provided (for admin-created shifts), validate and save
+            serializer.save()
 
 
 class ShiftDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -131,7 +138,7 @@ def start_shift(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, IsOrgMember])
 def end_shift(request, shift_id):
-    """End an active shift"""
+    """End an active shift with optional checklist"""
     try:
         shift = Shift.objects.get(
             id=shift_id,
@@ -141,13 +148,69 @@ def end_shift(request, shift_id):
     except Shift.DoesNotExist:
         return Response({'error': 'Shift not found'}, status=status.HTTP_404_NOT_FOUND)
     
-    serializer = ShiftEndSerializer(shift, data=request.data, partial=True)
-    if serializer.is_valid():
-        shift = serializer.save()
+    # Handle shift end data
+    shift_data = {}
+    if 'end_lat' in request.data:
+        shift_data['end_lat'] = request.data.get('end_lat')
+    if 'end_lng' in request.data:
+        shift_data['end_lng'] = request.data.get('end_lng')
+    if 'end_address' in request.data:
+        shift_data['end_address'] = request.data.get('end_address')
+    if 'notes' in request.data:
+        shift_data['notes'] = request.data.get('notes')
+    
+    if shift_data:
+        shift_serializer = ShiftEndSerializer(shift, data=shift_data, partial=True)
+        if shift_serializer.is_valid():
+            shift = shift_serializer.save()
+            shift.status = 'COMPLETED'
+            shift.end_at = timezone.now()
+            shift.save()
+        else:
+            return Response(shift_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
         shift.status = 'COMPLETED'
+        shift.end_at = timezone.now()
         shift.save()
-        return Response(ShiftSerializer(shift).data)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Handle checklist if provided
+    checklist_data = None
+    if any(key in request.FILES for key in ['fuel_level_photo', 'photo_front', 'photo_back', 'photo_left', 'photo_right']):
+        checklist_data = {
+            'shift': shift.id,
+            'parking_lat': request.data.get('parking_lat'),
+            'parking_lng': request.data.get('parking_lng'),
+            'parking_address': request.data.get('parking_address', ''),
+            'fuel_level_photo': request.FILES.get('fuel_level_photo'),
+            'fuel_level_manual': request.data.get('fuel_level_manual'),
+            'photo_front': request.FILES.get('photo_front'),
+            'photo_back': request.FILES.get('photo_back'),
+            'photo_left': request.FILES.get('photo_left'),
+            'photo_right': request.FILES.get('photo_right'),
+            'scratches_noted': request.data.get('scratches_noted', False),
+            'damage_description': request.data.get('damage_description', ''),
+        }
+        
+        # Remove None values
+        checklist_data = {k: v for k, v in checklist_data.items() if v is not None}
+        
+        checklist_serializer = ShiftEndChecklistCreateSerializer(
+            data=checklist_data,
+            context={'request': request}
+        )
+        if checklist_serializer.is_valid():
+            checklist = checklist_serializer.save()
+            # Return shift with checklist data
+            shift_response = ShiftSerializer(shift).data
+            shift_response['checklist'] = ShiftEndChecklistSerializer(checklist).data
+            return Response(shift_response, status=status.HTTP_200_OK)
+        else:
+            # Checklist failed but shift is already ended
+            shift_response = ShiftSerializer(shift).data
+            shift_response['checklist_errors'] = checklist_serializer.errors
+            return Response(shift_response, status=status.HTTP_200_OK)
+    
+    return Response(ShiftSerializer(shift).data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
