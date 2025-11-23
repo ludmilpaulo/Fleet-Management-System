@@ -53,6 +53,44 @@ export const loginUser = createAsyncThunk(
   }
 )
 
+export const registerUser = createAsyncThunk(
+  'auth/registerUser',
+  async (registrationData: {
+    username: string
+    email: string
+    password: string
+    firstName: string
+    lastName: string
+    phoneNumber?: string
+    employeeId?: string
+    department?: string
+    role: 'admin' | 'driver' | 'inspector' | 'staff'
+    company_slug: string
+  }, { rejectWithValue }) => {
+    try {
+      const response = await authService.register(registrationData)
+      // Convert AuthUser to User interface
+      const user: User = {
+        id: response.user.id.toString(),
+        username: response.user.username,
+        fullName: response.user.full_name || `${response.user.first_name} ${response.user.last_name}`.trim(),
+        role: response.user.role,
+        company: typeof response.user.company === 'string' 
+          ? response.user.company 
+          : response.user.company?.name || '',
+        email: response.user.email,
+      }
+      return user
+    } catch (error: any) {
+      const errorInfo = {
+        message: error.message || 'Registration failed',
+        errorType: error.errorType || 'unknown',
+      }
+      return rejectWithValue(errorInfo)
+    }
+  }
+)
+
 export const fetchUserProfile = createAsyncThunk(
   'auth/fetchUserProfile',
   async (_, { rejectWithValue }) => {
@@ -166,6 +204,28 @@ const authSlice = createSlice({
         state.isAuthenticated = false
         state.isLoading = false
         state.error = null // Don't set error on profile fetch failure
+      })
+    
+    // registerUser
+    builder
+      .addCase(registerUser.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.user = action.payload
+        state.isAuthenticated = true
+        state.isLoading = false
+        state.error = null
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.user = null
+        state.isAuthenticated = false
+        state.isLoading = false
+        const errorPayload = action.payload as any
+        state.error = typeof errorPayload === 'string' 
+          ? errorPayload 
+          : errorPayload?.message || 'Registration failed'
       })
     
     // logoutUser

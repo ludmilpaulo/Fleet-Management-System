@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "FleetIA",
+    "slug": "fleetia-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,21 +13,50 @@
       "backgroundColor": "#030712"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fleetia.mobile",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "FleetIA needs your location to track vehicle routes and provide location-based services.",
+        "NSLocationAlwaysUsageDescription": "FleetIA needs your location to track vehicle routes even when the app is in the background.",
+        "NSCameraUsageDescription": "FleetIA needs camera access to take photos for vehicle inspections and issue reporting.",
+        "NSPhotoLibraryUsageDescription": "FleetIA needs photo library access to attach photos to inspections and reports.",
+        "NSBluetoothAlwaysUsageDescription": "FleetIA needs Bluetooth access to track key fobs and vehicle access."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#030712"
       },
+      "package": "com.fleetia.mobile",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_CONNECT",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "extra": {
+      "apiUrl": "https://taki.pythonanywhere.com/api"
+    },
     "plugins": [
-      "react-native-ble-plx",
+      "expo-location",
+      "expo-camera",
       [
         "expo-notifications",
         {
@@ -35,7 +64,14 @@
           "color": "#3b82f6",
           "sounds": []
         }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow FleetIA to use Face ID for secure authentication."
+        }
       ]
-    ]
+    ],
+    "scheme": "fleetia"
   }
 }

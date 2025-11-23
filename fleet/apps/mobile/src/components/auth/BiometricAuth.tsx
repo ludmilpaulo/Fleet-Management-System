@@ -37,13 +37,13 @@ const BiometricButton: React.FC<BiometricButtonProps> = ({
   const getIconName = (method: string): keyof typeof Ionicons.glyphMap => {
     switch (method) {
       case 'face':
-        return 'face-recognition';
+        return 'face';
       case 'fingerprint':
-        return 'fingerprint';
+        return 'finger-print';
       case 'iris':
         return 'eye';
       default:
-        return 'security';
+        return 'shield';
     }
   };
 
@@ -216,7 +216,7 @@ const BiometricAuth: React.FC<BiometricAuthProps> = ({
           onPress={handleEnableBiometric}
           disabled={disabled}
         >
-          <Ionicons name="fingerprint" size={24} color="#007AFF" />
+          <Ionicons name="finger-print" size={24} color="#007AFF" />
           <Text style={styles.enableButtonText}>Enable Biometric Login</Text>
         </TouchableOpacity>
       </View>

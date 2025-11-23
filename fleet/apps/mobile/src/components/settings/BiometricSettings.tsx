@@ -142,7 +142,7 @@ const BiometricSettings: React.FC<BiometricSettingsProps> = ({
       <View style={[styles.container, style]}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Ionicons name="fingerprint" size={24} color="#8E8E93" />
+            <Ionicons name="finger-print" size={24} color="#8E8E93" />
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.title}>Biometric Login</Text>
@@ -159,7 +159,7 @@ const BiometricSettings: React.FC<BiometricSettingsProps> = ({
       <View style={[styles.container, style]}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Ionicons name="fingerprint" size={24} color="#8E8E93" />
+            <Ionicons name="finger-print" size={24} color="#8E8E93" />
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.title}>Biometric Login</Text>
@@ -202,7 +202,7 @@ const BiometricSettings: React.FC<BiometricSettingsProps> = ({
       <View style={styles.header}>
         <View style={styles.iconContainer}>
           <Ionicons 
-            name="fingerprint" 
+            name="finger-print" 
             size={24} 
             color={biometricEnabled ? "#34C759" : "#8E8E93"} 
           />
