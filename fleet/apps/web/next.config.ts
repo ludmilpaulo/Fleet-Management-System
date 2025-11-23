@@ -10,6 +10,22 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Transpile Apollo Client packages to fix module resolution
+  transpilePackages: ['@apollo/client'],
+  // Turbopack configuration (Next.js 16 default)
+  turbopack: {},
+  // Webpack config for non-Turbopack builds (when using --webpack flag)
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

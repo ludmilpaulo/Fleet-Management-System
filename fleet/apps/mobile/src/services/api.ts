@@ -17,7 +17,8 @@ const API_BASE_URL = (() => {
     console.log(`[ApiService] Using API URL: ${apiURL} (Device: ${Platform.OS}, Physical: ${isPhysicalDevice})`);
     return apiURL;
   }
-  return 'https://www.fleetia.online/api';
+  // Production API URL
+  return 'https://taki.pythonanywhere.com/api';
 })();
 
 class ApiService {
