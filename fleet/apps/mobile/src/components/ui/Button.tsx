@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -24,7 +24,7 @@ interface ButtonProps {
   fullWidth?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<ButtonProps> = React.memo(({
   title,
   onPress,
   variant = 'primary',
@@ -37,7 +37,7 @@ export const Button: React.FC<ButtonProps> = ({
   textClassName = '',
   fullWidth = false,
 }) => {
-  const getSizeClasses = () => {
+  const sizeClasses = useMemo(() => {
     switch (size) {
       case 'sm':
         return 'px-4 py-2 min-h-[36px]';
@@ -48,9 +48,9 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return 'px-6 py-3 min-h-[48px]';
     }
-  };
+  }, [size]);
 
-  const getVariantClasses = () => {
+  const variantClasses = useMemo(() => {
     switch (variant) {
       case 'primary':
         return 'bg-primary-500 shadow-lg shadow-primary-500/30';
@@ -63,9 +63,9 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return 'bg-primary-500 shadow-lg shadow-primary-500/30';
     }
-  };
+  }, [variant]);
 
-  const getTextSizeClasses = () => {
+  const textSizeClasses = useMemo(() => {
     switch (size) {
       case 'sm':
         return 'text-sm';
@@ -76,9 +76,9 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return 'text-base';
     }
-  };
+  }, [size]);
 
-  const getTextVariantClasses = () => {
+  const textVariantClasses = useMemo(() => {
     switch (variant) {
       case 'primary':
       case 'secondary':
@@ -89,10 +89,17 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return 'text-white';
     }
-  };
+  }, [variant]);
 
-  const baseClasses = `rounded-xl items-center justify-center flex-row ${fullWidth ? 'w-full' : ''} ${getSizeClasses()} ${getVariantClasses()} ${disabled ? 'opacity-50' : ''} ${className}`;
-  const textClasses = `font-semibold text-center ${getTextSizeClasses()} ${getTextVariantClasses()} ${textClassName}`;
+  const baseClasses = useMemo(() => 
+    `rounded-xl items-center justify-center flex-row ${fullWidth ? 'w-full' : ''} ${sizeClasses} ${variantClasses} ${disabled ? 'opacity-50' : ''} ${className}`,
+    [fullWidth, sizeClasses, variantClasses, disabled, className]
+  );
+  
+  const textClasses = useMemo(() => 
+    `font-semibold text-center ${textSizeClasses} ${textVariantClasses} ${textClassName}`,
+    [textSizeClasses, textVariantClasses, textClassName]
+  );
 
   const ButtonContent = () => (
     <>
@@ -157,4 +164,4 @@ export const Button: React.FC<ButtonProps> = ({
       <ButtonContent />
     </TouchableOpacity>
   );
-};
+});

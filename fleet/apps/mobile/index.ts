@@ -1,5 +1,7 @@
 import { registerRootComponent } from 'expo';
 import './global.css';
+// Initialize warning suppressor first to suppress expected warnings
+import './src/utils/warningSuppressor';
 
 import App from './App';
 

@@ -17,6 +17,7 @@ import { Button } from '../../components/ui/Button';
 import { useAppSelector } from '../../store/hooks';
 import { apiService, Vehicle } from '../../services/apiService';
 import { useNavigation } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 
 export const VehiclesScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -157,16 +158,47 @@ export const VehiclesScreen: React.FC = () => {
                   </View>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.viewButton}
-                  onPress={() => {
-                    // Navigate to vehicle details if implemented
-                    Alert.alert('Vehicle Details', `View details for ${vehicle.reg_number}`);
-                  }}
-                >
-                  <Text style={styles.viewButtonText}>View Details</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#3b82f6" />
-                </TouchableOpacity>
+                <View style={styles.actionsContainer}>
+                  <TouchableOpacity
+                    style={styles.viewButton}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      Alert.alert('Vehicle Details', `View details for ${vehicle.reg_number}`);
+                    }}
+                  >
+                    <Text style={styles.viewButtonText}>View Details</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#3b82f6" />
+                  </TouchableOpacity>
+                  
+                  {user?.role === 'driver' && vehicle.status === 'ACTIVE' && (
+                    <TouchableOpacity
+                      style={styles.reportButton}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        Alert.alert(
+                          'Report Issue',
+                          `Report an issue with ${vehicle.reg_number}?`,
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                              text: 'Report',
+                              onPress: () => {
+                                Alert.alert(
+                                  'Report Issue',
+                                  'To report an issue, please use the "Report Issue" option from the Dashboard.',
+                                  [{ text: 'OK' }]
+                                );
+                              },
+                            },
+                          ]
+                        );
+                      }}
+                    >
+                      <Ionicons name="warning-outline" size={16} color="#f59e0b" />
+                      <Text style={styles.reportButtonText}>Report Issue</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </Card>
             ))
           )}
@@ -278,19 +310,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
   },
-  viewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  actionsContainer: {
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     marginTop: 4,
+    gap: 8,
+  },
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   viewButtonText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#3b82f6',
+  },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#fef3c7',
+    borderRadius: 8,
+    gap: 6,
+  },
+  reportButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#f59e0b',
   },
 });
 

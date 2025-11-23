@@ -1,5 +1,6 @@
 import { authService, AuthUser } from './authService'
 import { analytics } from './mixpanel'
+import { apiCache } from './apiCache'
 
 import { Platform } from 'react-native';
 
@@ -206,8 +207,16 @@ class ApiService {
   }
 
   // Vehicle Management
-  async getVehicles(): Promise<Vehicle[]> {
+  async getVehicles(useCache: boolean = true): Promise<Vehicle[]> {
     try {
+      // Check cache first
+      if (useCache) {
+        const cached = await apiCache.get<Vehicle[]>('/fleet/vehicles/');
+        if (cached) {
+          return cached;
+        }
+      }
+
       const response = await fetch(`${BASE_URL}/fleet/vehicles/`, {
         headers: this.getHeaders(),
       })
@@ -215,6 +224,11 @@ class ApiService {
       
       // Handle both paginated and non-paginated responses
       const vehicles = Array.isArray(data) ? data : (data.results || [])
+      
+      // Cache the response (5 minutes TTL)
+      if (useCache) {
+        await apiCache.set('/fleet/vehicles/', vehicles, 5 * 60 * 1000);
+      }
       
       analytics.track('Vehicles Fetched', {
         count: vehicles.length
@@ -267,8 +281,16 @@ class ApiService {
   }
 
   // Inspection Management
-  async getInspections(): Promise<Inspection[]> {
+  async getInspections(useCache: boolean = true): Promise<Inspection[]> {
     try {
+      // Check cache first
+      if (useCache) {
+        const cached = await apiCache.get<Inspection[]>('/inspections/inspections/');
+        if (cached) {
+          return cached;
+        }
+      }
+
       const response = await fetch(`${BASE_URL}/inspections/inspections/`, {
         headers: this.getHeaders(),
       })
@@ -276,6 +298,11 @@ class ApiService {
       
       // Handle both paginated and non-paginated responses
       const inspections = Array.isArray(data) ? data : (data.results || [])
+      
+      // Cache the response (3 minutes TTL)
+      if (useCache) {
+        await apiCache.set('/inspections/inspections/', inspections, 3 * 60 * 1000);
+      }
       
       analytics.track('Inspections Fetched', {
         count: inspections.length
@@ -299,8 +326,13 @@ class ApiService {
         body: JSON.stringify(data),
       })
       
+      const inspection = await this.handleResponse<Inspection>(response);
+      
+      // Invalidate inspections cache when a new inspection is created
+      await apiCache.invalidate('/inspections/inspections/');
+      
       analytics.track('Inspection Created')
-      return this.handleResponse<Inspection>(response)
+      return inspection;
     } catch (error) {
       analytics.track('Inspection Creation Failed', {
         error: error instanceof Error ? error.message : 'unknown'
@@ -474,8 +506,16 @@ class ApiService {
   }
 
   // Shift Management
-  async getShifts(): Promise<Shift[]> {
+  async getShifts(useCache: boolean = true): Promise<Shift[]> {
     try {
+      // Check cache first (shorter TTL for shifts as they change frequently)
+      if (useCache) {
+        const cached = await apiCache.get<Shift[]>('/fleet/shifts/');
+        if (cached) {
+          return cached;
+        }
+      }
+
       const response = await fetch(`${BASE_URL}/fleet/shifts/`, {
         headers: this.getHeaders(),
       })
@@ -483,6 +523,11 @@ class ApiService {
       
       // Handle both paginated and non-paginated responses
       const shifts = Array.isArray(data) ? data : (data.results || [])
+      
+      // Cache the response (2 minutes TTL for shifts)
+      if (useCache) {
+        await apiCache.set('/fleet/shifts/', shifts, 2 * 60 * 1000);
+      }
       
       analytics.track('Shifts Fetched', {
         count: shifts.length
@@ -523,12 +568,17 @@ class ApiService {
         body: JSON.stringify(payload),
       })
       
+      const shift = await this.handleResponse<Shift>(response);
+      
+      // Invalidate shifts cache when a shift is started
+      await apiCache.invalidate('/fleet/shifts/');
+      
       analytics.track('Shift Started', {
         vehicle_id: vehicleId,
         has_location: !!(lat && lng),
         has_address: !!startAddress,
       })
-      return this.handleResponse<Shift>(response)
+      return shift;
     } catch (error) {
       console.error('[ApiService] Error starting shift:', error);
       analytics.track('Shift Start Failed', {
@@ -635,13 +685,18 @@ class ApiService {
         body: formData,
       })
       
+      const shift = await this.handleResponse<Shift>(response);
+      
+      // Invalidate shifts cache when a shift is ended
+      await apiCache.invalidate('/fleet/shifts/');
+      
       analytics.track('Shift Ended', {
         shift_id: shiftId,
         has_location: !!(lat && lng),
         has_photos: !!(photos?.fuelLevelPhoto || photos?.photoFront),
         has_checklist: !!checklistData,
       })
-      return this.handleResponse<Shift>(response)
+      return shift;
     } catch (error) {
       analytics.track('Shift End Failed', {
         shift_id: shiftId,

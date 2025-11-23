@@ -14,6 +14,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAppSelector } from '../../store/hooks';
 import { apiService, DashboardStats } from '../../services/apiService';
+import { Alert } from 'react-native';
 
 export const ReportsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -32,8 +33,55 @@ export const ReportsScreen: React.FC = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const data = await apiService.getDashboardStats();
-      setStats(data);
+      
+      // For drivers, fetch their specific data
+      if (user?.role === 'driver') {
+        const [shifts, inspections] = await Promise.all([
+          apiService.getShifts().catch(() => []),
+          apiService.getInspections().catch(() => []),
+        ]);
+        
+        // Filter for current driver
+        const driverShifts = shifts.filter((s: any) => {
+          const driverId = typeof s.driver === 'object' ? s.driver.id : s.driver;
+          return driverId.toString() === user?.id?.toString();
+        });
+        
+        const driverInspections = inspections.filter((insp: any) => {
+          const inspectorId = typeof insp.created_by === 'object' ? insp.created_by.id : insp.created_by;
+          return inspectorId.toString() === user?.id?.toString();
+        });
+        
+        const activeShifts = driverShifts.filter((s: any) => s.status === 'ACTIVE').length;
+        const today = new Date().toISOString().split('T')[0];
+        const completedToday = driverShifts.filter((s: any) => 
+          s.status === 'COMPLETED' && s.end_at?.startsWith(today)
+        ).length;
+        
+        const failedInspections = driverInspections.filter((insp: any) => 
+          insp.status === 'FAIL' || insp.status === 'FAILED'
+        ).length;
+        
+        // Create driver-specific stats
+        setStats({
+          total_vehicles: 0,
+          active_vehicles: 0,
+          vehicles_in_maintenance: 0,
+          total_issues: 0,
+          open_issues: 0,
+          critical_issues: 0,
+          total_inspections: driverInspections.length,
+          failed_inspections: failedInspections,
+          active_shifts: activeShifts,
+          completed_shifts_today: completedToday,
+          maintenance_due: 0,
+          upcoming_inspections: 0,
+        });
+      } else {
+        // For admin/staff, use dashboard stats
+        const data = await apiService.getDashboardStats();
+        setStats(data);
+      }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
     } finally {
@@ -47,44 +95,63 @@ export const ReportsScreen: React.FC = () => {
     fetchStats();
   };
 
-  const reportSections = [
-    {
-      title: 'Fleet Overview',
-      icon: 'car-outline',
-      items: [
-        { label: 'Total Vehicles', value: stats?.total_vehicles || 0 },
-        { label: 'Active Vehicles', value: stats?.active_vehicles || 0 },
-        { label: 'In Maintenance', value: stats?.vehicles_in_maintenance || 0 },
-      ],
-    },
-    {
-      title: 'Issues & Maintenance',
-      icon: 'warning-outline',
-      items: [
-        { label: 'Total Issues', value: stats?.total_issues || 0 },
-        { label: 'Open Issues', value: stats?.open_issues || 0 },
-        { label: 'Critical Issues', value: stats?.critical_issues || 0 },
-        { label: 'Maintenance Due', value: stats?.maintenance_due || 0 },
-      ],
-    },
-    {
-      title: 'Inspections',
-      icon: 'checkmark-circle-outline',
-      items: [
-        { label: 'Total Inspections', value: stats?.total_inspections || 0 },
-        { label: 'Failed Inspections', value: stats?.failed_inspections || 0 },
-        { label: 'Upcoming', value: stats?.upcoming_inspections || 0 },
-      ],
-    },
-    {
-      title: 'Shifts',
-      icon: 'time-outline',
-      items: [
-        { label: 'Active Shifts', value: stats?.active_shifts || 0 },
-        { label: 'Completed Today', value: stats?.completed_shifts_today || 0 },
-      ],
-    },
-  ];
+  const reportSections = user?.role === 'driver' 
+    ? [
+        {
+          title: 'My Shifts',
+          icon: 'time-outline',
+          items: [
+            { label: 'Active Shifts', value: stats?.active_shifts || 0 },
+            { label: 'Completed Today', value: stats?.completed_shifts_today || 0 },
+          ],
+        },
+        {
+          title: 'My Inspections',
+          icon: 'checkmark-circle-outline',
+          items: [
+            { label: 'Total Inspections', value: stats?.total_inspections || 0 },
+            { label: 'Failed Inspections', value: stats?.failed_inspections || 0 },
+          ],
+        },
+      ]
+    : [
+        {
+          title: 'Fleet Overview',
+          icon: 'car-outline',
+          items: [
+            { label: 'Total Vehicles', value: stats?.total_vehicles || 0 },
+            { label: 'Active Vehicles', value: stats?.active_vehicles || 0 },
+            { label: 'In Maintenance', value: stats?.vehicles_in_maintenance || 0 },
+          ],
+        },
+        {
+          title: 'Issues & Maintenance',
+          icon: 'warning-outline',
+          items: [
+            { label: 'Total Issues', value: stats?.total_issues || 0 },
+            { label: 'Open Issues', value: stats?.open_issues || 0 },
+            { label: 'Critical Issues', value: stats?.critical_issues || 0 },
+            { label: 'Maintenance Due', value: stats?.maintenance_due || 0 },
+          ],
+        },
+        {
+          title: 'Inspections',
+          icon: 'checkmark-circle-outline',
+          items: [
+            { label: 'Total Inspections', value: stats?.total_inspections || 0 },
+            { label: 'Failed Inspections', value: stats?.failed_inspections || 0 },
+            { label: 'Upcoming', value: stats?.upcoming_inspections || 0 },
+          ],
+        },
+        {
+          title: 'Shifts',
+          icon: 'time-outline',
+          items: [
+            { label: 'Active Shifts', value: stats?.active_shifts || 0 },
+            { label: 'Completed Today', value: stats?.completed_shifts_today || 0 },
+          ],
+        },
+      ];
 
   if (loading && !stats) {
     return (
@@ -140,30 +207,32 @@ export const ReportsScreen: React.FC = () => {
             </Card>
           ))}
 
-          <Card style={styles.actionsCard}>
-            <Text style={styles.actionsTitle}>Export Reports</Text>
-            <Text style={styles.actionsSubtitle}>
-              Generate detailed reports for analysis
-            </Text>
-            <View style={styles.actionsButtons}>
-              <Button
-                title="Export CSV"
-                onPress={() => {
-                  // TODO: Implement CSV export
-                }}
-                variant="outline"
-                style={styles.actionButton}
-              />
-              <Button
-                title="Export PDF"
-                onPress={() => {
-                  // TODO: Implement PDF export
-                }}
-                variant="outline"
-                style={styles.actionButton}
-              />
-            </View>
-          </Card>
+          {user?.role !== 'driver' && (
+            <Card style={styles.actionsCard}>
+              <Text style={styles.actionsTitle}>Export Reports</Text>
+              <Text style={styles.actionsSubtitle}>
+                Generate detailed reports for analysis
+              </Text>
+              <View style={styles.actionsButtons}>
+                <Button
+                  title="Export CSV"
+                  onPress={() => {
+                    Alert.alert('Coming Soon', 'CSV export feature will be available soon');
+                  }}
+                  variant="outline"
+                  style={styles.actionButton}
+                />
+                <Button
+                  title="Export PDF"
+                  onPress={() => {
+                    Alert.alert('Coming Soon', 'PDF export feature will be available soon');
+                  }}
+                  variant="outline"
+                  style={styles.actionButton}
+                />
+              </View>
+            </Card>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

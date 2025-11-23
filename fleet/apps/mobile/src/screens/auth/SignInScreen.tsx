@@ -6,12 +6,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import * as Haptics from 'expo-haptics';
 
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -62,6 +64,7 @@ export const SignInScreen: React.FC = () => {
     }
 
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await dispatch(loginUser({ username, password })).unwrap();
       
       // Offer to enable biometric login after successful sign-in
@@ -94,10 +97,11 @@ export const SignInScreen: React.FC = () => {
         );
       }
       
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       dispatch(addNotification({
         type: 'success',
         title: 'Login Successful',
-        message: `Welcome back, ${user?.first_name || user?.username}!`,
+        message: `Welcome back, ${user?.fullName || user?.username}!`,
       }));
     } catch (err: any) {
       // Extract error type and message
@@ -135,6 +139,7 @@ export const SignInScreen: React.FC = () => {
         alertMessage = 'Unable to connect to the server. Please check:\n\n• Your internet connection\n• That the backend server is running\n• That your device is on the same network as the server';
       }
       
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(alertTitle, alertMessage, alertButtons);
       
       dispatch(addNotification({
@@ -152,7 +157,7 @@ export const SignInScreen: React.FC = () => {
       dispatch(addNotification({
         type: 'success',
         title: 'Biometric Login Successful',
-        message: `Welcome back, ${user?.first_name || user?.username}!`,
+        message: `Welcome back, ${user?.fullName || user?.username}!`,
       }));
     } catch (err: any) {
       dispatch(addNotification({
@@ -172,11 +177,12 @@ export const SignInScreen: React.FC = () => {
   };
 
   const handleSignUp = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('SignUp');
   };
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 bg-white">
       <LinearGradient
         colors={['#eff6ff', '#ffffff', '#f0f9ff']}
         className="flex-1"
@@ -184,38 +190,46 @@ export const SignInScreen: React.FC = () => {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1"
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <ScrollView
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}
+            contentContainerStyle={{ flexGrow: 1, padding: 20 }}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             {/* Header */}
-            <View className="items-center mb-8">
-              <View className="mb-4">
+            <View className="items-center mb-8 mt-8">
+              <View className="mb-6">
                 <LinearGradient
                   colors={['#3b82f6', '#2563eb']}
-                  className="w-16 h-16 rounded-3xl items-center justify-center"
+                  className="w-20 h-20 rounded-3xl items-center justify-center"
                   style={{
                     shadowColor: '#3b82f6',
                     shadowOffset: { width: 0, height: 8 },
                     shadowOpacity: 0.3,
-                    shadowRadius: 12,
-                    elevation: 8,
+                    shadowRadius: 16,
+                    elevation: 12,
                   }}
                 >
-                  <Ionicons name="car" size={32} color="#ffffff" />
+                  <Ionicons name="car" size={40} color="#ffffff" />
                 </LinearGradient>
               </View>
-              <Text className="text-3xl font-bold text-slate-900 mb-2">Fleet Management</Text>
-              <Text className="text-base text-slate-600 text-center">Sign in to your account</Text>
+              <Text className="text-4xl font-bold text-slate-900 mb-2">Welcome Back</Text>
+              <Text className="text-base text-slate-600 text-center max-w-xs">
+                Sign in to access your fleet management dashboard
+              </Text>
             </View>
 
             {/* Sign In Form */}
-            <Card className="mb-6 p-5 rounded-3xl shadow-lg bg-white dark:bg-slate-800" variant="elevated">
-              <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100 text-center mb-2">Welcome Back</Text>
-              <Text className="text-sm text-slate-600 dark:text-slate-400 text-center mb-6">
-                Enter your credentials to access your dashboard
+            <Card className="mb-6 p-6 rounded-3xl shadow-xl bg-white dark:bg-slate-800" variant="elevated">
+              <View className="mb-6">
+                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100 text-center mb-2">
+                  Sign In
+                </Text>
+                <Text className="text-sm text-slate-600 dark:text-slate-400 text-center">
+                  Enter your credentials to continue
               </Text>
+              </View>
 
               <Input
                 label="Username"
@@ -225,6 +239,7 @@ export const SignInScreen: React.FC = () => {
                 leftIcon="person-outline"
                 autoCapitalize="none"
                 autoCorrect={false}
+                className="mb-4"
               />
 
               <Input
@@ -235,14 +250,19 @@ export const SignInScreen: React.FC = () => {
                 secureTextEntry={!showPassword}
                 leftIcon="lock-closed-outline"
                 rightIcon={showPassword ? 'eye-off' : 'eye'}
+                onRightIconPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowPassword(!showPassword);
+                }}
                 autoCapitalize="none"
                 autoCorrect={false}
+                className="mb-4"
               />
 
               {error && (
-                <View className="flex-row items-center bg-red-50 dark:bg-red-900/20 p-3 rounded-lg mb-4">
+                <View className="flex-row items-center bg-red-50 dark:bg-red-900/20 p-4 rounded-xl mb-4 border border-red-200 dark:border-red-800">
                   <Ionicons name="alert-circle" size={20} color="#ef4444" />
-                  <Text className="text-sm text-red-500 ml-2 flex-1">{error}</Text>
+                  <Text className="text-sm text-red-600 dark:text-red-400 ml-2 flex-1">{error}</Text>
                 </View>
               )}
 
@@ -252,20 +272,22 @@ export const SignInScreen: React.FC = () => {
                 loading={isLoading}
                 disabled={isLoading}
                 className="mb-4"
+                size="lg"
               />
 
-              <View className="flex-row justify-center items-center">
-                <Text className="text-sm text-slate-600 dark:text-slate-400">Don't have an account? </Text>
-                <Button
-                  title="Sign Up"
-                  onPress={handleSignUp}
-                  variant="ghost"
-                  size="sm"
-                />
+              <View className="flex-row justify-center items-center mb-5">
+                <Text className="text-sm text-slate-600 dark:text-slate-400 mr-2">
+                  Don't have an account?
+                </Text>
+                <TouchableOpacity onPress={handleSignUp} activeOpacity={0.7}>
+                  <Text className="text-sm font-semibold text-primary-600 dark:text-primary-400">
+                    Sign Up
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               {/* Biometric Authentication */}
-              <View className="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700">
+              <View className="pt-5 border-t border-gray-200 dark:border-gray-700">
                 <BiometricAuth
                   onAuthenticate={handleBiometricAuth}
                   onError={handleBiometricError}
@@ -275,24 +297,45 @@ export const SignInScreen: React.FC = () => {
             </Card>
 
             {/* Demo Credentials */}
-            <Card className="p-5 rounded-3xl bg-gray-50 dark:bg-slate-800" variant="outlined">
-              <Text className="text-base font-semibold text-slate-900 dark:text-slate-100 text-center mb-4">Demo Credentials</Text>
-              <View className="flex-row flex-wrap justify-between">
-                <View className="w-[48%] mb-3">
-                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Admin</Text>
-                  <Text className="text-xs text-slate-600 dark:text-slate-400" style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>admin / admin123</Text>
+            <Card className="p-5 rounded-3xl bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-600" variant="outlined">
+              <View className="flex-row items-center mb-4">
+                <Ionicons name="information-circle" size={20} color="#3b82f6" />
+                <Text className="text-base font-semibold text-slate-900 dark:text-slate-100 ml-2">
+                  Demo Credentials
+                </Text>
+              </View>
+              <View className="flex-row flex-wrap justify-between gap-3">
+                <View className="w-[48%] p-3 bg-white dark:bg-slate-700 rounded-xl">
+                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Admin
+                  </Text>
+                  <Text className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                    admin / admin123
+                  </Text>
                 </View>
-                <View className="w-[48%] mb-3">
-                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Staff</Text>
-                  <Text className="text-xs text-slate-600 dark:text-slate-400" style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>staff1 / staff123</Text>
+                <View className="w-[48%] p-3 bg-white dark:bg-slate-700 rounded-xl">
+                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Staff
+                  </Text>
+                  <Text className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                    staff1 / staff123
+                  </Text>
                 </View>
-                <View className="w-[48%] mb-3">
-                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Driver</Text>
-                  <Text className="text-xs text-slate-600 dark:text-slate-400" style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>driver1 / driver123</Text>
+                <View className="w-[48%] p-3 bg-white dark:bg-slate-700 rounded-xl">
+                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Driver
+                  </Text>
+                  <Text className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                    driver1 / driver123
+                  </Text>
                 </View>
-                <View className="w-[48%] mb-3">
-                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Inspector</Text>
-                  <Text className="text-xs text-slate-600 dark:text-slate-400" style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>inspector1 / inspector123</Text>
+                <View className="w-[48%] p-3 bg-white dark:bg-slate-700 rounded-xl">
+                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Inspector
+                  </Text>
+                  <Text className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                    inspector1 / inspector123
+                  </Text>
                 </View>
               </View>
             </Card>

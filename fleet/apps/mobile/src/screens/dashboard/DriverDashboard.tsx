@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -127,48 +127,162 @@ export const DriverDashboard: React.FC = () => {
           setActiveVehicle(available || null);
         }
         
-        // Fetch stats - get all data in parallel
+        // Fetch stats and activities data in parallel
         try {
-          const [vehicles, inspections] = await Promise.all([
+          const [vehicles, inspections, issues, notifications] = await Promise.all([
             apiService.getVehicles().catch(() => []),
             apiService.getInspections().catch(() => []),
+            apiService.getIssues().catch(() => []),
+            apiService.getNotifications().catch(() => []),
           ]);
           
           // Calculate inspections completed by this driver
-          const driverInspections = inspections.filter((insp: any) => {
+          const completedInspections = inspections.filter((insp: any) => {
             const inspectorId = typeof insp.created_by === 'object' ? insp.created_by.id : insp.created_by;
-            return inspectorId === user?.id && (insp.status === 'PASS' || insp.status === 'PASSED' || insp.status === 'COMPLETED');
+            return inspectorId.toString() === user?.id?.toString() && (insp.status === 'PASS' || insp.status === 'PASSED' || insp.status === 'COMPLETED');
           });
           
           setStats(prev => ({
             ...prev,
             vehiclesActive: vehicles.filter((v: any) => v.status === 'ACTIVE').length,
-            inspectionsCompleted: driverInspections.length,
+            inspectionsCompleted: completedInspections.length,
             driverStatus: active ? 'On Shift' : 'Available',
           }));
-        } catch (error) {
-          console.error('Error fetching stats:', error);
-        }
         
-        // Recent activities
-        const recentShifts = shifts
+        // Filter driver's issues
+        const driverIssues = issues.filter((issue: any) => {
+          const reporterId = typeof issue.reported_by === 'object' ? issue.reported_by.id : issue.reported_by;
+          return reporterId.toString() === user?.id?.toString();
+        });
+        
+        // Filter driver's notifications
+        const driverNotifications = notifications.filter((notif: any) => {
+          const userId = typeof notif.user === 'object' ? notif.user.id : notif.user;
+          return userId.toString() === user?.id?.toString();
+        });
+        
+        // Build activities array from multiple sources
+        const activities: any[] = [];
+        
+        // Add recent shifts (started and completed)
+        const driverShifts = shifts
           .filter((s: any) => {
             const driverId = typeof s.driver === 'object' ? s.driver.id : s.driver;
-            return driverId === user?.id && s.status === 'COMPLETED';
+            return driverId.toString() === user?.id?.toString();
           })
           .sort((a: any, b: any) => new Date(b.end_at || b.start_at).getTime() - new Date(a.end_at || a.start_at).getTime())
-          .slice(0, 2);
+          .slice(0, 5);
         
-        setRecentActivities(recentShifts.map((shift: any) => ({
-          id: `shift-${shift.id}`,
-          title: 'Shift Completed',
-          description: `Shift for ${typeof shift.vehicle === 'object' ? shift.vehicle.reg_number : 'Vehicle'}`,
-          time: formatTimeAgo(shift.end_at || shift.start_at),
-          icon: 'checkmark-circle' as keyof typeof Ionicons.glyphMap,
-          color: '#10b981',
-          type: 'completed',
-        })));
+        driverShifts.forEach((shift: any) => {
+          if (shift.status === 'ACTIVE') {
+            activities.push({
+              id: `shift-${shift.id}`,
+              title: 'Shift Started',
+              description: `Started shift for ${typeof shift.vehicle === 'object' ? shift.vehicle.reg_number : 'Vehicle'}`,
+              time: formatTimeAgo(shift.start_at),
+              icon: 'play-circle' as keyof typeof Ionicons.glyphMap,
+              color: '#3b82f6',
+              type: 'shift_started',
+              timestamp: new Date(shift.start_at).getTime(),
+            });
+          } else if (shift.status === 'COMPLETED') {
+            activities.push({
+              id: `shift-${shift.id}`,
+              title: 'Shift Completed',
+              description: `Completed shift for ${typeof shift.vehicle === 'object' ? shift.vehicle.reg_number : 'Vehicle'}`,
+              time: formatTimeAgo(shift.end_at || shift.start_at),
+              icon: 'checkmark-circle' as keyof typeof Ionicons.glyphMap,
+              color: '#10b981',
+              type: 'completed',
+              timestamp: new Date(shift.end_at || shift.start_at).getTime(),
+            });
+          }
+        });
         
+        // Add recent inspections
+        const recentInspections = inspections
+          .filter((insp: any) => {
+            const inspectorId = typeof insp.created_by === 'object' ? insp.created_by.id : insp.created_by;
+            return inspectorId.toString() === user?.id?.toString();
+          })
+          .sort((a: any, b: any) => new Date(b.started_at || b.created_at).getTime() - new Date(a.started_at || a.created_at).getTime())
+          .slice(0, 5);
+        
+        recentInspections.forEach((inspection: any) => {
+          const inspectionType = inspection.type === 'START' ? 'Pre-Trip' : 'Post-Trip';
+          const statusIcon = inspection.status === 'PASS' || inspection.status === 'PASSED' 
+            ? 'checkmark-circle' 
+            : inspection.status === 'FAIL' || inspection.status === 'FAILED'
+            ? 'close-circle'
+            : 'time';
+          const statusColor = inspection.status === 'PASS' || inspection.status === 'PASSED'
+            ? '#10b981'
+            : inspection.status === 'FAIL' || inspection.status === 'FAILED'
+            ? '#ef4444'
+            : '#f59e0b';
+          
+          activities.push({
+            id: `inspection-${inspection.id}`,
+            title: `${inspectionType} Inspection ${inspection.status === 'PASS' || inspection.status === 'PASSED' ? 'Passed' : inspection.status === 'FAIL' || inspection.status === 'FAILED' ? 'Failed' : 'Started'}`,
+            description: `${inspectionType} inspection ${inspection.address ? `at ${inspection.address}` : ''}`,
+            time: formatTimeAgo(inspection.started_at || inspection.created_at),
+            icon: statusIcon as keyof typeof Ionicons.glyphMap,
+            color: statusColor,
+            type: inspection.status === 'PASS' || inspection.status === 'PASSED' ? 'completed' : inspection.status === 'FAIL' || inspection.status === 'FAILED' ? 'warning' : 'in_progress',
+            timestamp: new Date(inspection.started_at || inspection.created_at).getTime(),
+          });
+        });
+        
+        // Add recent issues reported
+        driverIssues
+          .sort((a: any, b: any) => new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime())
+          .slice(0, 3)
+          .forEach((issue: any) => {
+            activities.push({
+              id: `issue-${issue.id}`,
+              title: 'Issue Reported',
+              description: `${issue.title} - ${issue.category}`,
+              time: formatTimeAgo(issue.reported_at),
+              icon: 'warning' as keyof typeof Ionicons.glyphMap,
+              color: issue.severity === 'CRITICAL' ? '#ef4444' : issue.severity === 'HIGH' ? '#f59e0b' : '#3b82f6',
+              type: 'warning',
+              timestamp: new Date(issue.reported_at).getTime(),
+            });
+          });
+        
+        // Add recent notifications
+        driverNotifications
+          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 3)
+          .forEach((notif: any) => {
+            const notifIcon = notif.type === 'TICKET_ASSIGNED' ? 'ticket' :
+                             notif.type === 'INSPECTION_FAILED' ? 'alert-circle' :
+                             notif.type === 'SHIFT_STARTED' ? 'play-circle' :
+                             notif.type === 'SHIFT_ENDED' ? 'stop-circle' :
+                             'notifications';
+            const notifColor = notif.priority === 'URGENT' || notif.priority === 'HIGH' ? '#ef4444' : '#3b82f6';
+            
+            activities.push({
+              id: `notification-${notif.id}`,
+              title: notif.title,
+              description: notif.message,
+              time: formatTimeAgo(notif.created_at),
+              icon: notifIcon as keyof typeof Ionicons.glyphMap,
+              color: notifColor,
+              type: notif.priority === 'URGENT' || notif.priority === 'HIGH' ? 'warning' : 'info',
+              timestamp: new Date(notif.created_at).getTime(),
+            });
+          });
+        
+        // Sort all activities by timestamp (most recent first) and take top 5
+        const sortedActivities = activities
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 5);
+        
+        setRecentActivities(sortedActivities);
+        } catch (error) {
+          console.error('Error fetching activities:', error);
+        }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       } finally {
@@ -206,7 +320,7 @@ export const DriverDashboard: React.FC = () => {
     };
   }, []);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       // Reload user profile first
@@ -226,11 +340,11 @@ export const DriverDashboard: React.FC = () => {
         return;
       }
       
-      // Fetch all data in parallel
+      // Fetch all data in parallel (bypass cache on refresh)
       const [shifts, vehicles, inspections] = await Promise.all([
-        apiService.getShifts().catch(() => []),
-        apiService.getVehicles().catch(() => []),
-        apiService.getInspections().catch(() => []),
+        apiService.getShifts(false).catch(() => []),
+        apiService.getVehicles(false).catch(() => []),
+        apiService.getInspections(false).catch(() => []),
       ]);
       
       // Find active shift
@@ -277,24 +391,143 @@ export const DriverDashboard: React.FC = () => {
         driverStatus: active ? 'On Shift' : 'Available',
       });
       
-      // Update recent activities
-      const recentShifts = shifts
+      // Fetch and update recent activities from multiple sources
+      const [issues, notifications] = await Promise.all([
+        apiService.getIssues().catch(() => []),
+        apiService.getNotifications().catch(() => []),
+      ]);
+      
+      // Filter driver's issues
+      const driverIssues = issues.filter((issue: any) => {
+        const reporterId = typeof issue.reported_by === 'object' ? issue.reported_by.id : issue.reported_by;
+        return reporterId.toString() === currentUser.id.toString();
+      });
+      
+      // Filter driver's notifications
+      const driverNotifications = notifications.filter((notif: any) => {
+        const userId = typeof notif.user === 'object' ? notif.user.id : notif.user;
+        return userId.toString() === currentUser.id.toString();
+      });
+      
+      // Build activities array from multiple sources
+      const activities: any[] = [];
+      
+      // Add recent shifts
+      const driverShifts = shifts
         .filter((s: any) => {
           const driverId = typeof s.driver === 'object' ? s.driver.id : s.driver;
-          return driverId === currentUser.id && s.status === 'COMPLETED';
+          return driverId.toString() === currentUser.id.toString();
         })
         .sort((a: any, b: any) => new Date(b.end_at || b.start_at).getTime() - new Date(a.end_at || a.start_at).getTime())
-        .slice(0, 2);
+        .slice(0, 5);
       
-      setRecentActivities(recentShifts.map((shift: any) => ({
-        id: `shift-${shift.id}`,
-        title: 'Shift Completed',
-        description: `Shift for ${typeof shift.vehicle === 'object' ? shift.vehicle.reg_number : 'Vehicle'}`,
-        time: formatTimeAgo(shift.end_at || shift.start_at),
-        icon: 'checkmark-circle' as keyof typeof Ionicons.glyphMap,
-        color: '#10b981',
-        type: 'completed',
-      })));
+      driverShifts.forEach((shift: any) => {
+        if (shift.status === 'ACTIVE') {
+          activities.push({
+            id: `shift-${shift.id}`,
+            title: 'Shift Started',
+            description: `Started shift for ${typeof shift.vehicle === 'object' ? shift.vehicle.reg_number : 'Vehicle'}`,
+            time: formatTimeAgo(shift.start_at),
+            icon: 'play-circle' as keyof typeof Ionicons.glyphMap,
+            color: '#3b82f6',
+            type: 'shift_started',
+            timestamp: new Date(shift.start_at).getTime(),
+          });
+        } else if (shift.status === 'COMPLETED') {
+          activities.push({
+            id: `shift-${shift.id}`,
+            title: 'Shift Completed',
+            description: `Completed shift for ${typeof shift.vehicle === 'object' ? shift.vehicle.reg_number : 'Vehicle'}`,
+            time: formatTimeAgo(shift.end_at || shift.start_at),
+            icon: 'checkmark-circle' as keyof typeof Ionicons.glyphMap,
+            color: '#10b981',
+            type: 'completed',
+            timestamp: new Date(shift.end_at || shift.start_at).getTime(),
+          });
+        }
+      });
+      
+      // Add recent inspections
+      const recentInspectionsForActivity = inspections
+        .filter((insp: any) => {
+          const inspectorId = typeof insp.created_by === 'object' ? insp.created_by.id : insp.created_by;
+          return inspectorId.toString() === currentUser.id.toString();
+        })
+        .sort((a: any, b: any) => new Date(b.started_at || b.created_at).getTime() - new Date(a.started_at || a.created_at).getTime())
+        .slice(0, 5);
+      
+      recentInspectionsForActivity.forEach((inspection: any) => {
+        const inspectionType = inspection.type === 'START' ? 'Pre-Trip' : 'Post-Trip';
+        const statusIcon = inspection.status === 'PASS' || inspection.status === 'PASSED' 
+          ? 'checkmark-circle' 
+          : inspection.status === 'FAIL' || inspection.status === 'FAILED'
+          ? 'close-circle'
+          : 'time';
+        const statusColor = inspection.status === 'PASS' || inspection.status === 'PASSED'
+          ? '#10b981'
+          : inspection.status === 'FAIL' || inspection.status === 'FAILED'
+          ? '#ef4444'
+          : '#f59e0b';
+        
+        activities.push({
+          id: `inspection-${inspection.id}`,
+          title: `${inspectionType} Inspection ${inspection.status === 'PASS' || inspection.status === 'PASSED' ? 'Passed' : inspection.status === 'FAIL' || inspection.status === 'FAILED' ? 'Failed' : 'Started'}`,
+          description: `${inspectionType} inspection ${inspection.address ? `at ${inspection.address}` : ''}`,
+          time: formatTimeAgo(inspection.started_at || inspection.created_at),
+          icon: statusIcon as keyof typeof Ionicons.glyphMap,
+          color: statusColor,
+          type: inspection.status === 'PASS' || inspection.status === 'PASSED' ? 'completed' : inspection.status === 'FAIL' || inspection.status === 'FAILED' ? 'warning' : 'in_progress',
+          timestamp: new Date(inspection.started_at || inspection.created_at).getTime(),
+        });
+      });
+      
+      // Add recent issues
+      driverIssues
+        .sort((a: any, b: any) => new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime())
+        .slice(0, 3)
+        .forEach((issue: any) => {
+          activities.push({
+            id: `issue-${issue.id}`,
+            title: 'Issue Reported',
+            description: `${issue.title} - ${issue.category}`,
+            time: formatTimeAgo(issue.reported_at),
+            icon: 'warning' as keyof typeof Ionicons.glyphMap,
+            color: issue.severity === 'CRITICAL' ? '#ef4444' : issue.severity === 'HIGH' ? '#f59e0b' : '#3b82f6',
+            type: 'warning',
+            timestamp: new Date(issue.reported_at).getTime(),
+          });
+        });
+      
+      // Add recent notifications
+      driverNotifications
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 3)
+        .forEach((notif: any) => {
+          const notifIcon = notif.type === 'TICKET_ASSIGNED' ? 'ticket' :
+                           notif.type === 'INSPECTION_FAILED' ? 'alert-circle' :
+                           notif.type === 'SHIFT_STARTED' ? 'play-circle' :
+                           notif.type === 'SHIFT_ENDED' ? 'stop-circle' :
+                           'notifications';
+          const notifColor = notif.priority === 'URGENT' || notif.priority === 'HIGH' ? '#ef4444' : '#3b82f6';
+          
+          activities.push({
+            id: `notification-${notif.id}`,
+            title: notif.title,
+            description: notif.message,
+            time: formatTimeAgo(notif.created_at),
+            icon: notifIcon as keyof typeof Ionicons.glyphMap,
+            color: notifColor,
+            type: notif.priority === 'URGENT' || notif.priority === 'HIGH' ? 'warning' : 'info',
+            timestamp: new Date(notif.created_at).getTime(),
+          });
+        });
+      
+      // Sort all activities by timestamp and take top 5
+      const sortedActivities = activities
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 5);
+      
+      setRecentActivities(sortedActivities);
       
     } catch (error) {
       console.error('Error refreshing:', error);
@@ -302,13 +535,13 @@ export const DriverDashboard: React.FC = () => {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [user, dispatch]);
 
-  const getCurrentLocation = async () => {
+  const getCurrentLocation = useCallback(async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Location permission is required to start a shift.');
+        Alert.alert('Permission Denied', 'Location permission is required.');
         return null;
       }
 
@@ -327,15 +560,16 @@ export const DriverDashboard: React.FC = () => {
       console.error('Error getting location:', error);
       return null;
     }
-  };
+  }, []);
 
-  const handleStartShift = async () => {
+  const handleStartShift = useCallback(async () => {
     if (actionLoading) return;
     
     try {
       setActionLoading('startShift');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
+      // Use cached vehicles first for faster response
       const vehicles = await apiService.getVehicles();
       const activeVehicles = vehicles.filter((v: any) => v.status === 'ACTIVE');
       
@@ -349,7 +583,19 @@ export const DriverDashboard: React.FC = () => {
       if (activeVehicles.length === 1) {
         vehicleId = activeVehicles[0].id;
       } else {
-        Alert.alert('Select Vehicle', 'Multiple vehicles available. Please select one from the Vehicles tab.');
+        Alert.alert(
+          'Select Vehicle', 
+          'Multiple vehicles available. Please select one from the Vehicles tab.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Go to Vehicles',
+              onPress: () => {
+                (navigation as any).navigate('Vehicles');
+              }
+            }
+          ]
+        );
         setActionLoading(null);
         return;
       }
@@ -369,11 +615,12 @@ export const DriverDashboard: React.FC = () => {
       
       setActiveShift(shift);
       
+      // Refresh shifts (bypass cache to get latest)
       try {
-        const updatedShifts = await apiService.getShifts();
+        const updatedShifts = await apiService.getShifts(false);
         const updatedActive = updatedShifts.find((s: any) => {
           const driverId = typeof s.driver === 'object' ? s.driver.id : s.driver;
-          return s.status === 'ACTIVE' && driverId === user?.id && s.id === shift.id;
+          return s.status === 'ACTIVE' && driverId.toString() === user?.id?.toString() && s.id === shift.id;
         });
         if (updatedActive) {
           setActiveShift(updatedActive);
@@ -382,6 +629,7 @@ export const DriverDashboard: React.FC = () => {
         console.error('Error reloading shifts:', error);
       }
 
+      // Start location tracking
       try {
         await locationTrackingService.startTracking({
           vehicleId: vehicleId,
@@ -398,7 +646,7 @@ export const DriverDashboard: React.FC = () => {
         setActiveVehicle(vehicle);
       }
       
-      // Update stats and refresh dashboard data
+      // Update stats and refresh dashboard data (bypass cache for fresh data)
       setStats(prev => ({
         ...prev,
         driverStatus: 'On Shift',
@@ -407,14 +655,14 @@ export const DriverDashboard: React.FC = () => {
       // Refresh dashboard data
       try {
         const [updatedShifts, updatedVehicles, updatedInspections] = await Promise.all([
-          apiService.getShifts().catch(() => []),
-          apiService.getVehicles().catch(() => []),
-          apiService.getInspections().catch(() => []),
+          apiService.getShifts(false).catch(() => []),
+          apiService.getVehicles(false).catch(() => []),
+          apiService.getInspections(false).catch(() => []),
         ]);
         
         const updatedActive = updatedShifts.find((s: any) => {
           const driverId = typeof s.driver === 'object' ? s.driver.id : s.driver;
-          return s.status === 'ACTIVE' && driverId === user?.id && s.id === shift.id;
+          return s.status === 'ACTIVE' && driverId.toString() === user?.id?.toString() && s.id === shift.id;
         });
         if (updatedActive) {
           setActiveShift(updatedActive);
@@ -422,7 +670,7 @@ export const DriverDashboard: React.FC = () => {
         
         const driverInspections = updatedInspections.filter((insp: any) => {
           const inspectorId = typeof insp.created_by === 'object' ? insp.created_by.id : insp.created_by;
-          return inspectorId === user?.id && (insp.status === 'PASS' || insp.status === 'PASSED' || insp.status === 'COMPLETED');
+          return inspectorId.toString() === user?.id?.toString() && (insp.status === 'PASS' || insp.status === 'PASSED' || insp.status === 'COMPLETED');
         });
         
         setStats(prev => ({
@@ -442,7 +690,11 @@ export const DriverDashboard: React.FC = () => {
       }));
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', `Shift started successfully!\n\nVehicle: ${vehicle?.reg_number || vehicleId}\nLocation: ${location.address}`);
+      Alert.alert(
+        'Success', 
+        `Shift started successfully!\n\nVehicle: ${vehicle?.reg_number || vehicleId}\nLocation: ${location.address}\n\nYou can now start an inspection from the Quick Actions.`,
+        [{ text: 'OK', style: 'default' }]
+      );
     } catch (error: any) {
       console.error('[DriverDashboard] Error starting shift:', error);
       
@@ -468,34 +720,219 @@ export const DriverDashboard: React.FC = () => {
     } finally {
       setActionLoading(null);
     }
-  };
+  }, [actionLoading, user, navigation, dispatch]);
 
-  const handleViewSchedule = () => {
+  const handleViewSchedule = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     (navigation as any).navigate('Reports');
+  }, [navigation]);
+
+  const handleReportIssue = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    try {
+      // Get active shift to get the vehicle
+      const shifts = await apiService.getShifts();
+      const activeShift = shifts.find((s: any) => {
+        const driverId = typeof s.driver === 'object' ? s.driver.id : s.driver;
+        return s.status === 'ACTIVE' && driverId.toString() === user?.id?.toString();
+      });
+
+      if (!activeShift) {
+        Alert.alert(
+          'No Active Shift',
+          'You need to start a shift before reporting an issue. Would you like to start a shift?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Start Shift',
+              onPress: () => {
+                // Trigger start shift
+                handleStartShift();
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // Get vehicle from active shift
+      const vehicleId = typeof activeShift.vehicle === 'object' ? activeShift.vehicle.id : activeShift.vehicle;
+      
+      // Get location for the issue
+      const location = await getCurrentLocation();
+      
+      // Navigate to Vehicles tab
+      (navigation as any).navigate('Vehicles');
+      
+      // Show success message after navigation
+      setTimeout(() => {
+        Alert.alert(
+          'Report Issue',
+          `To report an issue for your active vehicle, please:\n\n1. Go to the Vehicles tab\n2. Find your vehicle\n3. Tap "Report Issue"\n\nOr you can report it directly from here.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Report Now',
+              onPress: async () => {
+                try {
+                  // Create issue with default description
+                  await apiService.createIssue({
+                    vehicle: vehicleId,
+                    title: 'Driver Reported Issue',
+                    description: 'Issue reported from dashboard - please update with details',
+                    category: 'OTHER',
+                    severity: 'MEDIUM',
+                    location_description: location?.address || 'Unknown location',
+                    lat: location?.lat,
+                    lng: location?.lng,
+                  });
+
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  Alert.alert('Success', 'Issue reported successfully! You can add more details from the Vehicles tab.');
+                  dispatch(addNotification({
+                    type: 'success',
+                    title: 'Issue Reported',
+                    message: 'Your issue has been reported and will be reviewed.',
+                  }));
+                } catch (error: any) {
+                  console.error('[DriverDashboard] Error reporting issue:', error);
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                  Alert.alert('Error', 'Failed to report issue. Please try again from the Vehicles tab.');
+                }
+              },
+            },
+          ]
+        );
+      }, 500);
+    } catch (error) {
+      console.error('[DriverDashboard] Error in report issue:', error);
+      // Fallback: navigate to Vehicles tab
+      (navigation as any).navigate('Vehicles');
+      Alert.alert(
+        'Report Issue',
+        'Please navigate to the Vehicles tab and use the "Report Issue" option on your vehicle.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [navigation, user, dispatch, handleStartShift]);
+
+  const handleEndShift = async () => {
+    if (actionLoading) return;
+    
+    if (!activeShift) {
+      Alert.alert('No Active Shift', 'You do not have an active shift to end.');
+      return;
+    }
+    
+    try {
+      setActionLoading('endShift');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      const location = await getCurrentLocation();
+      if (!location) {
+        setActionLoading(null);
+        return;
+      }
+
+      await apiService.endShift(
+        activeShift.id,
+        location.address,
+        location.lat,
+        location.lng
+      );
+
+      // Stop location tracking
+      try {
+        await locationTrackingService.stopTracking();
+      } catch (trackingError: any) {
+        console.error('[DriverDashboard] Failed to stop location tracking:', trackingError);
+      }
+
+      // Refresh dashboard data
+      try {
+        const [updatedShifts, updatedVehicles, updatedInspections] = await Promise.all([
+          apiService.getShifts().catch(() => []),
+          apiService.getVehicles().catch(() => []),
+          apiService.getInspections().catch(() => []),
+        ]);
+        
+        const updatedActive = updatedShifts.find((s: any) => {
+          const driverId = typeof s.driver === 'object' ? s.driver.id : s.driver;
+          return s.status === 'ACTIVE' && driverId === user?.id;
+        });
+        setActiveShift(updatedActive || null);
+        
+        const driverInspections = updatedInspections.filter((insp: any) => {
+          const inspectorId = typeof insp.created_by === 'object' ? insp.created_by.id : insp.created_by;
+          return inspectorId === user?.id && (insp.status === 'PASS' || insp.status === 'PASSED' || insp.status === 'COMPLETED');
+        });
+        
+        setStats(prev => ({
+          ...prev,
+          vehiclesActive: updatedVehicles.filter((v: any) => v.status === 'ACTIVE').length,
+          inspectionsCompleted: driverInspections.length,
+          driverStatus: 'Available',
+        }));
+      } catch (refreshError) {
+        console.error('Error refreshing after shift end:', refreshError);
+      }
+      
+      dispatch(addNotification({
+        type: 'success',
+        title: 'Shift Ended',
+        message: `Shift ended successfully at ${location.address}`,
+      }));
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Success', `Shift ended successfully!\n\nLocation: ${location.address}`);
+    } catch (error: any) {
+      console.error('[DriverDashboard] Error ending shift:', error);
+      
+      let errorMessage = 'Failed to end shift. Please try again.';
+      if (error.message) {
+        errorMessage = error.message;
+        if (error.message.includes('shift') || error.message.includes('not found')) {
+          errorMessage = 'Shift not found or already ended.';
+        } else if (error.message.includes('permission') || error.message.includes('Unauthorized')) {
+          errorMessage = 'You do not have permission to end this shift.';
+        } else if (error.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your connection.';
+        }
+      }
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error Ending Shift', errorMessage);
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Shift End Failed',
+        message: errorMessage,
+      }));
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleReportIssue = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert(
-      'Report Issue',
-      'To report an issue, please navigate to the Vehicles tab, select a vehicle, and use the "Report Issue" option.',
-      [{ text: 'OK' }]
-    );
-  };
-
-  const handleStartInspection = async () => {
+  const handleStartInspection = useCallback(async () => {
     if (actionLoading) return;
     
     try {
       setActionLoading('inspection');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      const shifts = await apiService.getShifts();
-      const activeShift = shifts.find((s: any) => s.status === 'ACTIVE' && (typeof s.driver === 'object' ? s.driver.id : s.driver) === user?.id);
+      // Use cached shifts if available, but refresh to get latest
+      const shifts = await apiService.getShifts(false);
+      const activeShift = shifts.find((s: any) => {
+        const driverId = typeof s.driver === 'object' ? s.driver.id : s.driver;
+        return s.status === 'ACTIVE' && driverId.toString() === user?.id?.toString();
+      });
       
       if (!activeShift) {
-        Alert.alert('No Active Shift', 'You need to start a shift before performing an inspection.');
+        Alert.alert(
+          'No Active Shift', 
+          'You need to start a shift before performing an inspection. Please use the "Start Shift" button first.',
+          [{ text: 'OK', style: 'default' }]
+        );
         setActionLoading(null);
         return;
       }
@@ -516,24 +953,24 @@ export const DriverDashboard: React.FC = () => {
         weather_conditions: 'Unknown',
       });
 
-      // Refresh dashboard data after inspection start
+      // Refresh dashboard data after inspection start (bypass cache)
       try {
         const [updatedShifts, updatedVehicles, updatedInspections] = await Promise.all([
-          apiService.getShifts().catch(() => []),
-          apiService.getVehicles().catch(() => []),
-          apiService.getInspections().catch(() => []),
+          apiService.getShifts(false).catch(() => []),
+          apiService.getVehicles(false).catch(() => []),
+          apiService.getInspections(false).catch(() => []),
         ]);
         
         const updatedActive = updatedShifts.find((s: any) => {
           const driverId = typeof s.driver === 'object' ? s.driver.id : s.driver;
-          return s.status === 'ACTIVE' && driverId === user?.id;
+          return s.status === 'ACTIVE' && driverId.toString() === user?.id?.toString();
         });
         setActiveShift(updatedActive || null);
         
         // Update inspections completed count
         const driverInspections = updatedInspections.filter((insp: any) => {
           const inspectorId = typeof insp.created_by === 'object' ? insp.created_by.id : insp.created_by;
-          return inspectorId === user?.id && (insp.status === 'PASS' || insp.status === 'PASSED' || insp.status === 'COMPLETED');
+          return inspectorId.toString() === user?.id?.toString() && (insp.status === 'PASS' || insp.status === 'PASSED' || insp.status === 'COMPLETED');
         });
         
         setStats(prev => ({
@@ -547,11 +984,26 @@ export const DriverDashboard: React.FC = () => {
       dispatch(addNotification({
         type: 'success',
         title: 'Inspection Started',
-        message: 'Vehicle inspection has been started.',
+        message: `Inspection started successfully. Inspection ID: ${inspection.id}`,
       }));
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', `Inspection started successfully!\n\nLocation: ${location.address}`);
+      
+      // Show success alert with option to view inspection
+      Alert.alert(
+        'Inspection Started', 
+        `Inspection started successfully!\n\nLocation: ${location.address}\nInspection ID: ${inspection.id}`,
+        [
+          { text: 'OK', style: 'default' },
+          {
+            text: 'View Inspections',
+            onPress: () => {
+              // Navigate to Reports tab which shows inspections for drivers
+              (navigation as any).navigate('Reports');
+            }
+          }
+        ]
+      );
     } catch (error: any) {
       console.error('[DriverDashboard] Error starting inspection:', error);
       
@@ -577,7 +1029,7 @@ export const DriverDashboard: React.FC = () => {
     } finally {
       setActionLoading(null);
     }
-  };
+  }, [actionLoading, user, navigation, dispatch]);
 
   const handleButtonPress = async (index: number, action: () => void | Promise<void>) => {
     console.log('[DriverDashboard] Button pressed:', index, action.name || 'action');
@@ -607,50 +1059,38 @@ export const DriverDashboard: React.FC = () => {
     }
   };
 
-  const quickActions = [
+  const quickActions = useMemo(() => [
     {
-      title: 'Start Shift',
-      icon: 'play-circle' as keyof typeof Ionicons.glyphMap,
-      gradient: ['#10b981', '#059669'],
-      onPress: async () => {
-        console.log('[DriverDashboard] Start Shift button pressed');
-        await handleButtonPress(0, handleStartShift);
-      },
-      loading: actionLoading === 'startShift',
+      title: activeShift ? 'End Shift' : 'Start Shift',
+      icon: (activeShift ? 'stop-circle' : 'play-circle') as keyof typeof Ionicons.glyphMap,
+      gradient: activeShift ? ['#ef4444', '#dc2626'] : ['#10b981', '#059669'],
+      action: activeShift ? handleEndShift : handleStartShift,
+      loading: activeShift ? actionLoading === 'endShift' : actionLoading === 'startShift',
     },
     {
       title: 'View Schedule',
       icon: 'calendar' as keyof typeof Ionicons.glyphMap,
       gradient: ['#3b82f6', '#2563eb'],
-      onPress: async () => {
-        console.log('[DriverDashboard] View Schedule button pressed');
-        await handleButtonPress(1, handleViewSchedule);
-      },
+      action: handleViewSchedule,
       loading: false,
     },
     {
       title: 'Report Issue',
       icon: 'warning' as keyof typeof Ionicons.glyphMap,
       gradient: ['#f59e0b', '#d97706'],
-      onPress: async () => {
-        console.log('[DriverDashboard] Report Issue button pressed');
-        await handleButtonPress(2, handleReportIssue);
-      },
+      action: handleReportIssue,
       loading: false,
     },
     {
       title: 'Start Inspection',
       icon: 'shield-checkmark' as keyof typeof Ionicons.glyphMap,
       gradient: ['#8b5cf6', '#7c3aed'],
-      onPress: async () => {
-        console.log('[DriverDashboard] Start Inspection button pressed');
-        await handleButtonPress(3, handleStartInspection);
-      },
+      action: handleStartInspection,
       loading: actionLoading === 'inspection',
     },
-  ];
+  ], [activeShift, actionLoading, handleEndShift, handleStartShift, handleViewSchedule, handleReportIssue, handleStartInspection]);
 
-  const getActivityColor = (type: string) => {
+  const getActivityColor = useCallback((type: string) => {
     switch (type) {
       case 'completed':
         return '#10b981';
@@ -661,7 +1101,7 @@ export const DriverDashboard: React.FC = () => {
       default:
         return '#6b7280';
     }
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -827,23 +1267,10 @@ export const DriverDashboard: React.FC = () => {
                 <TouchableOpacity
                   onPress={() => {
                     console.log('[DriverDashboard] Quick action button pressed:', action.title, 'Index:', actionIndex);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                    if (action.onPress) {
-                      try {
-                        const result = action.onPress();
-                        // Handle async actions
-                        if (result && typeof result === 'object' && 'catch' in result) {
-                          (result as Promise<void>).catch((error) => {
-                            console.error('[DriverDashboard] Error in async button action:', error);
-                            Alert.alert('Error', `Failed to execute ${action.title}. Please try again.`);
-                          });
-                        }
-                      } catch (error) {
-                        console.error('[DriverDashboard] Error in button onPress:', error);
-                        Alert.alert('Error', `Failed to execute ${action.title}. Please try again.`);
-                      }
+                    if (action.action) {
+                      handleButtonPress(actionIndex, action.action);
                     } else {
-                      console.warn('[DriverDashboard] No onPress handler for:', action.title);
+                      console.warn('[DriverDashboard] No action handler for:', action.title);
                     }
                   }}
                   disabled={action.loading}

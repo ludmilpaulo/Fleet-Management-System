@@ -41,26 +41,47 @@ export default function DashboardScreen() {
 
   const initializeDashboard = async () => {
     try {
-      const [userData, statsData] = await Promise.all([
-        authService.getCurrentUser(),
-        apiService.getDashboardStats(),
-      ])
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
       
-      setUser(userData)
-      setStats(statsData)
-      
-      analytics.track('Dashboard Loaded', {
-        user_role: userData?.role,
-        total_vehicles: statsData?.total_vehicles,
-        active_vehicles: statsData?.active_vehicles,
-      })
+      // Try to get dashboard stats, but don't fail if it doesn't exist
+      try {
+        const statsData = await apiService.getDashboardStats();
+        setStats(statsData);
+        
+        analytics.track('Dashboard Loaded', {
+          user_role: userData?.role,
+          total_vehicles: statsData?.total_vehicles,
+          active_vehicles: statsData?.active_vehicles,
+        });
+      } catch (statsError) {
+        console.warn('Dashboard stats not available, using defaults:', statsError);
+        // Set default stats so the screen doesn't stay in loading state
+        setStats({
+          total_vehicles: 0,
+          active_vehicles: 0,
+          vehicles_in_maintenance: 0,
+          upcoming_inspections: 0,
+          open_issues: 0,
+          active_shifts: 0,
+        });
+      }
     } catch (error) {
-      console.error('Dashboard initialization error:', error)
+      console.error('Dashboard initialization error:', error);
+      // Set default stats to prevent infinite loading
+      setStats({
+        total_vehicles: 0,
+        active_vehicles: 0,
+        vehicles_in_maintenance: 0,
+        upcoming_inspections: 0,
+        open_issues: 0,
+        active_shifts: 0,
+      });
       analytics.track('Dashboard Load Failed', {
         error: error instanceof Error ? error.message : 'unknown'
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 

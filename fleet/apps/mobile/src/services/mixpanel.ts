@@ -1,4 +1,6 @@
 import { Mixpanel } from 'mixpanel-react-native';
+import { Platform } from 'react-native';
+import '../utils/warningSuppressor'; // Initialize warning suppressor
 
 const MIXPANEL_TOKEN = 'c1cb0b3411115435a0d45662ad7a97e4';
 
@@ -11,8 +13,18 @@ mixpanelInstance.init();
 export const analytics = {
   // Initialize
   initialize: async () => {
-    await mixpanelInstance.init();
-    mixpanelInstance.setLoggingEnabled(true);
+    try {
+      await mixpanelInstance.init();
+      // Only enable logging in development builds, not Expo Go
+      if (__DEV__ && !Platform.isExpoGo) {
+        mixpanelInstance.setLoggingEnabled(true);
+      }
+    } catch (error) {
+      // Silently handle Mixpanel initialization errors in Expo Go
+      if (__DEV__) {
+        console.log('[Analytics] Mixpanel initialized in JavaScript mode (Expo Go)');
+      }
+    }
   },
 
   // User identification

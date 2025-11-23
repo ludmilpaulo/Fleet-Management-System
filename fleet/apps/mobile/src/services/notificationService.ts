@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import '../utils/warningSuppressor'; // Initialize warning suppressor
 import { apiService, Shift } from './apiService';
 import { authService } from './authService';
 
@@ -35,7 +36,7 @@ class NotificationService {
   async requestPermissions(): Promise<boolean> {
     try {
       if (!isDevice) {
-        console.warn('Must use physical device for Push Notifications');
+        // Suppress warning in Expo Go (expected limitation)
         return false;
       }
 
@@ -48,7 +49,7 @@ class NotificationService {
       }
 
       if (finalStatus !== 'granted') {
-        console.warn('Failed to get push token for push notification!');
+        // Suppress warning in Expo Go (expected limitation)
         return false;
       }
 
@@ -87,11 +88,7 @@ class NotificationService {
       } catch (error: any) {
         // This is expected in Expo Go SDK 53+ - push tokens are not supported
         // Local notifications will work fine without push token
-        if (error?.message?.includes('projectId') || error?.message?.includes('No "projectId"')) {
-          console.warn('Push token not available (Expo Go limitation), using local notifications only');
-        } else {
-          console.warn('Push token not available, using local notifications only:', error.message || error);
-        }
+        // Warning is suppressed at the top level for Expo Go
         return null;
       }
     } catch (error: any) {

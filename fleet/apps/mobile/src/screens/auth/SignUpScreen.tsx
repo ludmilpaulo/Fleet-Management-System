@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  StyleSheet,
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import * as Haptics from 'expo-haptics';
 
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -92,6 +92,7 @@ export const SignUpScreen: React.FC = () => {
     if (!validateForm()) return;
 
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const registrationData = {
         ...formData,
         company_slug: selectedCompany!.slug,
@@ -99,12 +100,14 @@ export const SignUpScreen: React.FC = () => {
 
       await dispatch(registerUser(registrationData)).unwrap();
       
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       dispatch(addNotification({
         type: 'success',
         title: 'Registration Successful',
         message: `Welcome to ${selectedCompany!.name}, ${formData.firstName}!`,
       }));
     } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       dispatch(addNotification({
         type: 'error',
         title: 'Registration Failed',
@@ -114,77 +117,102 @@ export const SignUpScreen: React.FC = () => {
   };
 
   const handleSignIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('SignIn');
   };
 
   const roleOptions = [
-    { value: 'admin', label: 'Admin', description: 'Full system access' },
-    { value: 'staff', label: 'Staff', description: 'Operations management' },
-    { value: 'driver', label: 'Driver', description: 'Route management' },
-    { value: 'inspector', label: 'Inspector', description: 'Vehicle inspections' },
+    { value: 'admin', label: 'Admin', description: 'Full system access', icon: 'shield' as keyof typeof Ionicons.glyphMap, color: '#ef4444' },
+    { value: 'staff', label: 'Staff', description: 'Operations management', icon: 'briefcase' as keyof typeof Ionicons.glyphMap, color: '#3b82f6' },
+    { value: 'driver', label: 'Driver', description: 'Route management', icon: 'car' as keyof typeof Ionicons.glyphMap, color: '#10b981' },
+    { value: 'inspector', label: 'Inspector', description: 'Vehicle inspections', icon: 'checkmark-circle' as keyof typeof Ionicons.glyphMap, color: '#8b5cf6' },
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 bg-white">
       <LinearGradient
         colors={['#eff6ff', '#ffffff', '#f0f9ff']}
-        style={styles.gradient}
+        className="flex-1"
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          className="flex-1"
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={{ flexGrow: 1, padding: 20 }}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.logoContainer}>
+            <View className="items-center mb-6 mt-4">
+              <View className="mb-4">
                 <LinearGradient
                   colors={['#3b82f6', '#2563eb']}
-                  style={styles.logo}
+                  className="w-20 h-20 rounded-3xl items-center justify-center"
+                  style={{
+                    shadowColor: '#3b82f6',
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 16,
+                    elevation: 12,
+                  }}
                 >
-                  <Ionicons name="car" size={32} color="#ffffff" />
+                  <Ionicons name="person-add" size={40} color="#ffffff" />
                 </LinearGradient>
               </View>
-              <Text style={styles.title}>Fleet Management</Text>
-              <Text style={styles.subtitle}>Create your account</Text>
+              <Text className="text-4xl font-bold text-slate-900 mb-2">Create Account</Text>
+              <Text className="text-base text-slate-600 text-center max-w-xs">
+                Join your fleet management team
+              </Text>
             </View>
 
             {/* Sign Up Form */}
-            <Card style={styles.formCard} variant="elevated">
-              <Text style={styles.formTitle}>Join Our Team</Text>
-              <Text style={styles.formSubtitle}>
-                Fill in your details to create your account
-              </Text>
+            <Card className="mb-6 p-6 rounded-3xl shadow-xl bg-white dark:bg-slate-800" variant="elevated">
+              <View className="mb-6">
+                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100 text-center mb-2">
+                  Join Our Team
+                </Text>
+                <Text className="text-sm text-slate-600 dark:text-slate-400 text-center">
+                  Fill in your details to create your account
+                </Text>
+              </View>
 
               {/* Company Selection */}
-              <CompanySelector
-                onCompanySelect={setSelectedCompany}
-                selectedCompany={selectedCompany}
-              />
+              <View className="mb-6">
+                <CompanySelector
+                  onCompanySelect={setSelectedCompany}
+                  selectedCompany={selectedCompany}
+                />
+              </View>
 
               {/* Personal Information */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Personal Information</Text>
+              <View className="mb-6">
+                <View className="flex-row items-center mb-4">
+                  <Ionicons name="person-outline" size={20} color="#3b82f6" />
+                  <Text className="text-lg font-semibold text-slate-900 dark:text-slate-100 ml-2">
+                    Personal Information
+                  </Text>
+                </View>
                 
-                <View style={styles.row}>
-                  <View style={styles.halfWidth}>
+                <View className="flex-row justify-between mb-4">
+                  <View className="w-[48%]">
                     <Input
                       label="First Name *"
                       placeholder="Enter first name"
                       value={formData.firstName}
                       onChangeText={(value) => handleInputChange('firstName', value)}
                       leftIcon="person-outline"
+                      className="mb-0"
                     />
                   </View>
-                  <View style={styles.halfWidth}>
+                  <View className="w-[48%]">
                     <Input
                       label="Last Name *"
                       placeholder="Enter last name"
                       value={formData.lastName}
                       onChangeText={(value) => handleInputChange('lastName', value)}
+                      className="mb-0"
                     />
                   </View>
                 </View>
@@ -197,6 +225,7 @@ export const SignUpScreen: React.FC = () => {
                   leftIcon="at-outline"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  className="mb-4"
                 />
 
                 <Input
@@ -208,6 +237,7 @@ export const SignUpScreen: React.FC = () => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  className="mb-4"
                 />
 
                 <Input
@@ -217,12 +247,18 @@ export const SignUpScreen: React.FC = () => {
                   onChangeText={(value) => handleInputChange('phoneNumber', value)}
                   leftIcon="call-outline"
                   keyboardType="phone-pad"
+                  className="mb-4"
                 />
               </View>
 
               {/* Work Information */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Work Information</Text>
+              <View className="mb-6">
+                <View className="flex-row items-center mb-4">
+                  <Ionicons name="briefcase-outline" size={20} color="#3b82f6" />
+                  <Text className="text-lg font-semibold text-slate-900 dark:text-slate-100 ml-2">
+                    Work Information
+                  </Text>
+                </View>
                 
                 <Input
                   label="Employee ID"
@@ -230,6 +266,7 @@ export const SignUpScreen: React.FC = () => {
                   value={formData.employeeId}
                   onChangeText={(value) => handleInputChange('employeeId', value)}
                   leftIcon="card-outline"
+                  className="mb-4"
                 />
 
                 <Input
@@ -238,42 +275,72 @@ export const SignUpScreen: React.FC = () => {
                   value={formData.department}
                   onChangeText={(value) => handleInputChange('department', value)}
                   leftIcon="business-outline"
+                  className="mb-4"
                 />
 
                 {/* Role Selection */}
-                <View style={styles.roleSection}>
-                  <Text style={styles.roleLabel}>Role *</Text>
-                  <View style={styles.roleGrid}>
-                    {roleOptions.map((option) => (
-                      <TouchableOpacity
-                        key={option.value}
-                        style={[
-                          styles.roleOption,
-                          formData.role === option.value && styles.roleOptionSelected,
-                        ]}
-                        onPress={() => handleInputChange('role', option.value)}
-                      >
-                        <Text style={[
-                          styles.roleOptionText,
-                          formData.role === option.value && styles.roleOptionTextSelected,
-                        ]}>
-                          {option.label}
-                        </Text>
-                        <Text style={[
-                          styles.roleOptionDescription,
-                          formData.role === option.value && styles.roleOptionDescriptionSelected,
-                        ]}>
-                          {option.description}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                <View className="mb-4">
+                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                    Role *
+                  </Text>
+                  <View className="flex-row flex-wrap justify-between">
+                    {roleOptions.map((option) => {
+                      const isSelected = formData.role === option.value;
+                      return (
+                        <TouchableOpacity
+                          key={option.value}
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            handleInputChange('role', option.value);
+                          }}
+                          className={`w-[48%] p-4 rounded-2xl mb-3 border-2 ${
+                            isSelected 
+                              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-700'
+                          }`}
+                          activeOpacity={0.7}
+                        >
+                          <View className="flex-row items-center mb-2">
+                            <View 
+                              className="w-8 h-8 rounded-lg items-center justify-center mr-2"
+                              style={{ backgroundColor: isSelected ? option.color : '#e5e7eb' }}
+                            >
+                              <Ionicons 
+                                name={option.icon} 
+                                size={18} 
+                                color={isSelected ? '#ffffff' : '#6b7280'} 
+                              />
+                            </View>
+                            <Text className={`text-sm font-semibold ${
+                              isSelected 
+                                ? 'text-primary-700 dark:text-primary-300' 
+                                : 'text-slate-700 dark:text-slate-300'
+                            }`}>
+                              {option.label}
+                            </Text>
+                          </View>
+                          <Text className={`text-xs ${
+                            isSelected 
+                              ? 'text-primary-600 dark:text-primary-400' 
+                              : 'text-slate-600 dark:text-slate-400'
+                          }`}>
+                            {option.description}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 </View>
               </View>
 
               {/* Password */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Security</Text>
+              <View className="mb-6">
+                <View className="flex-row items-center mb-4">
+                  <Ionicons name="lock-closed-outline" size={20} color="#3b82f6" />
+                  <Text className="text-lg font-semibold text-slate-900 dark:text-slate-100 ml-2">
+                    Security
+                  </Text>
+                </View>
                 
                 <Input
                   label="Password *"
@@ -283,8 +350,13 @@ export const SignUpScreen: React.FC = () => {
                   secureTextEntry={!showPassword}
                   leftIcon="lock-closed-outline"
                   rightIcon={showPassword ? 'eye-off' : 'eye'}
+                  onRightIconPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowPassword(!showPassword);
+                  }}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  className="mb-4"
                 />
 
                 <Input
@@ -295,15 +367,20 @@ export const SignUpScreen: React.FC = () => {
                   secureTextEntry={!showPasswordConfirm}
                   leftIcon="lock-closed-outline"
                   rightIcon={showPasswordConfirm ? 'eye-off' : 'eye'}
+                  onRightIconPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowPasswordConfirm(!showPasswordConfirm);
+                  }}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  className="mb-4"
                 />
               </View>
 
               {error && (
-                <View style={styles.errorContainer}>
+                <View className="flex-row items-center bg-red-50 dark:bg-red-900/20 p-4 rounded-xl mb-4 border border-red-200 dark:border-red-800">
                   <Ionicons name="alert-circle" size={20} color="#ef4444" />
-                  <Text style={styles.errorText}>{error}</Text>
+                  <Text className="text-sm text-red-600 dark:text-red-400 ml-2 flex-1">{error}</Text>
                 </View>
               )}
 
@@ -312,17 +389,19 @@ export const SignUpScreen: React.FC = () => {
                 onPress={handleSignUp}
                 loading={isLoading}
                 disabled={isLoading}
-                style={styles.signUpButton}
+                className="mb-4"
+                size="lg"
               />
 
-              <View style={styles.signInContainer}>
-                <Text style={styles.signInText}>Already have an account? </Text>
-                <Button
-                  title="Sign In"
-                  onPress={handleSignIn}
-                  variant="ghost"
-                  size="sm"
-                />
+              <View className="flex-row justify-center items-center">
+                <Text className="text-sm text-slate-600 dark:text-slate-400 mr-2">
+                  Already have an account?
+                </Text>
+                <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}>
+                  <Text className="text-sm font-semibold text-primary-600 dark:text-primary-400">
+                    Sign In
+                  </Text>
+                </TouchableOpacity>
               </View>
             </Card>
           </ScrollView>
@@ -331,150 +410,3 @@ export const SignUpScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  logoContainer: {
-    marginBottom: 16,
-  },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  formCard: {
-    marginBottom: 24,
-  },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  formSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  halfWidth: {
-    width: '48%',
-  },
-  roleSection: {
-    marginTop: 16,
-  },
-  roleLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
-  },
-  roleGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  roleOption: {
-    width: '48%',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#ffffff',
-    marginBottom: 8,
-  },
-  roleOptionSelected: {
-    borderColor: '#3b82f6',
-    backgroundColor: '#eff6ff',
-  },
-  roleOptionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 4,
-  },
-  roleOptionTextSelected: {
-    color: '#1e40af',
-  },
-  roleOptionDescription: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  roleOptionDescriptionSelected: {
-    color: '#1e40af',
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef2f2',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#ef4444',
-    marginLeft: 8,
-    flex: 1,
-  },
-  signUpButton: {
-    marginBottom: 16,
-  },
-  signInContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  signInText: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-});

@@ -18,53 +18,33 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({
   children,
   style,
+  className = '',
   onPress,
   variant = 'default',
   padding = 'md',
 }) => {
-  const getCardStyle = (): ViewStyle => {
-    const baseStyle: ViewStyle = {
-      borderRadius: 16,
-      backgroundColor: '#ffffff',
-    };
-
-    const paddingStyles: Record<string, ViewStyle> = {
-      sm: { padding: 12 },
-      md: { padding: 16 },
-      lg: { padding: 24 },
-    };
-
-    const variantStyles: Record<string, ViewStyle> = {
-      default: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-      },
-      elevated: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 8,
-      },
-      outlined: {
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-      },
-      gradient: {
-        backgroundColor: 'transparent',
-      },
-    };
-
-    return {
-      ...baseStyle,
-      ...paddingStyles[padding],
-      ...variantStyles[variant],
-      ...style,
-    };
+  const getPaddingClass = () => {
+    switch (padding) {
+      case 'sm': return 'p-3';
+      case 'lg': return 'p-6';
+      default: return 'p-4';
+    }
   };
+
+  const getVariantClasses = () => {
+    switch (variant) {
+      case 'elevated':
+        return 'shadow-xl';
+      case 'outlined':
+        return 'border border-gray-200';
+      case 'gradient':
+        return '';
+      default:
+        return 'shadow-md';
+    }
+  };
+
+  const baseClasses = `rounded-2xl bg-white ${getPaddingClass()} ${getVariantClasses()} ${className}`;
 
   const CardContent = () => {
     if (variant === 'gradient') {
@@ -73,14 +53,19 @@ export const Card: React.FC<CardProps> = ({
           colors={['#ffffff', '#f8fafc']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={getCardStyle()}
+          className={baseClasses}
+          style={style}
         >
           {children}
         </LinearGradient>
       );
     }
 
-    return <View style={getCardStyle()}>{children}</View>;
+    return (
+      <View className={baseClasses} style={style}>
+        {children}
+      </View>
+    );
   };
 
   if (onPress) {

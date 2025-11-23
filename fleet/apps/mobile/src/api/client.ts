@@ -17,7 +17,8 @@ const API_URL = (() => {
     console.log(`[API Client] Using API URL: ${apiURL} (Device: ${Platform.OS}, Physical: ${isPhysicalDevice}, Network IP: ${networkIP})`);
     return apiURL;
   }
-  return 'https://www.fleetia.online/api';
+  // Production API URL
+  return 'https://taki.pythonanywhere.com/api';
 })();
 
 // Token storage using expo-secure-store

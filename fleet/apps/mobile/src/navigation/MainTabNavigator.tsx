@@ -40,9 +40,10 @@ export const MainTabNavigator: React.FC<MainTabNavigatorProps> = ({ userRole }) 
 
   // Calculate bottom safe area padding
   // Ensure tab bar is positioned ABOVE device menu buttons (home indicator, Android navigation bar)
-  // React Navigation handles positioning, we just need to add safe area padding
-  const safeAreaBottom = Math.max(insets.bottom, 12); // Minimum 12px, more if device has safe area
-  const bottomPadding = safeAreaBottom; // Padding from bottom edge
+  // Use actual safe area inset - React Navigation will automatically add this padding
+  // For iOS: insets.bottom will be 0 on devices without home indicator, or ~34px on devices with it
+  // For Android: insets.bottom will be 0 on devices with gesture navigation, or navigation bar height otherwise
+  const safeAreaBottom = insets.bottom;
 
   return (
     <Tab.Navigator
@@ -72,11 +73,13 @@ export const MainTabNavigator: React.FC<MainTabNavigatorProps> = ({ userRole }) 
           backgroundColor: '#ffffff',
           borderTopWidth: 1,
           borderTopColor: '#e5e7eb',
-          paddingBottom: bottomPadding,
+          // Add safe area padding to bottom to prevent overlap with device buttons
+          paddingBottom: safeAreaBottom > 0 ? safeAreaBottom : Platform.OS === 'android' ? 8 : 0,
           paddingTop: 8,
-          minHeight: 60 + bottomPadding,
-          // Let React Navigation handle positioning naturally - it respects safe areas
-          // Don't use absolute positioning to avoid overlapping device buttons
+          // Use minHeight instead of fixed height to allow natural sizing
+          minHeight: 60 + (safeAreaBottom > 0 ? safeAreaBottom : Platform.OS === 'android' ? 8 : 0),
+          // Ensure tab bar respects safe areas and doesn't overlap device buttons
+          // React Navigation will position it correctly above device UI elements
           elevation: 8, // Android shadow
           shadowColor: '#000', // iOS shadow
           shadowOffset: { width: 0, height: -2 },
@@ -87,6 +90,9 @@ export const MainTabNavigator: React.FC<MainTabNavigatorProps> = ({ userRole }) 
           fontSize: 12,
           fontWeight: '600',
           marginBottom: Platform.OS === 'android' ? 4 : 0,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
         },
         headerShown: false,
       })}

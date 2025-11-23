@@ -63,15 +63,24 @@ export const Input: React.FC<InputProps> = ({
     }
   };
 
-  const inputContainerClasses = `flex-row items-${multiline ? 'start' : 'center'} bg-white border-2 rounded-xl px-4 ${multiline ? 'py-3' : ''} ${multiline ? 'min-h-[80px]' : 'min-h-[48px]'} shadow-sm ${error ? 'border-red-500' : isFocused ? 'border-primary-500' : 'border-gray-200'} ${disabled ? 'bg-gray-50 opacity-60' : ''}`;
+  const getInputContainerClasses = () => {
+    const baseClasses = 'flex-row bg-white border-2 rounded-xl px-4 shadow-sm';
+    const alignmentClass = multiline ? 'items-start' : 'items-center';
+    const paddingClass = multiline ? 'py-3' : '';
+    const heightClass = multiline ? 'min-h-[80px]' : 'min-h-[48px]';
+    const borderClass = error ? 'border-red-500' : isFocused ? 'border-primary-500' : 'border-gray-200';
+    const disabledClass = disabled ? 'bg-gray-50 opacity-60' : '';
+    
+    return `${baseClasses} ${alignmentClass} ${paddingClass} ${heightClass} ${borderClass} ${disabledClass}`.trim();
+  };
 
   return (
     <View className={`mb-4 ${className}`} style={style}>
       {label && (
-        <Text className="text-sm font-semibold text-gray-700 mb-2">{label}</Text>
+        <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{label}</Text>
       )}
       
-      <View className={inputContainerClasses}>
+      <View className={getInputContainerClasses()}>
         {leftIcon && (
           <Ionicons
             name={leftIcon}
@@ -82,7 +91,7 @@ export const Input: React.FC<InputProps> = ({
         )}
         
         <TextInput
-          className={`flex-1 text-base text-gray-900 ${multiline ? 'text-top pt-3' : ''} ${inputClassName}`}
+          className={`flex-1 text-base text-gray-900 dark:text-gray-100 ${multiline ? 'text-top pt-3' : ''} ${inputClassName}`}
           style={inputStyle}
           placeholder={placeholder}
           placeholderTextColor="#9ca3af"
