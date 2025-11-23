@@ -24,6 +24,18 @@ const nextConfig: NextConfig = {
         tls: false,
       };
     }
+    
+    // Better module resolution for Apollo Client
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+    
+    // Ensure Apollo Client modules are properly resolved
+    config.resolve.extensionAlias = {
+      '.js': ['.js', '.ts', '.tsx'],
+      '.jsx': ['.jsx', '.tsx'],
+    };
+    
     return config;
   },
 };
