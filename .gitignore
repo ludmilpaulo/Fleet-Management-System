@@ -294,6 +294,27 @@ local.properties
 
 # CocoaPods
 /ios/Pods/
+Pods/
+Podfile.lock
+
+# iOS Build artifacts
+ios/build/
+ios/DerivedData/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Android Build artifacts
+android/app/build/
+android/build/
+android/.gradle/
+android/app/src/main/assets/index.android.bundle
+android/app/src/main/res/drawable-*/
+android/app/src/main/res/raw/
+
+# Expo prebuild generated files
+ios/
+android/
 
 # ===========================
 # IDE and Editor Files
