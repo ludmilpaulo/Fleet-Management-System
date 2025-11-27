@@ -1,0 +1,37 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="appIconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#9333ea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="appIconGradientDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f472b6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="180" fill="url(#appIconGradient)"/>
+  
+  <!-- Truck icon -->
+  <g transform="translate(512, 512)">
+    <!-- Truck body -->
+    <rect x="-230" y="-130" width="300" height="180" rx="20" fill="#ffffff" opacity="0.95"/>
+    <!-- Truck cabin -->
+    <rect x="-100" y="-180" width="150" height="130" rx="15" fill="url(#appIconGradientDark)" opacity="0.9"/>
+    <!-- Windows -->
+    <rect x="-75" y="-155" width="50" height="40" rx="5" fill="#ffffff" opacity="0.25"/>
+    <rect x="-10" y="-155" width="50" height="40" rx="5" fill="#ffffff" opacity="0.25"/>
+    <!-- Wheels -->
+    <circle cx="-155" cy="60" r="40" fill="#1e293b"/>
+    <circle cx="50" cy="60" r="40" fill="#1e293b"/>
+    <circle cx="-155" cy="60" r="25" fill="#64748b"/>
+    <circle cx="50" cy="60" r="25" fill="#64748b"/>
+    <!-- Container lines -->
+    <line x1="-200" y1="-75" x2="50" y2="-75" stroke="#2563eb" stroke-width="8" opacity="0.4"/>
+    <line x1="-200" y1="-25" x2="50" y2="-25" stroke="#2563eb" stroke-width="8" opacity="0.4"/>
+  </g>
+</svg>
+
