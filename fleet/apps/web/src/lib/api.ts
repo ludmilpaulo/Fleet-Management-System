@@ -82,17 +82,17 @@ api.interceptors.response.use(
 
 // API endpoints
 export const authAPI = {
-  login: (email: string, password: string) =>
-    api.post('/token/', { email, password }),
+  login: (username: string, password: string) =>
+    api.post('/account/login/', { username, password }),
   
   refresh: (refresh: string) =>
-    api.post('/token/refresh/', { refresh }),
+    api.post('/account/refresh/', { refresh }),
   
   register: (data: any) =>
     api.post('/account/register/', data),
   
   me: () =>
-    api.get('/account/me/'),
+    api.get('/account/profile/'),
   
   logout: () =>
     api.post('/account/logout/'),
@@ -100,19 +100,22 @@ export const authAPI = {
 
 export const companyAPI = {
   list: () =>
-    api.get('/companies/'),
+    api.get('/companies/companies/'),
   
-  detail: (id: string) =>
-    api.get(`/companies/${id}/`),
+  detail: (slug: string) =>
+    api.get(`/companies/companies/${slug}/`),
   
   create: (data: any) =>
-    api.post('/companies/', data),
+    api.post('/companies/companies/create/', data),
   
   update: (id: string, data: any) =>
-    api.put(`/companies/${id}/`, data),
+    api.put(`/companies/companies/${id}/update/`, data),
   
-  stats: (id: string) =>
-    api.get(`/companies/${id}/stats/`),
+  stats: () =>
+    api.get('/companies/companies/stats/'),
+  
+  exists: (slug: string) =>
+    api.get(`/companies/companies/exists/?slug=${slug}`),
 }
 
 export const vehicleAPI = {

@@ -1,8 +1,22 @@
 import { authService, AuthUser } from './authService'
 import { analytics } from './mixpanel'
 
-// Base API configuration
-const BASE_URL = 'https://www.fleetia.online/api'
+// Base API configuration - uses IP address for iOS simulator and Android device compatibility
+const getApiBaseUrl = (): string => {
+  // Environment variable takes highest priority
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  
+  // Default to IP address (update 192.168.1.110 to your computer's IP if different)
+  // This works for both iOS simulator and Android device
+  return 'http://192.168.1.110:8000/api';
+};
+
+const BASE_URL = getApiBaseUrl();
+
+// Log API configuration on initialization
+console.log('[API Service] Base URL:', BASE_URL);
 
 // Types for API responses
 export interface Vehicle {

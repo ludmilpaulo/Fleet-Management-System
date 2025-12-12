@@ -25,12 +25,18 @@ export interface AuthResponse {
 }
 
 class AuthService {
-  private baseURL = 'https://www.fleetia.online/api/account';
+  private baseURL =
+    `${process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.110:8000/api'}/account`;
   private token: string | null = null;
   private user: AuthUser | null = null;
 
+  constructor() {
+    console.log('[AuthService] Initialized with baseURL:', this.baseURL);
+  }
+
   async login(username: string, password: string): Promise<AuthResponse> {
     try {
+      console.log('[AuthService] Attempting login to:', `${this.baseURL}/login/`);
       const response = await fetch(`${this.baseURL}/login/`, {
         method: 'POST',
         headers: {
@@ -39,12 +45,55 @@ class AuthService {
         body: JSON.stringify({ username, password }),
       });
 
+      console.log('[AuthService] Login response status:', response.status);
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Login failed');
+        let errorMessage = 'Login failed';
+        try {
+          const errorData = await response.json();
+          console.error('[AuthService] Login error response:', errorData);
+          
+          // Handle different error formats from Django REST Framework
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          } else if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors)) {
+            errorMessage = errorData.non_field_errors.join(', ');
+          } else if (typeof errorData === 'object') {
+            // Handle field-specific errors
+            const fieldErrors = Object.entries(errorData)
+              .filter(([key]) => key !== 'detail' && key !== 'message')
+              .map(([key, value]: [string, any]) => {
+                if (Array.isArray(value)) {
+                  return `${key}: ${value.join(', ')}`;
+                }
+                return `${key}: ${value}`;
+              });
+            
+            if (fieldErrors.length > 0) {
+              errorMessage = fieldErrors.join('; ');
+            }
+          }
+        } catch (parseError) {
+          // If response is not JSON, try to get text
+          try {
+            const text = await response.text();
+            errorMessage = text || `HTTP ${response.status} ${response.statusText}`;
+          } catch {
+            errorMessage = `HTTP ${response.status} ${response.statusText}`;
+          }
+        }
+        
+        const error = new Error(errorMessage);
+        analytics.track('Login Failed', {
+          username,
+          error: errorMessage,
+          status: response.status
+        });
+        throw error;
       }
 
       const data: AuthResponse = await response.json();
+      console.log('[AuthService] Login successful for user:', data.user.username);
       
       // Store token and user data securely
       await this.storeAuthData(data.token, data.user);
@@ -61,16 +110,27 @@ class AuthService {
 
       return data;
     } catch (error) {
+      console.error('[AuthService] Login error:', error);
+      if (error instanceof Error) {
+        analytics.track('Login Failed', {
+          username,
+          error: error.message
+        });
+        throw error;
+      }
+      // Handle network errors
+      const networkError = new Error('Network error. Please check your connection and ensure the backend server is running.');
       analytics.track('Login Failed', {
         username,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Network error'
       });
-      throw error;
+      throw networkError;
     }
   }
 
   async register(userData: any): Promise<AuthResponse> {
     try {
+      console.log('[AuthService] Attempting registration to:', `${this.baseURL}/register/`);
       const response = await fetch(`${this.baseURL}/register/`, {
         method: 'POST',
         headers: {
@@ -79,12 +139,55 @@ class AuthService {
         body: JSON.stringify(userData),
       });
 
+      console.log('[AuthService] Registration response status:', response.status);
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Registration failed');
+        let errorMessage = 'Registration failed';
+        try {
+          const errorData = await response.json();
+          console.error('[AuthService] Registration error response:', errorData);
+          
+          // Handle different error formats from Django REST Framework
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          } else if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors)) {
+            errorMessage = errorData.non_field_errors.join(', ');
+          } else if (typeof errorData === 'object') {
+            // Handle field-specific errors
+            const fieldErrors = Object.entries(errorData)
+              .filter(([key]) => key !== 'detail' && key !== 'message')
+              .map(([key, value]: [string, any]) => {
+                if (Array.isArray(value)) {
+                  return `${key}: ${value.join(', ')}`;
+                }
+                return `${key}: ${value}`;
+              });
+            
+            if (fieldErrors.length > 0) {
+              errorMessage = fieldErrors.join('; ');
+            }
+          }
+        } catch (parseError) {
+          // If response is not JSON, try to get text
+          try {
+            const text = await response.text();
+            errorMessage = text || `HTTP ${response.status} ${response.statusText}`;
+          } catch {
+            errorMessage = `HTTP ${response.status} ${response.statusText}`;
+          }
+        }
+        
+        const error = new Error(errorMessage);
+        analytics.track('Registration Failed', {
+          username: userData.username,
+          error: errorMessage,
+          status: response.status
+        });
+        throw error;
       }
 
       const data: AuthResponse = await response.json();
+      console.log('[AuthService] Registration successful for user:', data.user.username);
       
       // Store token and user data securely
       await this.storeAuthData(data.token, data.user);
@@ -100,11 +203,21 @@ class AuthService {
 
       return data;
     } catch (error) {
+      console.error('[AuthService] Registration error:', error);
+      if (error instanceof Error) {
+        analytics.track('Registration Failed', {
+          username: userData.username,
+          error: error.message
+        });
+        throw error;
+      }
+      // Handle network errors
+      const networkError = new Error('Network error. Please check your connection and ensure the backend server is running.');
       analytics.track('Registration Failed', {
         username: userData.username,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Network error'
       });
-      throw error;
+      throw networkError;
     }
   }
 

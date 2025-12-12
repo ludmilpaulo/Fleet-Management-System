@@ -179,17 +179,21 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://192.168.1.110:3000",
-    "https://fleet-management-system.vercel.app",
-    "https://fleet-management-system-sooty.vercel.app",
-    "https://www.fleetia.online",
-    "https://fleetia.online",
-]
-
-CORS_ALLOW_CREDENTIALS = True
+# In development, allow all origins for mobile app testing
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOW_CREDENTIALS = True
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.1.110:3000",
+        "https://fleet-management-system.vercel.app",
+        "https://fleet-management-system-sooty.vercel.app",
+        "https://www.fleetia.online",
+        "https://fleetia.online",
+    ]
+    CORS_ALLOW_CREDENTIALS = True
 
 # CSRF Trusted Origins for production deployments
 CSRF_TRUSTED_ORIGINS = [

@@ -1,4 +1,6 @@
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8001/api';
+// Use IP address for iOS simulator and Android device compatibility
+// Default to 192.168.1.110 (update this to your computer's IP if different)
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.110:8000/api';
 
 let access: string | null = null;
 let refresh: string | null = null;

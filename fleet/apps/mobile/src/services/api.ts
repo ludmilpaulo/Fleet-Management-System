@@ -1,7 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, Company, CompanyStats } from '../types';
 
-const API_BASE_URL = 'http://localhost:8001/api';
+// Use IP address for iOS simulator and Android device compatibility
+// Default to 192.168.1.110 (update this to your computer's IP if different)
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.110:8000/api';
+
+// Log API configuration on initialization
+console.log('[API Service] Base URL:', API_BASE_URL);
 
 class ApiService {
   private baseURL: string;
@@ -34,45 +39,114 @@ class ApiService {
     };
 
     try {
+      console.log(`[API] ${options.method || 'GET'} ${url}`);
       const response = await fetch(url, config);
       
+      // Clone the response so we can read it multiple times if needed
+      const responseClone = response.clone();
+      
+      // Read the response body once
+      let responseData: any;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          responseData = await response.json();
+        } catch {
+          // If JSON parsing fails, try text
+          responseData = await responseClone.text();
+        }
+      } else {
+        responseData = await response.text();
+      }
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || `HTTP ${response.status}`);
+        // Handle different error formats from Django REST Framework
+        let errorMessage: string;
+        
+        if (typeof responseData === 'string') {
+          errorMessage = responseData || `HTTP ${response.status} ${response.statusText}`;
+        } else {
+          errorMessage = responseData.detail || responseData.message;
+          
+          // Handle non_field_errors (common in DRF)
+          if (responseData.non_field_errors && Array.isArray(responseData.non_field_errors)) {
+            errorMessage = responseData.non_field_errors.join(', ');
+          }
+          
+          // Handle field-specific errors
+          if (!errorMessage && typeof responseData === 'object') {
+            const fieldErrors = Object.entries(responseData)
+              .filter(([key]) => key !== 'detail' && key !== 'message')
+              .map(([key, value]: [string, any]) => {
+                if (Array.isArray(value)) {
+                  return `${key}: ${value.join(', ')}`;
+                }
+                return `${key}: ${value}`;
+              });
+            
+            if (fieldErrors.length > 0) {
+              errorMessage = fieldErrors.join('; ');
+            }
+          }
+        }
+        
+        // Fallback error message
+        if (!errorMessage) {
+          errorMessage = `Request failed with status ${response.status}`;
+        }
+        
+        console.error(`[API Error] ${url}:`, errorMessage, responseData);
+        throw new Error(errorMessage);
       }
 
-      return await response.json();
+      // Return the parsed data for successful responses
+      return responseData as T;
     } catch (error) {
-      console.error('API Request failed:', error);
-      throw error;
+      console.error('[API Request failed]:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error. Please check your connection and try again.');
     }
   }
 
   // Auth endpoints
   async login(username: string, password: string): Promise<{ user: User; token: string }> {
-    const response = await this.request<{ user: User; token: string }>('/account/login/', {
-      method: 'POST',
-      body: JSON.stringify({ username, password }),
-    });
+    try {
+      const response = await this.request<{ user: User; token: string; message?: string }>('/account/login/', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (response.token) {
-      await AsyncStorage.setItem('auth_token', response.token);
+      if (response.token) {
+        await AsyncStorage.setItem('auth_token', response.token);
+      }
+
+      return response;
+    } catch (error) {
+      console.error('[Login Error]:', error);
+      throw error;
     }
-
-    return response;
   }
 
   async register(userData: any): Promise<{ user: User; token: string }> {
-    const response = await this.request<{ user: User; token: string }>('/account/register/', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+    try {
+      console.log('[Register] Sending registration data:', { ...userData, password: '***' });
+      const response = await this.request<{ user: User; token: string; message?: string }>('/account/register/', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
 
-    if (response.token) {
-      await AsyncStorage.setItem('auth_token', response.token);
+      if (response.token) {
+        await AsyncStorage.setItem('auth_token', response.token);
+      }
+
+      return response;
+    } catch (error) {
+      console.error('[Register Error]:', error);
+      throw error;
     }
-
-    return response;
   }
 
   async logout(): Promise<void> {
@@ -91,13 +165,39 @@ class ApiService {
 
   // Company endpoints
   async getCompanies(search?: string): Promise<Company[]> {
-    const params = new URLSearchParams();
-    if (search) {
-      params.append('search', search);
+    try {
+      const params = new URLSearchParams();
+      if (search) {
+        params.append('search', search);
+      }
+      
+      const queryString = params.toString();
+      const endpoint = `/companies/companies/${queryString ? `?${queryString}` : ''}`;
+      console.log('[API] Fetching companies from:', endpoint);
+      
+      const response = await this.request<{ results: Company[]; count?: number }>(endpoint);
+      
+      console.log('[API] Companies response:', {
+        count: response.count,
+        resultsCount: response.results?.length || 0
+      });
+      
+      // Handle paginated response format from Django REST Framework
+      if (response.results && Array.isArray(response.results)) {
+        return response.results;
+      }
+      
+      // Fallback: if response is directly an array
+      if (Array.isArray(response)) {
+        return response;
+      }
+      
+      console.warn('[API] Unexpected companies response format:', response);
+      return [];
+    } catch (error) {
+      console.error('[API] Error fetching companies:', error);
+      throw error;
     }
-    
-    const response = await this.request<{ results: Company[] }>(`/companies/companies/?${params}`);
-    return response.results;
   }
 
   async getCompany(slug: string): Promise<Company> {
@@ -125,6 +225,24 @@ class ApiService {
 
   async clearStoredToken(): Promise<void> {
     return AsyncStorage.removeItem('auth_token');
+  }
+
+  // Test API connection
+  async testConnection(): Promise<boolean> {
+    try {
+      // Try to access a public endpoint or health check
+      const response = await fetch(`${this.baseURL}/account/login/`, {
+        method: 'OPTIONS',
+      });
+      return response.ok || response.status !== 404;
+    } catch (error) {
+      console.error('[API Connection Test Failed]:', error);
+      return false;
+    }
+  }
+
+  getBaseURL(): string {
+    return this.baseURL;
   }
 }
 
