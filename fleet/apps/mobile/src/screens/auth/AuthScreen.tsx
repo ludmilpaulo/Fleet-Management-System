@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Animated,
   Dimensions,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -18,6 +17,8 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { authService } from '../../services/authService'
 import { analytics } from '../../services/mixpanel'
+import { CompanySelector } from '../../components/ui/CompanySelector'
+import { Company } from '../../types'
 
 const { width, height } = Dimensions.get('window')
 
@@ -35,33 +36,17 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   const [lastName, setLastName] = useState('')
   const [employeeId, setEmployeeId] = useState('')
   const [department, setDepartment] = useState('')
-  const [role, setRole] = useState<'admin' | 'driver' | 'staff' | 'inspector'>('driver')
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(false)
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricEnabled, setBiometricEnabled] = useState(false)
   const [faceRecognitionAvailable, setFaceRecognitionAvailable] = useState(false)
-  
-  const fadeAnim = new Animated.Value(0)
-  const slideAnim = new Animated.Value(50)
 
   useEffect(() => {
+    // Check biometric availability
     checkBiometricAvailability()
     checkFaceRecognitionAvailability()
     checkBiometricEnabled()
-    
-    // Animate screen entrance
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-    ]).start()
   }, [])
 
   const checkBiometricAvailability = async () => {
@@ -110,6 +95,11 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       return
     }
 
+    if (!selectedCompany) {
+      Alert.alert('Error', 'Please select a company')
+      return
+    }
+
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match')
       return
@@ -127,12 +117,12 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         last_name: lastName,
         employee_id: employeeId,
         department,
-        role,
+        company_slug: selectedCompany.slug,
       })
       
       analytics.track('Registration Success', {
         username,
-        role
+        company: selectedCompany.name
       })
       
       onAuthSuccess()
@@ -219,30 +209,6 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     </View>
   )
 
-  const renderRoleSelector = () => (
-    <View style={styles.inputContainer}>
-      <Text style={styles.inputLabel}>Role</Text>
-      <View style={styles.roleContainer}>
-        {(['admin', 'driver', 'staff', 'inspector'] as const).map((roleOption) => (
-          <TouchableOpacity
-            key={roleOption}
-            style={[
-              styles.roleButton,
-              role === roleOption && styles.roleButtonSelected
-            ]}
-            onPress={() => setRole(roleOption)}
-          >
-            <Text style={[
-              styles.roleButtonText,
-              role === roleOption && styles.roleButtonTextSelected
-            ]}>
-              {roleOption.charAt(0).toUpperCase() + roleOption.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  )
 
   return (
     <LinearGradient
@@ -258,15 +224,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
           >
-            <Animated.View
-              style={[
-                styles.content,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }]
-                }
-              ]}
-            >
+            <View style={styles.content}>
               {/* Header */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
@@ -322,12 +280,15 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                 
                 {!isLogin && (
                   <>
+                    <CompanySelector
+                      onCompanySelect={setSelectedCompany}
+                      selectedCompany={selectedCompany}
+                    />
                     {renderInput('Email', email, setEmail, 'Enter email', false, 'email-address')}
                     {renderInput('First Name', firstName, setFirstName, 'Enter first name')}
                     {renderInput('Last Name', lastName, setLastName, 'Enter last name')}
                     {renderInput('Employee ID', employeeId, setEmployeeId, 'Enter employee ID')}
                     {renderInput('Department', department, setDepartment, 'Enter department')}
-                    {renderRoleSelector()}
                   </>
                 )}
                 
@@ -366,7 +327,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                     : 'Already have an account? Login'}
                 </Text>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -386,12 +347,10 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: 20,
   },
   content: {
-    flex: 1,
-    justifyContent: 'center',
+    width: '100%',
   },
   header: {
     alignItems: 'center',
@@ -485,32 +444,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  roleContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  roleButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  roleButtonSelected: {
-    backgroundColor: '#4ade80',
-    borderColor: '#4ade80',
-  },
-  roleButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  roleButtonTextSelected: {
-    color: '#000000',
-    fontWeight: '600',
   },
   submitButton: {
     backgroundColor: '#4ade80',

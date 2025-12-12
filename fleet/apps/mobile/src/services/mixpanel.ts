@@ -12,7 +12,8 @@ export const analytics = {
   // Initialize
   initialize: async () => {
     await mixpanelInstance.init();
-    mixpanelInstance.setLoggingEnabled(true);
+    // Disable Mixpanel console logs
+    mixpanelInstance.setLoggingEnabled(false);
   },
 
   // User identification

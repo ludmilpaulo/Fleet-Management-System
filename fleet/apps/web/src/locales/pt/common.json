@@ -1,0 +1,294 @@
+{
+  "language": {
+    "en": "Inglês",
+    "pt": "Português",
+    "es": "Espanhol"
+  },
+  "trustTitle": "Confiado por equipes em",
+  "featurePill": "Feito para operações modernas",
+  "featureTitle": "Tudo o que você precisa para operar uma frota profissional",
+  "featureDescription": "Planejamento, execução e compliance em uma única UI. Cada cartão foi feito para microinterações e insights sob medida.",
+  "nav": {
+    "title": "Gestão de Frotas",
+    "subtitle": "Inteligência para operações modernas",
+    "signIn": "Entrar",
+    "signUp": "Começar"
+  },
+  "hero": {
+    "pill": "Inteligência em nível de frota como serviço",
+    "title": "Construa um centro de comando que toda a frota confia.",
+    "description": "Orquestre veículos, motoristas, parceiros de manutenção e compliance em um só workspace. A FleetIA combina telemetria, automações e relatórios executivos para manter cada viagem no horário.",
+    "primaryCta": "Acessar o demo ao vivo",
+    "secondaryCta": "Ver dashboards",
+    "bullets": [
+      "Arquitetura pronta para SOC 2",
+      "Teste global por 14 dias",
+      "Onboarding guiado em 30 min"
+    ]
+  },
+  "featureCards": [
+    {
+      "title": "Grafo Unificado da Frota",
+      "description": "Monitore cada veículo, sensor e rota em uma camada única com pontuação de saúde em tempo real.",
+      "accent": "Inteligência de Frota"
+    },
+    {
+      "title": "Workspaces por Papel",
+      "description": "Dashboards sob medida para admin, equipe, motoristas e inspetores sem configuração extra.",
+      "accent": "Foco nas Pessoas"
+    },
+    {
+      "title": "Automação de Compliance",
+      "description": "Automatize inspeções, atestados de política e relatórios auditáveis com rastreabilidade.",
+      "accent": "Risco & Segurança"
+    },
+    {
+      "title": "Manutenção Preditiva",
+      "description": "Antecipe janelas de manutenção antes da falha e coordene fornecedores na mesma visão.",
+      "accent": "Operações Proativas"
+    }
+  ],
+  "stats": [
+    {
+      "label": "Veículos orquestrados",
+      "value": "3.2k+",
+      "context": "Streams de telemetria ativas"
+    },
+    {
+      "label": "Aderência de compliance",
+      "value": "98.4%",
+      "context": "Em 7 setores"
+    },
+    {
+      "label": "Resposta média",
+      "value": "12m",
+      "context": "Resolução de incidentes críticos"
+    },
+    {
+      "label": "Cobertura de automações",
+      "value": "42+",
+      "context": "Playbooks prontos"
+    }
+  ],
+  "trustSignals": ["FleetCorp", "Transport Masters", "Axis Freight", "Northwind Logistics", "Orbit Mobility", "Urban Deliveries"],
+  "workflow": {
+    "pill": "Clareza de fluxo",
+    "title": "Dos sinais brutos à resolução automática.",
+    "description": "A FleetIA orquestra telemetria, manuais, SOPs e planos de escalonamento em um fluxo vivo. Menos reuniões e inbox, mais contexto compartilhado.",
+    "steps": [
+      {
+        "pill": "01",
+        "title": "Conecte dados em minutos",
+        "description": "Traga telemática, manutenção e RH com conectores nativos ou API."
+      },
+      {
+        "pill": "02",
+        "title": "Veja o pulso completo da frota",
+        "description": "Centro de comando com detecção de anomalias, desvios de ETA e alertas de rota."
+      },
+      {
+        "pill": "03",
+        "title": "Automatize o trabalho repetitivo",
+        "description": "Dispare tickets, avisos aos motoristas e atestados de compliance automaticamente."
+      },
+      {
+        "pill": "04",
+        "title": "Escale decisões com confiança",
+        "description": "Previsões, lucratividade e inteligência pronta para o board."
+      }
+    ],
+    "opsReview": {
+      "label": "Revisão de Ops • Ao vivo",
+      "title": "Dashboard de prontidão T3",
+      "badge": "Verificado",
+      "cards": ["Manutenção", "Compliance", "Despacho"],
+      "cardsStatus": ["92%", "98%", "87%"],
+      "statusLabel": "Saudável",
+      "sync": "Última sincronização • há 2m",
+      "aiNote": "A IA mantém cada playbook atualizado com insights de telemetria.",
+      "autonomous": "Workflows autônomos"
+    }
+  },
+  "testimonialsSection": {
+    "pill": "Prova em campo",
+    "title": "Queridinha dos líderes de operações",
+    "description": "Um dia mais calmo, menos escalonamentos e conversas executivas mais ricas. A FleetIA entrega o sinal certo para a pessoa certa.",
+    "items": [
+      {
+        "quote": "A FleetIA nos ajudou a reduzir paradas não programadas em 22% em um trimestre. A pontuação de prontidão virou o KPI que o board confia.",
+        "name": "Lauren Mitchell",
+        "role": "Diretora de Operações de Frota",
+        "company": "Axis Freight",
+        "result": "22% menos downtime"
+      },
+      {
+        "quote": "Colocar motoristas, despacho e compliance no mesmo workspace mudou nosso ritmo. Todos operam na mesma realidade.",
+        "name": "Marcus Avery",
+        "role": "COO",
+        "company": "Urban Deliveries",
+        "result": "Fonte única da verdade"
+      }
+    ]
+  },
+  "cta": {
+    "pill": "Escolha sua pista",
+    "title": "Comece com uma experiência guiada de 14 dias.",
+    "description": "Sem cartão. Enviamos empresas, rotas e filas de tickets de exemplo para você sentir o produto em minutos.",
+    "primary": "Agendar tour do produto",
+    "secondary": "Ver dados de exemplo"
+  },
+  "tiers": [
+    {
+      "name": "Operations Suite",
+      "description": "Centro de comando, mapas ao vivo e automações para execução diária.",
+      "price": "A partir de $79 / mês",
+      "bullets": ["500 ativos rastreados", "Filas de incidentes e manutenção", "Alertas de anomalia com IA"]
+    },
+    {
+      "name": "Intelligence Suite",
+      "description": "Insights preditivos, automação de compliance e relatórios executivos.",
+      "price": "A partir de $149 / mês",
+      "bullets": ["Modelagem preditiva de manutenção", "Playbooks ilimitados", "Analytics nível board"]
+    }
+  ],
+  "popularTag": "Popular",
+  "demoAccess": {
+    "label": "Acesso Demo",
+    "title": "Teste com contas prontas",
+    "description": "Entregamos dois ambientes completos para você experimentar o fluxo fim a fim.",
+    "accounts": [
+      {
+        "role": "Admin",
+        "access": "Acesso total ao sistema",
+        "creds": "admin / admin123"
+      },
+      {
+        "role": "Staff",
+        "access": "Gestão operacional",
+        "creds": "staff1 / staff123"
+      }
+    ],
+    "note": "Precisa de um sandbox customizado? Fale conosco pelo chat interno."
+  },
+  "footer": {
+    "title": "Sistema de Gestão de Frotas",
+    "copyright": "© 2025 FleetIA. Todos os direitos reservados.",
+    "links": ["Plataforma", "Segurança", "Contato"]
+  },
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "done": "Concluído",
+    "search": "Pesquisar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "refresh": "Atualizar",
+    "noData": "Nenhum dado disponível",
+    "actions": "Ações",
+    "view": "Ver",
+    "close": "Fechar",
+    "submit": "Enviar",
+    "confirm": "Confirmar"
+  },
+  "auth": {
+    "signIn": "Entrar",
+    "signUp": "Cadastrar",
+    "signOut": "Sair",
+    "email": "E-mail",
+    "password": "Senha",
+    "forgotPassword": "Esqueceu a senha?",
+    "rememberMe": "Lembrar-me",
+    "createAccount": "Criar conta",
+    "alreadyHaveAccount": "Já tem uma conta?",
+    "dontHaveAccount": "Não tem uma conta?",
+    "signInTitle": "Bem-vindo de volta",
+    "signInSubtitle": "Entre na sua conta para continuar",
+    "signUpTitle": "Crie sua conta",
+    "signUpSubtitle": "Comece com FleetIA hoje",
+    "invalidCredentials": "E-mail ou senha inválidos",
+    "emailRequired": "E-mail é obrigatório",
+    "passwordRequired": "Senha é obrigatória",
+    "passwordMinLength": "A senha deve ter pelo menos 8 caracteres"
+  },
+  "dashboard": {
+    "title": "Painel",
+    "welcome": "Bem-vindo",
+    "overview": "Visão geral",
+    "vehicles": "Veículos",
+    "drivers": "Motoristas",
+    "inspections": "Inspeções",
+    "maintenance": "Manutenção",
+    "reports": "Relatórios",
+    "settings": "Configurações",
+    "totalVehicles": "Total de Veículos",
+    "activeVehicles": "Veículos Ativos",
+    "totalDrivers": "Total de Motoristas",
+    "activeDrivers": "Motoristas Ativos",
+    "pendingInspections": "Inspeções Pendentes",
+    "upcomingMaintenance": "Manutenção Próxima"
+  },
+  "settings": {
+    "title": "Configurações",
+    "language": "Idioma",
+    "notifications": "Notificações",
+    "account": "Conta",
+    "privacy": "Privacidade",
+    "about": "Sobre",
+    "profile": "Perfil",
+    "preferences": "Preferências",
+    "security": "Segurança",
+    "changePassword": "Alterar Senha",
+    "currentPassword": "Senha Atual",
+    "newPassword": "Nova Senha",
+    "confirmPassword": "Confirmar Senha"
+  },
+  "vehicles": {
+    "title": "Veículos",
+    "addVehicle": "Adicionar Veículo",
+    "editVehicle": "Editar Veículo",
+    "deleteVehicle": "Excluir Veículo",
+    "vehicleDetails": "Detalhes do Veículo",
+    "licensePlate": "Placa",
+    "make": "Marca",
+    "model": "Modelo",
+    "year": "Ano",
+    "vin": "Chassi",
+    "status": "Status",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "maintenance": "Em Manutenção"
+  },
+  "drivers": {
+    "title": "Motoristas",
+    "addDriver": "Adicionar Motorista",
+    "editDriver": "Editar Motorista",
+    "deleteDriver": "Excluir Motorista",
+    "driverDetails": "Detalhes do Motorista",
+    "name": "Nome",
+    "email": "E-mail",
+    "phone": "Telefone",
+    "licenseNumber": "Número da CNH",
+    "status": "Status"
+  },
+  "inspections": {
+    "title": "Inspeções",
+    "newInspection": "Nova Inspeção",
+    "inspectionDetails": "Detalhes da Inspeção",
+    "inspectionType": "Tipo de Inspeção",
+    "scheduledDate": "Data Agendada",
+    "completedDate": "Data de Conclusão",
+    "status": "Status",
+    "pending": "Pendente",
+    "completed": "Concluída",
+    "failed": "Falhou",
+    "notes": "Observações"
+  }
+}
+

@@ -1,0 +1,199 @@
+{
+  "summary": {
+    "total": 27,
+    "passed": 24,
+    "failed": 3,
+    "success_rate": 88.88888888888889
+  },
+  "results": [
+    {
+      "name": "Setup Company",
+      "passed": true,
+      "message": "Company: FleetCorp Solutions",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:34.306319"
+    },
+    {
+      "name": "Setup User (admin)",
+      "passed": true,
+      "message": "Username: test_admin",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:36.525818"
+    },
+    {
+      "name": "Setup User (staff)",
+      "passed": true,
+      "message": "Username: test_staff",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:39.556807"
+    },
+    {
+      "name": "Setup User (driver)",
+      "passed": true,
+      "message": "Username: test_driver",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:43.925946"
+    },
+    {
+      "name": "Setup User (inspector)",
+      "passed": true,
+      "message": "Username: test_inspector",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:48.050999"
+    },
+    {
+      "name": "Setup Vehicle (TEST-001)",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:48.072223"
+    },
+    {
+      "name": "Setup Vehicle (TEST-002)",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:48.103141"
+    },
+    {
+      "name": "Setup Vehicle (TEST-003)",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:48.146059"
+    },
+    {
+      "name": "Login (admin)",
+      "passed": true,
+      "message": "Token received",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:52.648614"
+    },
+    {
+      "name": "Profile Access (admin)",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:52.676115"
+    },
+    {
+      "name": "Login (staff)",
+      "passed": true,
+      "message": "Token received",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:55.184616"
+    },
+    {
+      "name": "Profile Access (staff)",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:55.218965"
+    },
+    {
+      "name": "Login (driver)",
+      "passed": true,
+      "message": "Token received",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:58.660824"
+    },
+    {
+      "name": "Profile Access (driver)",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:03:58.707041"
+    },
+    {
+      "name": "Login (inspector)",
+      "passed": true,
+      "message": "Token received",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:01.283951"
+    },
+    {
+      "name": "Profile Access (inspector)",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:01.316847"
+    },
+    {
+      "name": "Dashboard Stats (admin)",
+      "passed": true,
+      "message": "Stats retrieved",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:01.402671"
+    },
+    {
+      "name": "Dashboard Stats (staff)",
+      "passed": true,
+      "message": "Stats retrieved",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:01.475709"
+    },
+    {
+      "name": "Dashboard Stats (driver)",
+      "passed": true,
+      "message": "Stats retrieved",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:01.559572"
+    },
+    {
+      "name": "Dashboard Stats (inspector)",
+      "passed": true,
+      "message": "Stats retrieved",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:01.626047"
+    },
+    {
+      "name": "List Vehicles",
+      "passed": true,
+      "message": "Found 4 vehicles",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:02.112323"
+    },
+    {
+      "name": "Create Vehicle",
+      "passed": true,
+      "message": "Vehicle ID: None",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:02.157832"
+    },
+    {
+      "name": "Create Inspection",
+      "passed": false,
+      "message": "Status: 400",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:02.205999"
+    },
+    {
+      "name": "Start Shift",
+      "passed": false,
+      "message": "Status: 400",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:02.246596"
+    },
+    {
+      "name": "Create Issue",
+      "passed": false,
+      "message": "Status: 400",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:02.333113"
+    },
+    {
+      "name": "List Users",
+      "passed": true,
+      "message": "Found 4 users",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:02.480957"
+    },
+    {
+      "name": "Get User Stats",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:02.537915"
+    }
+  ]
+}

@@ -8,10 +8,13 @@ import {
   SafeAreaView,
   ScrollView,
   Switch,
+  Modal,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n'
 import BiometricSettings from '../../components/settings/BiometricSettings'
 
 interface SettingsScreenProps {
@@ -29,6 +32,7 @@ interface UserSettings {
 }
 
 export default function SettingsScreen({ navigation }: SettingsScreenProps) {
+  const { t } = useTranslation()
   const [settings, setSettings] = useState<UserSettings>({
     notifications: true,
     locationTracking: true,
@@ -39,6 +43,15 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
     company: 'Demo Company',
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [languageModalVisible, setLanguageModalVisible] = useState(false)
+  
+  const languages = [
+    { code: 'en', name: t('language.en'), native: 'English' },
+    { code: 'pt', name: t('language.pt'), native: 'Português' },
+    { code: 'es', name: t('language.es'), native: 'Español' },
+  ]
+  
+  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0]
 
   useEffect(() => {
     loadSettings()
@@ -122,10 +135,21 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
 
   const handleAbout = () => {
     Alert.alert(
-      'About Fleet Management',
+      t('settings.about'),
       'Version 1.0.0\n\nA comprehensive fleet management solution for modern businesses.',
-      [{ text: 'OK' }]
+      [{ text: t('common.done') }]
     )
+  }
+
+  const handleLanguageChange = async (langCode: string) => {
+    try {
+      await i18n.changeLanguage(langCode)
+      updateSetting('language', langCode)
+      setLanguageModalVisible(false)
+    } catch (error) {
+      console.error('Error changing language:', error)
+      Alert.alert(t('common.error'), 'Failed to change language')
+    }
   }
 
   const SettingItem = ({ 
@@ -197,8 +221,8 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle}>Settings</Text>
-            <Text style={styles.headerSubtitle}>Manage your preferences</Text>
+            <Text style={styles.headerTitle}>{t('settings.title')}</Text>
+            <Text style={styles.headerSubtitle}>{t('settings.preferences')}</Text>
           </View>
           <View style={styles.headerButton} />
         </View>
@@ -206,7 +230,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
         <ScrollView style={styles.settingsContainer} showsVerticalScrollIndicator={false}>
           {/* User Info */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Account</Text>
+            <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
             <View style={styles.userInfoCard}>
               <View style={styles.userAvatar}>
                 <Ionicons name="person" size={30} color="white" />
@@ -221,7 +245,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
 
           {/* Notifications */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notifications</Text>
+            <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
             <SettingItem
               icon="notifications"
               title="Push Notifications"
@@ -285,9 +309,9 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
             />
             <SettingItem
               icon="language"
-              title="Language"
-              subtitle="English"
-              onPress={() => Alert.alert('Language', 'Language selection coming soon')}
+              title={t('settings.language')}
+              subtitle={currentLanguage.native}
+              onPress={() => setLanguageModalVisible(true)}
             />
           </View>
 
@@ -335,10 +359,51 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
           <View style={styles.section}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Ionicons name="log-out" size={24} color="#ef4444" />
-              <Text style={styles.logoutText}>Logout</Text>
+              <Text style={styles.logoutText}>{t('auth.signOut')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
+
+        {/* Language Selection Modal */}
+        <Modal
+          visible={languageModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setLanguageModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{t('settings.language')}</Text>
+                <TouchableOpacity
+                  onPress={() => setLanguageModalVisible(false)}
+                  style={styles.modalCloseButton}
+                >
+                  <Ionicons name="close" size={24} color="white" />
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView style={styles.modalBody}>
+                {languages.map((lang) => (
+                  <TouchableOpacity
+                    key={lang.code}
+                    style={[
+                      styles.languageOption,
+                      i18n.language === lang.code && styles.languageOptionActive,
+                    ]}
+                    onPress={() => handleLanguageChange(lang.code)}
+                  >
+                    <Text style={styles.languageName}>{lang.native}</Text>
+                    <Text style={styles.languageCode}>{lang.name}</Text>
+                    {i18n.language === lang.code && (
+                      <Ionicons name="checkmark-circle" size={24} color="#4ade80" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </LinearGradient>
     </SafeAreaView>
   )
@@ -491,5 +556,66 @@ const styles = StyleSheet.create({
   },
   biometricSettings: {
     backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#1a1a2e',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    maxHeight: '80%',
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  modalTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBody: {
+    padding: 20,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 10,
+  },
+  languageOptionActive: {
+    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(74, 222, 128, 0.5)',
+  },
+  languageName: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+  },
+  languageCode: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
+    marginRight: 10,
   },
 })

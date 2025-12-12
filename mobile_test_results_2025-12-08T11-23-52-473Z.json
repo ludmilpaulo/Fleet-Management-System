@@ -1,0 +1,129 @@
+{
+  "summary": {
+    "total": 17,
+    "passed": 9,
+    "failed": 8,
+    "success_rate": 52.94117647058824
+  },
+  "results": [
+    {
+      "name": "API Connection Check",
+      "passed": true,
+      "message": "Connected to http://localhost:8000",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:36.083Z"
+    },
+    {
+      "name": "Mobile Login (admin)",
+      "passed": true,
+      "message": "Token received",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:39.443Z"
+    },
+    {
+      "name": "Mobile Profile Access (admin)",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:39.510Z"
+    },
+    {
+      "name": "Mobile Login (staff)",
+      "passed": true,
+      "message": "Token received",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:43.835Z"
+    },
+    {
+      "name": "Mobile Profile Access (staff)",
+      "passed": true,
+      "message": "",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:43.912Z"
+    },
+    {
+      "name": "Mobile Login (driver)",
+      "passed": false,
+      "message": "Status: 400, Error: Request failed with status code 400",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:49.086Z"
+    },
+    {
+      "name": "Mobile Login (inspector)",
+      "passed": false,
+      "message": "Status: 400, Error: Request failed with status code 400",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.203Z"
+    },
+    {
+      "name": "Mobile Dashboard Stats (admin)",
+      "passed": true,
+      "message": "Stats retrieved: 17 metrics",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.329Z"
+    },
+    {
+      "name": "Mobile Dashboard Stats (staff)",
+      "passed": true,
+      "message": "Stats retrieved: 17 metrics",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.454Z"
+    },
+    {
+      "name": "Mobile Dashboard (driver)",
+      "passed": false,
+      "message": "No token available",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.455Z"
+    },
+    {
+      "name": "Mobile Dashboard (inspector)",
+      "passed": false,
+      "message": "No token available",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.455Z"
+    },
+    {
+      "name": "Mobile Inspections",
+      "passed": false,
+      "message": "Inspector token not available",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.457Z"
+    },
+    {
+      "name": "Mobile Shifts",
+      "passed": false,
+      "message": "Driver token not available",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.462Z"
+    },
+    {
+      "name": "Mobile Issues",
+      "passed": false,
+      "message": "Driver token not available",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.464Z"
+    },
+    {
+      "name": "Mobile Camera",
+      "passed": false,
+      "message": "Inspector token not available",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.465Z"
+    },
+    {
+      "name": "Mobile Location - GPS Tracking",
+      "passed": true,
+      "message": "Location tracking endpoint available (simulated)",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.466Z"
+    },
+    {
+      "name": "Mobile Location - Geofencing",
+      "passed": true,
+      "message": "Geofencing support available (simulated)",
+      "data": {},
+      "timestamp": "2025-12-08T11:23:52.466Z"
+    }
+  ]
+}

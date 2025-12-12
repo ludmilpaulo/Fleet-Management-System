@@ -74,10 +74,11 @@ class CompanyListSerializer(serializers.ModelSerializer):
     Serializer for listing companies (minimal information)
     """
     current_user_count = serializers.ReadOnlyField()
+    is_trial_active = serializers.ReadOnlyField()
     
     class Meta:
         model = Company
         fields = (
-            'id', 'name', 'slug', 'email', 'subscription_plan', 'is_active',
-            'current_user_count', 'created_at'
+            'id', 'name', 'slug', 'description', 'email', 'subscription_plan', 'is_active',
+            'current_user_count', 'is_trial_active', 'created_at'
         )

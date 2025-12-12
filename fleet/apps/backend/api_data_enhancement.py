@@ -7,8 +7,7 @@ This script can be run on the production server to enhance the backend data
 import os
 import django
 import sys
-from datetime import datetime, timedelta
-from decimal import Decimal
+from datetime import timedelta
 import random
 
 # Setup Django environment
@@ -22,7 +21,6 @@ from account.models import Company
 from fleet_app.models import Vehicle, Shift
 from inspections.models import Inspection, InspectionItem
 from issues.models import Issue
-from tickets.models import Ticket
 
 User = get_user_model()
 
@@ -193,14 +191,14 @@ def add_realistic_issues(vehicles):
     users = User.objects.filter(company__name='FleetCorp Solutions')
     
     issue_templates = [
-        {'issue_type': 'mechanical', 'priority': 'high', 'description': 'Engine making unusual noise during acceleration', 'status': 'open'},
-        {'issue_type': 'electrical', 'priority': 'medium', 'description': 'Dashboard warning lights not functioning properly', 'status': 'in_progress'},
-        {'issue_type': 'body_damage', 'priority': 'low', 'description': 'Minor scratch on rear bumper from parking incident', 'status': 'resolved'},
-        {'issue_type': 'maintenance', 'priority': 'medium', 'description': 'Oil change overdue by 500 miles', 'status': 'open'},
-        {'issue_type': 'mechanical', 'priority': 'critical', 'description': 'Brake system warning light illuminated', 'status': 'open'},
-        {'issue_type': 'electrical', 'priority': 'high', 'description': 'Air conditioning system not cooling properly', 'status': 'in_progress'},
-        {'issue_type': 'maintenance', 'priority': 'low', 'description': 'Tire rotation needed', 'status': 'resolved'},
-        {'issue_type': 'mechanical', 'priority': 'medium', 'description': 'Transmission shifting roughly between gears', 'status': 'open'},
+        {'category': 'MECHANICAL', 'severity': 'HIGH', 'title': 'Engine Noise', 'description': 'Engine making unusual noise during acceleration', 'status': 'OPEN'},
+        {'category': 'ELECTRICAL', 'severity': 'MEDIUM', 'title': 'Dashboard Warning Lights', 'description': 'Dashboard warning lights not functioning properly', 'status': 'IN_PROGRESS'},
+        {'category': 'COSMETIC', 'severity': 'LOW', 'title': 'Bumper Scratch', 'description': 'Minor scratch on rear bumper from parking incident', 'status': 'RESOLVED'},
+        {'category': 'MECHANICAL', 'severity': 'MEDIUM', 'title': 'Oil Change Overdue', 'description': 'Oil change overdue by 500 miles', 'status': 'OPEN'},
+        {'category': 'BRAKE', 'severity': 'CRITICAL', 'title': 'Brake System Warning', 'description': 'Brake system warning light illuminated', 'status': 'OPEN'},
+        {'category': 'ELECTRICAL', 'severity': 'HIGH', 'title': 'AC System Malfunction', 'description': 'Air conditioning system not cooling properly', 'status': 'IN_PROGRESS'},
+        {'category': 'TYRE', 'severity': 'LOW', 'title': 'Tire Rotation Needed', 'description': 'Tire rotation needed', 'status': 'RESOLVED'},
+        {'category': 'MECHANICAL', 'severity': 'MEDIUM', 'title': 'Transmission Issue', 'description': 'Transmission shifting roughly between gears', 'status': 'OPEN'},
     ]
     
     issues = []
@@ -214,16 +212,17 @@ def add_realistic_issues(vehicles):
         issue = Issue.objects.create(
             vehicle=vehicle,
             reported_by=reporter,
-            issue_type=template['issue_type'],
-            priority=template['priority'],
+            category=template['category'],
+            severity=template['severity'],
             status=template['status'],
+            title=template['title'],
             description=template['description'],
             reported_at=created_date,
-            resolved_at=created_date + timedelta(days=random.randint(1, 5)) if template['status'] in ['resolved', 'closed'] else None
+            resolved_at=created_date + timedelta(days=random.randint(1, 5)) if template['status'] in ['RESOLVED', 'CLOSED'] else None
         )
         
         issues.append(issue)
-        print(f"  ✓ {template['issue_type'].title()} issue - {vehicle.reg_number} ({template['priority']} priority, {template['status']})")
+        print(f"  ✓ {template['category']} issue - {vehicle.reg_number} ({template['severity']} severity, {template['status']})")
     
     return issues
 

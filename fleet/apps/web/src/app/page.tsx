@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Truck,
   Users,
@@ -24,12 +25,24 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { initializeAuth } from '@/store/slices/authSlice';
+import { useTranslation } from 'react-i18next';
 
 export default function Home() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  
+  const { t, i18n } = useTranslation();
+
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+
+  const languageOptions = [
+    { code: 'en', label: t('language.en') },
+    { code: 'pt', label: t('language.pt') },
+    { code: 'es', label: t('language.es') },
+  ];
+
+  const changeLanguage = (code: string) => {
+    i18n.changeLanguage(code).catch(() => {});
+  };
 
   useEffect(() => {
     // Initialize auth state from localStorage
@@ -58,105 +71,58 @@ export default function Home() {
     }
   }, [isAuthenticated, user, isLoading, router]);
 
-  const featureCards = [
-    {
-      icon: Truck,
-      title: 'Unified Fleet Graph',
-      description: 'Monitor every vehicle, sensor, and route through a single intelligence layer with live health scoring.',
-      accent: 'Fleet Intelligence',
-    },
-    {
-      icon: Users,
-      title: 'Role-Aware Workspaces',
-      description: 'Deliver tailored dashboards for admins, staff, drivers, and inspectors with zero configuration.',
-      accent: 'Human-Centric',
-    },
-    {
-      icon: Shield,
-      title: 'Compliance Automation',
-      description: 'Automate inspections, policy attestation, and audit-ready reporting with confident traceability.',
-      accent: 'Risk & Safety',
-    },
-    {
-      icon: Wrench,
-      title: 'Predictive Maintenance',
-      description: 'Surface maintenance windows before failure and coordinate vendors in the same view.',
-      accent: 'Proactive Ops',
-    },
-  ];
+  const featureCardsTranslations = t('featureCards', { returnObjects: true }) as Array<{
+    title: string;
+    description: string;
+    accent: string;
+  }>;
+  const featureCards = featureCardsTranslations.map((item, idx) => ({
+    ...item,
+    icon: [Truck, Users, Shield, Wrench][idx] || Truck,
+  }));
 
-  const stats = [
-    { icon: LineChart, label: 'Vehicles orchestrated', value: '3.2k+', context: 'Live telemetry streams' },
-    { icon: ShieldCheck, label: 'Compliance adherence', value: '98.4%', context: 'Across 7 industries' },
-    { icon: Activity, label: 'Average response', value: '12m', context: 'Critical issue resolution' },
-    { icon: BadgeCheck, label: 'Automation coverage', value: '42+', context: 'Ready-to-use playbooks' },
-  ];
+  const statsTranslations = t('stats', { returnObjects: true }) as Array<{
+    label: string;
+    value: string;
+    context: string;
+  }>;
+  const stats = statsTranslations.map((item, idx) => ({
+    ...item,
+    icon: [LineChart, ShieldCheck, Activity, BadgeCheck][idx] || LineChart,
+  }));
 
-  const trustSignals = ['FleetCorp', 'Transport Masters', 'Axis Freight', 'Northwind Logistics', 'Orbit Mobility', 'Urban Deliveries'];
+  const trustSignals = t('trustSignals', { returnObjects: true }) as string[];
 
-  const workflowSteps = [
-    {
-      icon: Route,
-      title: 'Connect data in minutes',
-      description: 'Bring in telematics, maintenance tools, and HRIS with native connectors or API drops.',
-      pill: '01',
-    },
-    {
-      icon: BarChart3,
-      title: 'See the entire fleet heartbeat',
-      description: 'Live command center with anomaly detection, ETA deviations, and schedule drift alerts.',
-      pill: '02',
-    },
-    {
-      icon: ClipboardCheck,
-      title: 'Automate the busywork',
-      description: 'Trigger workflows for service tickets, driver notifications, and compliance attestations.',
-      pill: '03',
-    },
-    {
-      icon: Gauge,
-      title: 'Scale decisions with confidence',
-      description: 'Portfolio-level forecasting, profitability insights, and board-ready intelligence.',
-      pill: '04',
-    },
-  ];
+  const workflowStepsTranslations = t('workflow.steps', { returnObjects: true }) as Array<{
+    pill: string;
+    title: string;
+    description: string;
+  }>;
+  const workflowSteps = workflowStepsTranslations.map((step, idx) => ({
+    ...step,
+    icon: [Route, BarChart3, ClipboardCheck, Gauge][idx] || Route,
+  }));
 
-  const testimonials = [
-    {
-      quote: 'FleetIA helped us cut unscheduled downtime by 22% in one quarter. The live readiness score became the one KPI our exec team trusts.',
-      name: 'Lauren Mitchell',
-      role: 'Director of Fleet Ops',
-      company: 'Axis Freight',
-      result: '22% downtime reduction',
-    },
-    {
-      quote: 'Onboarding drivers, dispatch, and compliance teams onto one workspace changed our cadence. Everyone now works off the same reality.',
-      name: 'Marcus Avery',
-      role: 'Chief Operations Officer',
-      company: 'Urban Deliveries',
-      result: 'Single source of truth',
-    },
-  ];
+  const testimonials = t('testimonialsSection.items', { returnObjects: true }) as Array<{
+    quote: string;
+    name: string;
+    role: string;
+    company: string;
+    result: string;
+  }>;
 
-  const tiers = [
-    {
-      name: 'Operations Suite',
-      description: 'Command center, live maps, and workflow automation for day-to-day execution.',
-      price: 'From $79 / mo',
-      bullets: ['500 tracked assets', 'Incident + maintenance queues', 'AI-powered anomaly alerts'],
-    },
-    {
-      name: 'Intelligence Suite',
-      description: 'Predictive insights, compliance automation, and executive-level reporting.',
-      price: 'From $149 / mo',
-      bullets: ['Predictive maintenance modeling', 'Unlimited automation playbooks', 'Board-grade analytics'],
-    },
-  ];
+  const tiers = t('tiers', { returnObjects: true }) as Array<{
+    name: string;
+    description: string;
+    price: string;
+    bullets: string[];
+  }>;
 
-  const demoAccounts = [
-    { role: 'Admin', access: 'Full system access', creds: 'admin / admin123' },
-    { role: 'Staff', access: 'Operations management', creds: 'staff1 / staff123' },
-  ];
+  const demoAccounts = t('demoAccess.accounts', { returnObjects: true }) as Array<{
+    role: string;
+    access: string;
+    creds: string;
+  }>;
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-white overflow-hidden">
@@ -175,23 +141,38 @@ export default function Home() {
                 <Truck className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-base font-semibold tracking-wide text-white">Fleet Management</p>
-                <p className="text-xs text-slate-400">Intelligence for modern operations</p>
+                <p className="text-base font-semibold tracking-wide text-white">{t('nav.title')}</p>
+                <p className="text-xs text-slate-400">{t('nav.subtitle')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1">
+                {languageOptions.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => changeLanguage(lang.code)}
+                    className={`text-xs font-medium px-2 py-1 rounded-full transition ${
+                      i18n.language.startsWith(lang.code)
+                        ? 'bg-white/20 text-white'
+                        : 'text-white/70 hover:text-white'
+                    }`}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
               <Button
                 variant="outline"
                 onClick={() => router.push('/auth/signin')}
                 className="border-white/20 text-white/90 hover:text-white hover:border-white/40 bg-white/5"
               >
-                Sign In
+                {t('nav.signIn')}
               </Button>
               <Button
                 onClick={() => router.push('/auth/signup')}
                 className="btn-gradient text-sm px-5 py-2 rounded-full"
               >
-                Get Started
+                {t('nav.signUp')}
               </Button>
             </div>
           </div>
@@ -203,15 +184,14 @@ export default function Home() {
           <div className="space-y-10">
             <div className="pill bg-white/5 text-sky-100 w-fit flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-sky-300" />
-              Fleet-grade intelligence, delivered as a service
+              {t('hero.pill')}
             </div>
             <div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-tight text-white">
-                Build an operations command center your entire fleet trusts.
+                {t('hero.title')}
               </h1>
               <p className="mt-6 text-lg text-slate-300 max-w-2xl">
-                Orchestrate vehicles, drivers, maintenance partners, and compliance workflows in one beautiful workspace.
-                FleetIA blends telemetry, automations, and executive-level reporting to keep every trip on schedule.
+                {t('hero.description')}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -220,7 +200,7 @@ export default function Home() {
                 onClick={() => router.push('/auth/signup')}
                 className="btn-gradient text-base px-8 py-6 rounded-full font-semibold shadow-xl hover:shadow-2xl"
               >
-                Launch the live demo
+                {t('hero.primaryCta')}
               </Button>
               <Button
                 size="lg"
@@ -228,22 +208,16 @@ export default function Home() {
                 onClick={() => router.push('/auth/signin')}
                 className="rounded-full border-white/20 text-white/80 hover:text-white hover:border-white/40 bg-white/5"
               >
-                View dashboards
+                {t('hero.secondaryCta')}
               </Button>
             </div>
             <div className="flex flex-wrap gap-6 text-sm text-slate-400">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-300" />
-                SOC 2-ready architecture
-              </div>
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-blue-300" />
-                14-day planet-scale trial
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-300" />
-                Guided onboarding in 30 min
-              </div>
+              {[ShieldCheck, Globe, Clock].map((Icon, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <Icon className={`w-4 h-4 ${idx === 0 ? 'text-emerald-300' : idx === 1 ? 'text-blue-300' : 'text-amber-300'}`} />
+                  {t(`hero.bullets.${idx}`)}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -315,7 +289,9 @@ export default function Home() {
             })}
           </div>
           <div className="flex flex-wrap items-center gap-6 text-sm text-slate-400 justify-center">
-            <span className="uppercase tracking-[0.5em] text-xs text-slate-500">Trusted by teams at</span>
+            <span className="uppercase tracking-[0.5em] text-xs text-slate-500">
+              {t('trustTitle', { defaultValue: 'Trusted by teams at' })}
+            </span>
             <div className="flex flex-wrap gap-6 justify-center text-slate-300">
               {trustSignals.map((brand) => (
                 <span key={brand} className="text-base font-semibold tracking-wide text-white/70">
@@ -328,10 +304,15 @@ export default function Home() {
 
         <section className="space-y-10">
           <div className="flex flex-col gap-4 text-center">
-            <p className="pill mx-auto bg-white/5 text-sky-100 border-white/10">Designed for modern operations</p>
-            <h2 className="text-3xl sm:text-4xl font-semibold text-white">Everything you need to run a professional fleet</h2>
+            <p className="pill mx-auto bg-white/5 text-sky-100 border-white/10">{t('featurePill', { defaultValue: 'Designed for modern operations' })}</p>
+            <h2 className="text-3xl sm:text-4xl font-semibold text-white">
+              {t('featureTitle', { defaultValue: 'Everything you need to run a professional fleet' })}
+            </h2>
             <p className="text-slate-400 max-w-3xl mx-auto">
-              Put planning, execution, and compliance into a single UI. Each card is purpose-built with delightful micro-interactions and tailored insights.
+              {t('featureDescription', {
+                defaultValue:
+                  'Put planning, execution, and compliance into a single UI. Each card is purpose-built with delightful micro-interactions and tailored insights.',
+              })}
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
@@ -364,10 +345,10 @@ export default function Home() {
 
         <section className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] items-center">
           <div className="space-y-6">
-            <p className="pill bg-white/5 text-sky-100 border-white/10 w-fit">Workflow clarity</p>
-            <h3 className="text-3xl font-semibold text-white">From raw signals to automated resolution.</h3>
+            <p className="pill bg-white/5 text-sky-100 border-white/10 w-fit">{t('workflow.pill')}</p>
+            <h3 className="text-3xl font-semibold text-white">{t('workflow.title')}</h3>
             <p className="text-slate-400">
-              FleetIA orchestrates telemetry, manuals, SOPs, and escalation paths in one living workflow. Reduce meetings and inbox chaos with shared context.
+              {t('workflow.description')}
             </p>
             <div className="space-y-6">
               {workflowSteps.map((step) => {
@@ -392,33 +373,33 @@ export default function Home() {
           <div className="glass-dark rounded-[32px] border border-white/10 p-8 space-y-6 grid-overlay">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-400">Ops Review • Live</p>
-                <p className="text-2xl font-semibold text-white">Q3 readiness dashboard</p>
+                <p className="text-sm text-slate-400">{t('workflow.opsReview.label')}</p>
+                <p className="text-2xl font-semibold text-white">{t('workflow.opsReview.title')}</p>
               </div>
               <div className="pill bg-emerald-400/10 text-emerald-200 border-emerald-400/20 flex items-center gap-2">
                 <Shield className="w-4 h-4" />
-                Verified
+                {t('workflow.opsReview.badge')}
               </div>
             </div>
             <div className="rounded-3xl bg-slate-900/80 border border-white/10 p-6 space-y-4">
               <div className="flex items-center justify-between text-sm text-slate-300">
-                <span>Autonomous workflows</span>
-                <span>Last synced • 2m ago</span>
+                <span>{t('workflow.opsReview.autonomous', { defaultValue: 'Autonomous workflows' })}</span>
+                <span>{t('workflow.opsReview.sync')}</span>
               </div>
               <div className="grid grid-cols-3 gap-4">
-                {['Maintenance', 'Compliance', 'Dispatch'].map((label, idx) => (
+                {(t('workflow.opsReview.cards', { returnObjects: true }) as string[]).map((label, idx) => (
                   <div key={label} className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-2">
                     <p className="text-sm text-slate-400">{label}</p>
                     <p className="text-2xl font-semibold text-white">
-                      {idx === 0 ? '92%' : idx === 1 ? '98%' : '87%'}
+                      {(t('workflow.opsReview.cardsStatus', { returnObjects: true }) as string[])[idx]}
                     </p>
-                    <p className="text-xs text-emerald-200">Healthy</p>
+                    <p className="text-xs text-emerald-200">{t('workflow.opsReview.statusLabel')}</p>
                   </div>
                 ))}
               </div>
               <div className="text-xs text-slate-400 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-pink-300" />
-                AI keeps every playbook fresh with telemetry insight.
+                {t('workflow.opsReview.aiNote')}
               </div>
             </div>
           </div>
@@ -426,10 +407,10 @@ export default function Home() {
 
         <section className="space-y-10">
           <div className="flex flex-col gap-4 text-center">
-            <p className="pill mx-auto bg-white/5 text-sky-100 border-white/10">Proof teams feel</p>
-            <h3 className="text-3xl sm:text-4xl font-semibold text-white">Loved by operations leaders</h3>
+            <p className="pill mx-auto bg-white/5 text-sky-100 border-white/10">{t('testimonialsSection.pill')}</p>
+            <h3 className="text-3xl sm:text-4xl font-semibold text-white">{t('testimonialsSection.title')}</h3>
             <p className="text-slate-400 max-w-3xl mx-auto">
-              A calmer workday, fewer escalations, and richer exec conversations. FleetIA puts the right signal in front of the right person.
+              {t('testimonialsSection.description')}
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
@@ -454,22 +435,22 @@ export default function Home() {
         <section className="glass-dark border border-white/10 rounded-[32px] p-8 space-y-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-              <p className="pill bg-white/5 text-sky-100 border-white/10 w-fit">Choose your runway</p>
-              <h3 className="text-3xl font-semibold text-white mt-4">Start with a 14-day guided experience.</h3>
+              <p className="pill bg-white/5 text-sky-100 border-white/10 w-fit">{t('cta.pill')}</p>
+              <h3 className="text-3xl font-semibold text-white mt-4">{t('cta.title')}</h3>
               <p className="text-slate-400 mt-3 max-w-2xl">
-                No credit card. We preload sample companies, routes, and ticket queues so you can feel the product in minutes.
+                {t('cta.description')}
               </p>
             </div>
             <div className="flex gap-3">
               <Button className="btn-gradient rounded-full px-6 py-4" onClick={() => router.push('/auth/signup')}>
-                Book a product tour
+                {t('cta.primary')}
               </Button>
               <Button
                 variant="outline"
                 className="rounded-full border-white/20 text-white/80 hover:text-white hover:border-white/40 bg-white/5"
                 onClick={() => router.push('/auth/signin')}
               >
-                View sample data
+                {t('cta.secondary')}
               </Button>
             </div>
           </div>
@@ -482,7 +463,9 @@ export default function Home() {
                       <p className="text-sm text-slate-400">{tier.name}</p>
                       <p className="text-2xl font-semibold text-white">{tier.price}</p>
                     </div>
-                    <div className="pill bg-emerald-400/10 text-emerald-200 border-emerald-400/20">Popular</div>
+                    <div className="pill bg-emerald-400/10 text-emerald-200 border-emerald-400/20">
+                      {t('popularTag')}
+                    </div>
                   </div>
                   <p className="text-sm text-slate-300">{tier.description}</p>
                   <ul className="space-y-2 text-sm text-slate-300">
@@ -497,9 +480,9 @@ export default function Home() {
               ))}
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-5">
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Demo Access</p>
-              <h4 className="text-2xl font-semibold text-white">Try it with ready accounts</h4>
-              <p className="text-slate-400 text-sm">We ship two full environments so you can experience end-to-end workflows.</p>
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{t('demoAccess.label')}</p>
+              <h4 className="text-2xl font-semibold text-white">{t('demoAccess.title')}</h4>
+              <p className="text-slate-400 text-sm">{t('demoAccess.description')}</p>
               <div className="space-y-3">
                 {demoAccounts.map((account) => (
                   <div key={account.role} className="rounded-2xl bg-black/20 border border-white/10 p-4">
@@ -513,7 +496,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-slate-500">Need a custom sandbox? Ping us from inside the app chat.</p>
+              <p className="text-xs text-slate-500">{t('demoAccess.note')}</p>
             </div>
           </div>
         </section>
@@ -526,14 +509,28 @@ export default function Home() {
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-semibold">Fleet Management System</p>
-              <p className="text-xs text-slate-500">© 2025 FleetIA. All rights reserved.</p>
+              <p className="font-semibold">{t('footer.title')}</p>
+              <p className="text-xs text-slate-500">{t('footer.copyright')}</p>
             </div>
           </div>
-          <div className="flex gap-6 text-xs uppercase tracking-[0.35em] text-slate-500">
-            <span>Platform</span>
-            <span>Security</span>
-            <span>Contact</span>
+          <div className="flex gap-6 text-xs uppercase tracking-[0.35em]">
+            {(t('footer.links', { returnObjects: true }) as string[]).map((link) => {
+              const linkMap: Record<string, string> = {
+                Platform: '/platform',
+                Security: '/security',
+                Contact: '/contact',
+              };
+              const href = linkMap[link] || '#';
+              return (
+                <Link
+                  key={link}
+                  href={href}
+                  className="text-slate-500 hover:text-white transition-colors cursor-pointer"
+                >
+                  {link}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </footer>

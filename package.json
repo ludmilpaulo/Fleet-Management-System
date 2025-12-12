@@ -1,0 +1,20 @@
+{
+  "name": "fleet-management-tests",
+  "version": "1.0.0",
+  "description": "Test suite for Fleet Management System day-to-day operations",
+  "scripts": {
+    "test:backend": "cd fleet/apps/backend && python3 ../../test_day_to_day_operations.py",
+    "test:mobile": "node test_mobile_operations.js",
+    "test:web": "node test_web_operations.js",
+    "test:all": "./run_all_tests.sh",
+    "test:install": "npm install playwright axios"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "playwright": "^1.57.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+}

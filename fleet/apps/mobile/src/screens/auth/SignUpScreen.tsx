@@ -93,7 +93,16 @@ export const SignUpScreen: React.FC = () => {
 
     try {
       const registrationData = {
-        ...formData,
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        passwordConfirm: formData.passwordConfirm,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phoneNumber,
+        employeeId: formData.employeeId,
+        department: formData.department,
+        role: formData.role,
         company_slug: selectedCompany!.slug,
       };
 

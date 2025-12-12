@@ -9,6 +9,8 @@ import { store } from './src/store/store'
 import * as Notifications from 'expo-notifications'
 import { analytics } from './src/services/mixpanel'
 import { authService, AuthUser } from './src/services/authService'
+import { I18nextProvider, useTranslation } from 'react-i18next'
+import i18n from './src/i18n'
 
 // Import screens
 import AuthScreen from './src/screens/auth/AuthScreen'
@@ -53,6 +55,8 @@ function InspectionsStack() {
 
 // Main tab navigator
 function MainTabs() {
+  const { t } = useTranslation()
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -98,37 +102,37 @@ function MainTabs() {
       <Tab.Screen 
         name="Dashboard" 
         component={DashboardScreen}
-        options={{ tabBarLabel: 'Home' }}
+        options={{ tabBarLabel: t('tabs.dashboard') }}
       />
       <Tab.Screen 
         name="Inspections" 
         component={InspectionsStack}
-        options={{ tabBarLabel: 'Inspections' }}
+        options={{ tabBarLabel: t('tabs.inspections') }}
       />
       <Tab.Screen 
         name="Camera" 
         component={CameraScreen}
-        options={{ tabBarLabel: 'Camera' }}
+        options={{ tabBarLabel: t('tabs.camera') }}
       />
       <Tab.Screen 
         name="Keys" 
         component={KeyTrackerScreen}
-        options={{ tabBarLabel: 'Keys' }}
+        options={{ tabBarLabel: t('tabs.keys') }}
       />
       <Tab.Screen 
         name="Location" 
         component={LocationScreen}
-        options={{ tabBarLabel: 'Location' }}
+        options={{ tabBarLabel: t('tabs.location') }}
       />
       <Tab.Screen 
         name="Notifications" 
         component={NotificationsScreen}
-        options={{ tabBarLabel: 'Alerts' }}
+        options={{ tabBarLabel: t('tabs.notifications') }}
       />
       <Tab.Screen 
         name="Settings" 
         component={SettingsScreen}
-        options={{ tabBarLabel: 'Settings' }}
+        options={{ tabBarLabel: t('tabs.settings') }}
       />
     </Tab.Navigator>
   )
@@ -213,19 +217,23 @@ export default function App() {
 
   if (!isAuthenticated) {
     return (
-      <Provider store={store}>
-        <StatusBar style="light" />
-        <AuthScreen onAuthSuccess={handleAuthSuccess} />
-      </Provider>
+      <I18nextProvider i18n={i18n}>
+        <Provider store={store}>
+          <StatusBar style="light" />
+          <AuthScreen onAuthSuccess={handleAuthSuccess} />
+        </Provider>
+      </I18nextProvider>
     )
   }
 
   return (
-    <Provider store={store}>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <MainTabs />
-      </NavigationContainer>
-    </Provider>
+    <I18nextProvider i18n={i18n}>
+      <Provider store={store}>
+        <NavigationContainer>
+          <StatusBar style="light" />
+          <MainTabs />
+        </NavigationContainer>
+      </Provider>
+    </I18nextProvider>
   )
 }

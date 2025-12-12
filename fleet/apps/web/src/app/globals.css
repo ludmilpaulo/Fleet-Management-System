@@ -445,3 +445,8 @@ select,
 textarea {
   touch-action: manipulation;
 }
+
+/* Next.js Portal positioning */
+nextjs-portal {
+  position: relative;
+}

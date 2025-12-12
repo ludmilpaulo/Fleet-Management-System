@@ -220,8 +220,34 @@ export const companyAPI = {
   getCompanies: async (params?: {
     search?: string;
   }): Promise<Company[]> => {
-    const response = await axios.get(`${API_CONFIG.BASE_URL}/companies/companies/`, { params });
-    return response.data.results;
+    try {
+      const url = `${API_CONFIG.BASE_URL}/companies/companies/`;
+      console.log('[CompanyAPI] Fetching companies from:', url, params);
+      const response = await axios.get(url, { params });
+      console.log('[CompanyAPI] Companies response:', response.data);
+      
+      // Handle paginated response
+      if (response.data.results && Array.isArray(response.data.results)) {
+        return response.data.results;
+      }
+      
+      // Fallback: if response is directly an array
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      console.warn('[CompanyAPI] Unexpected response format:', response.data);
+      return [];
+    } catch (error: any) {
+      console.error('[CompanyAPI] Error fetching companies:', {
+        url: `${API_CONFIG.BASE_URL}/companies/companies/`,
+        error: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      throw error;
+    }
   },
 
   // Get company by slug

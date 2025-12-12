@@ -37,10 +37,18 @@ export const CompanySelector: React.FC<CompanySelectorProps> = ({
     setLoading(true);
     setError(null);
     try {
+      console.log('[CompanySelector] Fetching companies with query:', query);
       const fetchedCompanies = await apiService.getCompanies(query);
+      console.log('[CompanySelector] Fetched companies:', fetchedCompanies.length);
       setCompanies(fetchedCompanies);
+      
+      if (fetchedCompanies.length === 0) {
+        console.log('[CompanySelector] No companies found for query:', query);
+      }
     } catch (err: any) {
-      setError('Failed to fetch companies');
+      console.error('[CompanySelector] Error fetching companies:', err);
+      const errorMessage = err?.message || 'Failed to fetch companies. Please check your connection.';
+      setError(errorMessage);
       setCompanies([]);
     } finally {
       setLoading(false);

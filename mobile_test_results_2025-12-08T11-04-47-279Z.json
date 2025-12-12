@@ -1,0 +1,108 @@
+{
+  "summary": {
+    "total": 14,
+    "passed": 2,
+    "failed": 12,
+    "success_rate": 14.285714285714285
+  },
+  "results": [
+    {
+      "name": "Mobile Login (admin)",
+      "passed": false,
+      "message": "Status: undefined, Error: Error",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.174Z"
+    },
+    {
+      "name": "Mobile Login (staff)",
+      "passed": false,
+      "message": "Status: undefined, Error: Error",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.222Z"
+    },
+    {
+      "name": "Mobile Login (driver)",
+      "passed": false,
+      "message": "Status: undefined, Error: Error",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.241Z"
+    },
+    {
+      "name": "Mobile Login (inspector)",
+      "passed": false,
+      "message": "Status: undefined, Error: Error",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.260Z"
+    },
+    {
+      "name": "Mobile Dashboard (admin)",
+      "passed": false,
+      "message": "No token available",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.263Z"
+    },
+    {
+      "name": "Mobile Dashboard (staff)",
+      "passed": false,
+      "message": "No token available",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.263Z"
+    },
+    {
+      "name": "Mobile Dashboard (driver)",
+      "passed": false,
+      "message": "No token available",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.264Z"
+    },
+    {
+      "name": "Mobile Dashboard (inspector)",
+      "passed": false,
+      "message": "No token available",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.264Z"
+    },
+    {
+      "name": "Mobile Inspections",
+      "passed": false,
+      "message": "Inspector token not available",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.266Z"
+    },
+    {
+      "name": "Mobile Shifts",
+      "passed": false,
+      "message": "Driver token not available",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.267Z"
+    },
+    {
+      "name": "Mobile Issues",
+      "passed": false,
+      "message": "Driver token not available",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.269Z"
+    },
+    {
+      "name": "Mobile Camera",
+      "passed": false,
+      "message": "Inspector token not available",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.271Z"
+    },
+    {
+      "name": "Mobile Location - GPS Tracking",
+      "passed": true,
+      "message": "Location tracking endpoint available (simulated)",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.273Z"
+    },
+    {
+      "name": "Mobile Location - Geofencing",
+      "passed": true,
+      "message": "Geofencing support available (simulated)",
+      "data": {},
+      "timestamp": "2025-12-08T11:04:47.273Z"
+    }
+  ]
+}

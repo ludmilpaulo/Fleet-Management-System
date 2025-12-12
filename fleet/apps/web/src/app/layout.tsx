@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from '@/providers/ReduxProvider';
 import { MixpanelProvider } from '@/components/providers/mixpanel-provider';
+import { I18nProvider } from '@/providers/I18nProvider';
+import { CacheClearer } from '@/components/cache/CacheClearer';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -89,6 +91,11 @@ export const metadata: Metadata = {
     canonical: "https://www.fleetia.online",
   },
   category: "Business",
+  other: {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  },
 };
 
 export default function RootLayout({
@@ -100,10 +107,14 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
+        <CacheClearer />
         <ReduxProvider>
           <MixpanelProvider>
-            {children}
+            <I18nProvider>
+              {children}
+            </I18nProvider>
           </MixpanelProvider>
         </ReduxProvider>
       </body>

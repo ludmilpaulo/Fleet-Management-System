@@ -26,11 +26,20 @@ export function CompanySelector({ onCompanySelect, selectedCompany }: CompanySel
     setLoading(true);
     setError('');
     try {
+      console.log('[CompanySelector] Fetching companies...');
       const data = await companyAPI.getCompanies();
+      console.log('[CompanySelector] Companies fetched:', data.length);
       setCompanies(data);
     } catch (err: any) {
-      setError('Failed to load companies');
-      console.error('Error fetching companies:', err);
+      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to load companies';
+      setError(errorMessage);
+      console.error('[CompanySelector] Error fetching companies:', {
+        message: err?.message,
+        status: err?.response?.status,
+        statusText: err?.response?.statusText,
+        data: err?.response?.data,
+        url: err?.config?.url
+      });
     } finally {
       setLoading(false);
     }
