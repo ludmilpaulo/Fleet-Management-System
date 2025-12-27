@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { analytics } from '@/lib/mixpanel'
+import { getStatusColors } from '@/utils/colors'
 
 export default function VehiclesPage() {
   const dispatch = useDispatch<AppDispatch>()
@@ -109,13 +110,7 @@ export default function VehiclesPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      ACTIVE: 'bg-green-100 text-green-800',
-      INACTIVE: 'bg-gray-100 text-gray-800',
-      MAINTENANCE: 'bg-yellow-100 text-yellow-800',
-      RETIRED: 'bg-red-100 text-red-800',
-    }
-    return variants[status as keyof typeof variants] || variants.INACTIVE
+    return getStatusColors(status).full;
   }
 
   const getFuelTypeBadge = (fuelType: string) => {

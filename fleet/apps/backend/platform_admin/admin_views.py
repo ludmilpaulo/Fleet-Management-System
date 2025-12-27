@@ -52,13 +52,30 @@ class IsPlatformAdmin(permissions.BasePermission):
 def get_platform_admin(request):
     """Helper function to get platform admin instance"""
     try:
-        return request.user.platform_admin
-    except:
+        # Check if user has platform_admin relationship
+        if hasattr(request.user, 'platform_admin'):
+            return request.user.platform_admin
+        
+        # If user is superuser but doesn't have PlatformAdmin instance, create one
+        if request.user.is_superuser:
+            platform_admin, created = PlatformAdmin.objects.get_or_create(
+                user=request.user,
+                defaults={'is_super_admin': True}
+            )
+            return platform_admin
+        
+        return None
+    except Exception as e:
+        print(f"Error getting platform admin: {e}")
         return None
 
 
 def log_admin_action(admin, action_type, description, target_model=None, target_id=None, metadata=None, request=None):
     """Helper function to log admin actions"""
+    # Skip logging if admin is None
+    if admin is None:
+        return
+    
     AdminAction.objects.create(
         admin=admin,
         action_type=action_type,
@@ -96,35 +113,45 @@ class CompanyManagementListView(generics.ListCreateAPIView):
         return Company.objects.all().order_by('-created_at')
     
     def perform_create(self, serializer):
-        company = serializer.save()
-        admin = get_platform_admin(self.request)
-        log_admin_action(
-            admin, 'company_create', f'Created company: {company.name}',
-            'Company', company.id, {'company_name': company.name}, self.request
-        )
-        
-        # Send welcome email to company
         try:
-            from account.email_templates import get_company_welcome_email_template
-            from django.core.mail import EmailMessage
-            from django.conf import settings
-            
-            email_content = get_company_welcome_email_template({
-                'name': company.name,
-                'email': company.email,
-                'subscription_plan': company.subscription_plan
-            })
-            
-            msg = EmailMessage(
-                subject=f'Welcome to FleetIA - {company.name}!',
-                body=email_content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[company.email],
+            company = serializer.save()
+            admin = get_platform_admin(self.request)
+            log_admin_action(
+                admin, 'company_create', f'Created company: {company.name}',
+                'Company', company.id, {'company_name': company.name}, self.request
             )
-            msg.content_subtype = "html"
-            msg.send()
+            
+            # Send welcome email to company (non-blocking)
+            try:
+                from account.email_templates import get_company_welcome_email_template
+                from django.core.mail import EmailMessage
+                from django.conf import settings
+                
+                email_content = get_company_welcome_email_template({
+                    'name': company.name,
+                    'email': company.email,
+                    'subscription_plan': company.subscription_plan
+                })
+                
+                msg = EmailMessage(
+                    subject=f'Welcome to FleetIA - {company.name}!',
+                    body=email_content,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[company.email],
+                )
+                msg.content_subtype = "html"
+                msg.send()
+            except Exception as e:
+                # Log email error but don't fail the request
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to send company welcome email: {e}")
         except Exception as e:
-            print(f"Failed to send company welcome email: {e}")
+            # Log the error and re-raise to return proper JSON error response
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating company: {e}", exc_info=True)
+            raise
 
 
 class CompanyManagementDetailView(generics.RetrieveUpdateDestroyAPIView):

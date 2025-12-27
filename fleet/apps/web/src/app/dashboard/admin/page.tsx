@@ -34,6 +34,7 @@ import { analytics } from '@/lib/mixpanel'
 import { useRouter } from 'next/navigation'
 import { API_CONFIG } from '@/config/api'
 import { apiClient, extractResults } from '@/lib/apiClient'
+import { getRoleColors } from '@/utils/colors'
 
 interface DashboardStats {
   company_name: string
@@ -196,17 +197,29 @@ export default function AdminDashboard() {
     )
   }
 
+  const roleColors = getRoleColors('admin');
+
   return (
     <DashboardLayout>
       <HelpButton role="admin" page="dashboard" />
       <div className="space-y-6">
+        {/* Welcome Banner */}
+        <div className={`bg-gradient-to-r ${roleColors.gradient} rounded-lg p-6 text-white shadow-lg`}>
+          <h1 className="text-2xl font-bold mb-2">
+            Welcome back, {user?.full_name || user?.username || 'Admin'}!
+          </h1>
+          <p className="text-red-100">
+            Manage your fleet operations, users, and system settings from here.
+          </p>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between slide-up">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-2">
               Admin Dashboard
             </h1>
-            <p className="text-gray-600 text-lg">Welcome back, <span className="font-semibold text-gray-900">{user?.full_name || 'Admin'}</span></p>
+            <p className="text-gray-600 text-lg">Overview of your fleet management system</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="hover:border-blue-600 hover:text-blue-600 transition-all duration-300">
@@ -222,7 +235,7 @@ export default function AdminDashboard() {
 
         {/* Company Status Banner */}
         {stats ? (
-          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-purple-50">
+          <Card className="hover:shadow-lg transition-shadow border border-gray-200 bg-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -248,7 +261,7 @@ export default function AdminDashboard() {
           </Card>
         ) : (
           /* Fallback Company Status Banner */
-          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-purple-50">
+          <Card className="hover:shadow-lg transition-shadow border border-gray-200 bg-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -283,16 +296,16 @@ export default function AdminDashboard() {
 
         {stats ? (
           <div className="grid gap-4 md:grid-cols-4 fade-in">
-            <Card className="card-hover border-t-4 border-t-blue-500">
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Total Users</CardTitle>
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Total Users</CardTitle>
+                <div className="p-2 bg-blue-50 rounded-full">
+                  <Users className="h-4 w-4 text-blue-600" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.total_users}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
+                <div className="text-2xl font-bold text-gray-900">{stats.total_users}</div>
+                <div className="flex items-center text-xs text-gray-500 mt-1">
                   <ArrowUpRight className="w-3 h-3 text-green-500 mr-1" />
                   <span className="text-green-500">+{stats.recent_registrations} this week</span>
                 </div>
@@ -303,61 +316,61 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="card-hover border-t-4 border-t-green-500">
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Fleet Size</CardTitle>
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Truck className="h-5 w-5 text-green-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Fleet Size</CardTitle>
+                <div className="p-2 bg-green-50 rounded-full">
+                  <Truck className="h-4 w-4 text-green-600" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.total_vehicles}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
+                <div className="text-2xl font-bold text-gray-900">{stats.total_vehicles}</div>
+                <div className="flex items-center text-xs text-gray-500 mt-1">
                   <Activity className="w-3 h-3 text-blue-500 mr-1" />
                   <span className="text-blue-500">{stats.active_shifts} active shifts</span>
                 </div>
                 <Progress value={75} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   75% utilization rate
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-hover border-t-4 border-t-purple-500">
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Inspections</CardTitle>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-purple-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Inspections</CardTitle>
+                <div className="p-2 bg-purple-50 rounded-full">
+                  <CheckCircle className="h-4 w-4 text-purple-600" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.completed_inspections}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
+                <div className="text-2xl font-bold text-gray-900">{stats.completed_inspections}</div>
+                <div className="flex items-center text-xs text-gray-500 mt-1">
                   <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
                   <span className="text-green-500">+12% from last month</span>
                 </div>
                 <Progress value={85} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   85% pass rate
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-hover border-t-4 border-t-yellow-500">
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Monthly Revenue</CardTitle>
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-yellow-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Monthly Revenue</CardTitle>
+                <div className="p-2 bg-yellow-50 rounded-full">
+                  <DollarSign className="h-4 w-4 text-yellow-600" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString()}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
+                <div className="text-2xl font-bold text-gray-900">${stats.monthly_revenue.toLocaleString()}</div>
+                <div className="flex items-center text-xs text-gray-500 mt-1">
                   <ArrowUpRight className="w-3 h-3 text-green-500 mr-1" />
                   <span className="text-green-500">+8% from last month</span>
                 </div>
                 <Progress value={80} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   80% of target achieved
                 </p>
               </CardContent>
@@ -368,7 +381,7 @@ export default function AdminDashboard() {
         {/* User Roles Breakdown */}
         {stats ? (
           <div className="grid gap-4 md:grid-cols-2">
-            <Card>
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="w-5 h-5" />
@@ -399,7 +412,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="w-5 h-5" />
@@ -447,11 +460,11 @@ export default function AdminDashboard() {
         ) : (
           /* Fallback when stats are not available */
           <div className="grid gap-4 md:grid-cols-4 fade-in">
-            <Card className="card-hover border-t-4 border-t-blue-500">
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Loading...</CardTitle>
+                <div className="p-2 bg-blue-50 rounded-full">
+                  <Users className="h-4 w-4 text-blue-600" />
                 </div>
               </CardHeader>
               <CardContent>
@@ -459,11 +472,11 @@ export default function AdminDashboard() {
                 <p className="text-xs text-gray-500">Fetching data...</p>
               </CardContent>
             </Card>
-            <Card className="card-hover border-t-4 border-t-green-500">
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Truck className="h-5 w-5 text-green-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Loading...</CardTitle>
+                <div className="p-2 bg-green-50 rounded-full">
+                  <Truck className="h-4 w-4 text-green-600" />
                 </div>
               </CardHeader>
               <CardContent>
@@ -471,11 +484,11 @@ export default function AdminDashboard() {
                 <p className="text-xs text-gray-500">Fetching data...</p>
               </CardContent>
             </Card>
-            <Card className="card-hover border-t-4 border-t-purple-500">
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Shield className="h-5 w-5 text-purple-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Loading...</CardTitle>
+                <div className="p-2 bg-purple-50 rounded-full">
+                  <Shield className="h-4 w-4 text-purple-600" />
                 </div>
               </CardHeader>
               <CardContent>
@@ -483,11 +496,11 @@ export default function AdminDashboard() {
                 <p className="text-xs text-gray-500">Fetching data...</p>
               </CardContent>
             </Card>
-            <Card className="card-hover border-t-4 border-t-orange-500">
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Loading...</CardTitle>
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-orange-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Loading...</CardTitle>
+                <div className="p-2 bg-orange-50 rounded-full">
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
                 </div>
               </CardHeader>
               <CardContent>

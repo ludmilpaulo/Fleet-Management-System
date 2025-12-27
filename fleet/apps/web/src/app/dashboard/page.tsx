@@ -19,6 +19,8 @@ import {
   ArrowRight,
   Sparkles
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/dashboard-layout'
+import { COLORS } from '@/utils/colors'
 
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>()
@@ -134,22 +136,17 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-8 p-6 bg-gradient-to-br from-gray-50 via-white to-gray-50 min-h-screen">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div className={`bg-gradient-to-r ${COLORS.primary.from} ${COLORS.primary.to} rounded-lg p-6 text-white shadow-lg`}>
+          <h1 className="text-2xl font-bold mb-2">
             Dashboard
           </h1>
-          <p className="text-gray-600 mt-2 text-lg">
+          <p className="text-blue-100">
             Welcome back! Here's an overview of your fleet management system
           </p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
-          <Sparkles className="h-5 w-5 text-blue-600" />
-          <span className="text-sm font-medium text-gray-700">Real-time Updates</span>
-        </div>
-      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -158,7 +155,7 @@ export default function DashboardPage() {
           return (
             <Card 
               key={index} 
-              className="hover:shadow-xl transition-all duration-300 border-2 hover:border-opacity-50 hover:scale-105 group relative overflow-hidden"
+              className="hover:shadow-lg transition-shadow border border-gray-200"
             >
               <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bgColor} opacity-10 rounded-full -mr-16 -mt-16 group-hover:opacity-20 transition-opacity`}></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
@@ -186,7 +183,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <Card className="border-2 shadow-lg bg-gradient-to-br from-white to-gray-50">
+      <Card className="hover:shadow-lg transition-shadow border border-gray-200">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
@@ -245,7 +242,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* Recent Activity */}
-      <Card className="border-2 shadow-lg">
+      <Card className="hover:shadow-lg transition-shadow border border-gray-200">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
@@ -292,6 +289,7 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }

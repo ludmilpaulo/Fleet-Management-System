@@ -11,6 +11,7 @@ import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
 import { API_CONFIG } from '@/config/api';
 import Cookies from 'js-cookie';
+import { getTicketStatusColors, getPriorityColors, COLORS } from '@/utils/colors';
 
 interface SupportTicket {
   id: number;
@@ -84,22 +85,11 @@ export default function TicketsPage() {
   });
 
   const getPriorityBadge = (priority: string) => {
-    const badges = {
-      HIGH: 'bg-red-100 text-red-800 border-red-200',
-      MEDIUM: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      LOW: 'bg-green-100 text-green-800 border-green-200',
-    };
-    return badges[priority as keyof typeof badges] || 'bg-gray-100 text-gray-800';
+    return getPriorityColors(priority).full;
   };
 
   const getStatusBadge = (status: string) => {
-    const badges = {
-      OPEN: 'bg-red-100 text-red-800 border-red-200',
-      IN_PROGRESS: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      RESOLVED: 'bg-green-100 text-green-800 border-green-200',
-      CLOSED: 'bg-gray-100 text-gray-800 border-gray-200',
-    };
-    return badges[status as keyof typeof badges] || 'bg-gray-100 text-gray-800';
+    return getTicketStatusColors(status).full;
   };
 
   return (
@@ -108,12 +98,12 @@ export default function TicketsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className={`text-3xl font-bold bg-gradient-to-r ${COLORS.primary.from} ${COLORS.primary.to} bg-clip-text text-transparent`}>
               Support Tickets
             </h1>
             <p className="text-gray-600 mt-1">Manage support requests and issues</p>
           </div>
-          <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
+          <Button className={`bg-gradient-to-r ${COLORS.primary.from} ${COLORS.primary.to} hover:from-blue-700 hover:to-purple-700 text-white shadow-lg`}>
             <Plus className="h-4 w-4 mr-2" />
             New Ticket
           </Button>
@@ -122,7 +112,7 @@ export default function TicketsPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map((status) => (
-            <Card key={status} className="border-l-4 border-blue-500">
+            <Card key={status} className="hover:shadow-lg transition-shadow border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{status.replace('_', ' ')}</CardTitle>
                 <Ticket className="h-4 w-4 text-blue-600" />
@@ -172,7 +162,7 @@ export default function TicketsPage() {
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                      <div className={`h-10 w-10 rounded-full bg-gradient-to-r ${COLORS.primary.from} ${COLORS.primary.to} flex items-center justify-center`}>
                         <Ticket className="h-5 w-5 text-white" />
                       </div>
                       <div>

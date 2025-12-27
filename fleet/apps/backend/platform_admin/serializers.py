@@ -1,4 +1,5 @@
 from rest_framework import serializers
+import re
 from .models import (
     SubscriptionPlan, CompanySubscription, BillingHistory, PlatformSettings, AuditLog,
     PlatformAdmin, AdminAction, SystemConfiguration, DataExport, SystemMaintenance
@@ -241,7 +242,26 @@ class CompanyManagementSerializer(serializers.ModelSerializer):
             'current_vehicle_count', 'billing_email', 'billing_address',
             'payment_method', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        """Create company with auto-generated slug"""
+        # Generate slug from company name
+        name = validated_data['name']
+        slug = name.lower().replace(' ', '-').replace('_', '-')
+        
+        # Remove special characters
+        slug = re.sub(r'[^a-z0-9-]', '', slug)
+        
+        # Ensure slug is unique
+        base_slug = slug
+        counter = 1
+        while Company.objects.filter(slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+        
+        validated_data['slug'] = slug
+        return super().create(validated_data)
     
     def get_current_user_count(self, obj):
         return obj.users.count()

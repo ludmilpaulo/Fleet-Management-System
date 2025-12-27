@@ -22,12 +22,12 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
 import { API_CONFIG } from '@/config/api';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
+import { getRoleColors, getStatusColors, getPriorityColors, getTicketStatusColors } from '@/utils/colors';
 
 interface DashboardStats {
   total_vehicles: number;
@@ -228,110 +228,58 @@ export default function StaffDashboard() {
   ];
 
   const getPriorityColor = (priority: string) => {
-    switch (priority?.toUpperCase()) {
-      case 'URGENT':
-      case 'HIGH':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'LOW':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+    return getPriorityColors(priority).full;
   };
 
   const getStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case 'OPEN':
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'IN_PROGRESS':
-      case 'ASSIGNED':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'COMPLETED':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'ACTIVE':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+    return getTicketStatusColors(status).full;
   };
 
   const getVehicleStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
-      case 'MAINTENANCE':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'INACTIVE':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    return getStatusColors(status).full;
   };
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl p-8 text-white shadow-xl animate-pulse">
-            <div className="h-8 bg-white/20 rounded w-64 mb-2"></div>
-            <div className="h-4 bg-white/20 rounded w-96"></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-full"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      <div className="space-y-6">
+        <div className={`bg-gradient-to-r ${getRoleColors('staff').gradient} rounded-xl p-8 text-white shadow-xl animate-pulse`}>
+          <div className="h-8 bg-white/20 rounded-lg w-64 mb-3"></div>
+          <div className="h-5 bg-white/20 rounded-lg w-96"></div>
         </div>
-      </DashboardLayout>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse border border-gray-200">
+              <CardHeader>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-full"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     );
   }
 
+  const roleColors = getRoleColors('staff');
+
   return (
-    <DashboardLayout>
+    <>
       <HelpButton role="staff" page="dashboard" />
-      <div className="space-y-8 p-6 bg-gradient-to-br from-gray-50 via-white to-gray-50 min-h-screen">
+      <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 md:p-10 text-white shadow-2xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-grid-white/10 bg-[size:20px_20px] opacity-50"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -mr-48 -mt-48"></div>
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/5 rounded-full -ml-36 -mb-36"></div>
+        <div className={`bg-gradient-to-r ${roleColors.gradient} rounded-xl p-8 text-white shadow-xl relative overflow-hidden`}>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
           <div className="relative z-10">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <Activity className="w-6 h-6" />
-                  </div>
-                  <span className="text-sm font-medium text-white/90 uppercase tracking-wider">Staff Dashboard</span>
-                </div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
-                  Welcome back, {user?.first_name || user?.username || 'Staff'}! 👋
-                </h1>
-                <p className="text-white/90 text-lg md:text-xl max-w-2xl">
-                  Manage your fleet operations and keep everything running smoothly. Track vehicles, maintenance, and active routes all in one place.
-                </p>
-              </div>
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={fetchDashboardData}
-                className="hidden md:flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all"
-              >
-                <RefreshCw className="w-5 h-5" />
-                <span className="font-semibold">Refresh Data</span>
-              </Button>
-            </div>
+            <h1 className="text-3xl font-bold mb-3">
+              Welcome back, {user?.first_name || user?.username || 'Staff'}!
+            </h1>
+            <p className="text-blue-100 text-lg">
+              Manage your fleet operations and keep everything running smoothly. Track vehicles, maintenance, and active routes all in one place.
+            </p>
           </div>
         </div>
 
@@ -341,28 +289,27 @@ export default function StaffDashboard() {
             const Icon = stat.icon;
             return (
               <Link key={index} href={stat.link}>
-                <Card className={`border-l-4 ${stat.borderColor} hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer group relative overflow-hidden bg-white`}>
-                  <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bgColor} opacity-10 rounded-full -mr-16 -mt-16 group-hover:opacity-20 transition-opacity`}></div>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                    <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                <Card className="hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-300 hover:-translate-y-1 group cursor-pointer">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-gray-600 group-hover:text-gray-900 transition-colors">
                       {stat.title}
                     </CardTitle>
-                    <div className={`p-3 rounded-xl ${stat.bgColor} shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300`}>
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
+                    <div className={`p-2.5 rounded-xl ${stat.bgColor} group-hover:scale-110 transition-transform shadow-sm`}>
+                      <Icon className={`w-5 h-5 ${stat.color}`} />
                     </div>
                   </CardHeader>
-                  <CardContent className="relative z-10">
-                    <div className="text-4xl font-bold text-gray-900 mb-2">
+                  <CardContent>
+                    <div className="text-4xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                       {stat.value}
                     </div>
-                    <div className="flex items-center text-xs font-medium mt-3">
+                    <div className="flex items-center text-xs font-semibold mt-3">
                       {stat.changeType === 'positive' && (
                         <TrendingUp className="w-4 h-4 mr-1.5 text-green-600" />
                       )}
                       {stat.changeType === 'negative' && (
                         <AlertTriangle className="w-4 h-4 mr-1.5 text-red-600" />
                       )}
-                      <span className={stat.changeType === 'negative' ? 'text-red-700 font-semibold' : stat.changeType === 'positive' ? 'text-green-700 font-semibold' : 'text-gray-600'}>
+                      <span className={stat.changeType === 'negative' ? 'text-red-700' : stat.changeType === 'positive' ? 'text-green-700' : 'text-gray-600'}>
                         {stat.change}
                       </span>
                     </div>
@@ -375,21 +322,21 @@ export default function StaffDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Assigned Vehicles */}
-          <Card className="border-t-4 border-blue-500 shadow-lg hover:shadow-xl transition-shadow bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <Card className="hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-300">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-gray-100">
               <div>
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-blue-100 rounded-lg">
+                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-900">
+                  <div className="p-2.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl shadow-sm">
                     <Truck className="w-6 h-6 text-blue-600" />
                   </div>
                   <span>Assigned Vehicles</span>
                 </CardTitle>
-                <CardDescription className="mt-2 text-base">Your active vehicle fleet</CardDescription>
+                <CardDescription className="mt-2 text-base text-gray-600">Your active vehicle fleet</CardDescription>
               </div>
               <Link href="/dashboard/staff/vehicles">
-                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-semibold">
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-semibold transition-all">
                   View All
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </CardHeader>
@@ -443,21 +390,21 @@ export default function StaffDashboard() {
           </Card>
 
           {/* Pending Maintenance */}
-          <Card className="border-t-4 border-yellow-500 shadow-lg hover:shadow-xl transition-shadow bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <Card className="border-t-4 border-yellow-500 shadow-lg hover:shadow-xl transition-all duration-300 bg-white hover:border-yellow-600">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-gray-100">
               <div>
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
+                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-900">
+                  <div className="p-2.5 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl shadow-sm">
                     <Wrench className="w-6 h-6 text-yellow-600" />
                   </div>
                   <span>Pending Maintenance</span>
                 </CardTitle>
-                <CardDescription className="mt-2 text-base">Tasks requiring attention</CardDescription>
+                <CardDescription className="mt-2 text-base text-gray-600">Tasks requiring attention</CardDescription>
               </div>
               <Link href="/dashboard/staff/maintenance">
-                <Button variant="ghost" size="sm" className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 font-semibold">
+                <Button variant="ghost" size="sm" className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 font-semibold transition-all">
                   View All
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </CardHeader>
@@ -520,21 +467,21 @@ export default function StaffDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Completed Tasks */}
-          <Card className="border-t-4 border-green-500 shadow-lg hover:shadow-xl transition-shadow bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <Card className="border-t-4 border-green-500 shadow-lg hover:shadow-xl transition-all duration-300 bg-white hover:border-green-600">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-gray-100">
               <div>
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-green-100 rounded-lg">
+                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-900">
+                  <div className="p-2.5 bg-gradient-to-br from-green-100 to-green-200 rounded-xl shadow-sm">
                     <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
                   <span>Completed Tasks</span>
                 </CardTitle>
-                <CardDescription className="mt-2 text-base">Recently finished tasks</CardDescription>
+                <CardDescription className="mt-2 text-base text-gray-600">Recently finished tasks</CardDescription>
               </div>
               <Link href="/dashboard/tickets?status=COMPLETED">
-                <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700 hover:bg-green-50 font-semibold">
+                <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700 hover:bg-green-50 font-semibold transition-all">
                   View All
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </CardHeader>
@@ -582,21 +529,21 @@ export default function StaffDashboard() {
           </Card>
 
           {/* Active Routes */}
-          <Card className="border-t-4 border-purple-500 shadow-lg hover:shadow-xl transition-shadow bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <Card className="border-t-4 border-purple-500 shadow-lg hover:shadow-xl transition-all duration-300 bg-white hover:border-purple-600">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-gray-100">
               <div>
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-purple-100 rounded-lg">
+                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-900">
+                  <div className="p-2.5 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl shadow-sm">
                     <MapPin className="w-6 h-6 text-purple-600" />
                   </div>
                   <span>Active Routes</span>
                 </CardTitle>
-                <CardDescription className="mt-2 text-base">Currently active shifts and routes</CardDescription>
+                <CardDescription className="mt-2 text-base text-gray-600">Currently active shifts and routes</CardDescription>
               </div>
               <Link href="/dashboard/shifts?status=ACTIVE">
-                <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 font-semibold">
+                <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 font-semibold transition-all">
                   View All
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </CardHeader>
@@ -661,17 +608,17 @@ export default function StaffDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <Card className="border-t-4 border-blue-500 shadow-2xl bg-gradient-to-br from-white to-gray-50">
-          <CardHeader className="pb-4">
+        <Card className="border-t-4 border-blue-500 shadow-2xl bg-gradient-to-br from-white via-blue-50/30 to-gray-50 hover:shadow-2xl transition-all duration-300">
+          <CardHeader className="pb-4 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-2xl font-bold flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-blue-100 rounded-lg">
+                <CardTitle className="text-2xl font-bold flex items-center gap-3 mb-2 text-gray-900">
+                  <div className="p-2.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl shadow-sm">
                     <Zap className="w-6 h-6 text-blue-600" />
                   </div>
                   <span>Quick Actions</span>
                 </CardTitle>
-                <CardDescription className="text-base">Common staff operations and management tools</CardDescription>
+                <CardDescription className="text-base text-gray-600">Common staff operations and management tools</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -720,6 +667,6 @@ export default function StaffDashboard() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

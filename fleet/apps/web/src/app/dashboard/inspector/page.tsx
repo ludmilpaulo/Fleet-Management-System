@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
 import { getCurrentUser, User } from '@/lib/auth';
+import { getRoleColors } from '@/utils/colors';
 
 export default function InspectorDashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -189,12 +190,14 @@ export default function InspectorDashboard() {
     }
   };
 
+  const roleColors = getRoleColors('inspector');
+
   return (
     <DashboardLayout>
       <HelpButton role="inspector" page="dashboard" />
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg p-6 text-white">
+        <div className={`bg-gradient-to-r ${roleColors.gradient} rounded-lg p-6 text-white shadow-lg`}>
           <h1 className="text-2xl font-bold mb-2">
             Welcome back, {user?.first_name || user?.username}!
           </h1>
@@ -208,7 +211,7 @@ export default function InspectorDashboard() {
           {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card key={index} className="hover:shadow-lg transition-shadow border border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-600">
                     {stat.title}
