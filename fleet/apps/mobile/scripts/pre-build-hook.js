@@ -17,20 +17,31 @@ if (!isProduction) {
   process.exit(0);
 }
 
-// EAS runs from the mobile app directory, so app.json should be in the current directory
-// But also handle case where script might be run from project root
-let appJsonPath = path.join(__dirname, '..', 'app.json');
-if (!fs.existsSync(appJsonPath)) {
-  // Try from current working directory
-  appJsonPath = path.join(process.cwd(), 'app.json');
-  if (!fs.existsSync(appJsonPath)) {
-    // Try from project root
-    appJsonPath = path.join(process.cwd(), 'fleet', 'apps', 'mobile', 'app.json');
+// EAS runs from the mobile app directory (fleet/apps/mobile)
+// Try multiple paths to find app.json
+let appJsonPath = null;
+const possiblePaths = [
+  path.join(__dirname, '..', 'app.json'),  // Relative to script location
+  path.join(process.cwd(), 'app.json'),     // Current working directory
+  'app.json',                                // Current directory (fallback)
+];
+
+for (const possiblePath of possiblePaths) {
+  try {
+    if (fs.existsSync(possiblePath)) {
+      appJsonPath = possiblePath;
+      break;
+    }
+  } catch (e) {
+    // Continue to next path
   }
 }
 
-if (!fs.existsSync(appJsonPath)) {
+if (!appJsonPath) {
   console.error('❌ Error: Could not find app.json');
+  console.error('   Tried paths:', possiblePaths);
+  console.error('   Current directory:', process.cwd());
+  console.error('   Script directory:', __dirname);
   process.exit(1);
 }
 

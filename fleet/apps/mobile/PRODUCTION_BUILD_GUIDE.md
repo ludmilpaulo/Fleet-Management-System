@@ -81,20 +81,29 @@ bash scripts/build-production.sh android
 bash scripts/build-production.sh all
 ```
 
-#### Option 3: Manual EAS build (with auto-increment)
+#### Option 3: Manual EAS build (requires manual version increment)
 
-The `prebuildCommand` in `eas.json` automatically increments versions:
+**Important:** You must increment versions manually before building:
 ```bash
+# First, increment versions
+npm run increment-version
+
+# Then build
 eas build --platform ios --profile production
 eas build --platform android --profile production
 ```
 
+**Recommended:** Use the build scripts (Option 1) which handle version incrementing automatically.
+
 ### What Happens During Build
 
+When using the build scripts (`npm run build:ios`, etc.):
 1. ✅ Version numbers are automatically incremented
 2. ✅ Build is created for production distribution
 3. ✅ Build is configured for store submission
 4. ✅ Version changes are saved to `app.json`
+
+When using EAS directly, you must increment versions manually first.
 
 ## 📤 Submitting to Stores
 

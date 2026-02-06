@@ -15,7 +15,12 @@ echo ""
 
 # Step 1: Increment versions
 echo "📦 Step 1: Incrementing version numbers..."
+cd "$MOBILE_DIR"
 node scripts/increment-version.js
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to increment versions"
+  exit 1
+fi
 echo ""
 
 # Step 2: Get platform from argument or default to both

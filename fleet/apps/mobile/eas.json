@@ -39,7 +39,7 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://taki.pythonanywhere.com/api"
       },
-      "prebuildCommand": "bash scripts/pre-build-hook.sh"
+      "prebuildCommand": "cd . && node scripts/pre-build-hook.js || true"
     }
   },
   "submit": {
