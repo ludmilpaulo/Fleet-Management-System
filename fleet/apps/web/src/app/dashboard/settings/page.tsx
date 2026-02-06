@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Settings, User, Bell, Shield, Globe, Palette, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,10 +13,20 @@ import DashboardLayout from '@/components/layout/dashboard-layout';
 import HelpButton from '@/components/ui/help-button';
 
 export default function SettingsPage() {
+  const { t, i18n } = useTranslation();
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState(i18n.language?.split('-')[0] || 'en');
+
+  useEffect(() => {
+    setLanguage(i18n.language?.split('-')[0] || 'en');
+  }, [i18n.language]);
+
+  const handleLanguageChange = (value: string) => {
+    setLanguage(value);
+    i18n.changeLanguage(value).catch(() => {});
+  };
 
   return (
     <DashboardLayout>
@@ -23,9 +34,9 @@ export default function SettingsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Settings
+            {t('settings.title')}
           </h1>
-          <p className="text-gray-600 mt-1">Manage your account and application preferences</p>
+          <p className="text-gray-600 mt-1">{t('settings.preferencesDescription')}</p>
         </div>
 
         {/* Profile Settings */}
@@ -105,17 +116,17 @@ export default function SettingsPage() {
               <Switch checked={darkMode} onCheckedChange={setDarkMode} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="language">Language</Label>
-              <Select value={language} onValueChange={setLanguage}>
+              <Label htmlFor="language">{t('settings.language')}</Label>
+              <Select value={language} onValueChange={handleLanguageChange}>
                 <SelectTrigger>
                   <Globe className="h-4 w-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="fr">Français</SelectItem>
-                  <SelectItem value="de">Deutsch</SelectItem>
+                  <SelectItem value="en">{t('language.en')}</SelectItem>
+                  <SelectItem value="pt">{t('language.pt')}</SelectItem>
+                  <SelectItem value="es">{t('language.es')}</SelectItem>
+                  <SelectItem value="fr">{t('language.fr')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

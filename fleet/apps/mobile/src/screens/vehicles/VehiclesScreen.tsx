@@ -17,6 +17,7 @@ import { Button } from '../../components/ui/Button';
 import { useAppSelector } from '../../store/hooks';
 import { apiService, Vehicle } from '../../services/apiService';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 
 export const VehiclesScreen: React.FC = () => {
@@ -75,10 +76,10 @@ export const VehiclesScreen: React.FC = () => {
           colors={['#3b82f6', '#8b5cf6']}
           style={styles.header}
         >
-          <Text style={styles.headerTitle}>Vehicles</Text>
+          <Text style={styles.headerTitle}>{t('vehicles.title')}</Text>
         </LinearGradient>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading vehicles...</Text>
+          <Text style={styles.loadingText}>{t('common.loading')} {t('vehicles.title').toLowerCase()}...</Text>
         </View>
       </SafeAreaView>
     );
@@ -90,8 +91,22 @@ export const VehiclesScreen: React.FC = () => {
         colors={['#3b82f6', '#8b5cf6']}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>Vehicles</Text>
-        <Text style={styles.headerSubtitle}>{vehicles.length} vehicles</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerTitle}>{t('vehicles.title')}</Text>
+            <Text style={styles.headerSubtitle}>{vehicles.length} {t('vehicles.title').toLowerCase()}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              (navigation as any).navigate('AddVehicle');
+            }}
+          >
+            <Ionicons name="add" size={24} color="#fff" />
+            <Text style={styles.addButtonText}>{t('vehicles.addVehicle')}</Text>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       <ScrollView
@@ -105,7 +120,7 @@ export const VehiclesScreen: React.FC = () => {
           {vehicles.length === 0 ? (
             <Card style={styles.emptyCard}>
               <Ionicons name="car-outline" size={48} color="#9ca3af" />
-              <Text style={styles.emptyText}>No vehicles found</Text>
+              <Text style={styles.emptyText}>{t('vehicles.noVehicles')}</Text>
             </Card>
           ) : (
             vehicles.map((vehicle) => (
@@ -216,6 +231,25 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     paddingTop: 10,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 6,
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
   },
   headerTitle: {
     fontSize: 28,

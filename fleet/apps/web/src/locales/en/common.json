@@ -2,9 +2,22 @@
   "language": {
     "en": "English",
     "pt": "Portuguese",
-    "es": "Spanish"
+    "es": "Spanish",
+    "fr": "French"
   },
   "trustTitle": "Trusted by teams at",
+  "liveSnapshot": {
+    "title": "Live snapshot",
+    "fleetStatus": "Fleet status",
+    "readinessAcrossDepots": "Readiness across depots",
+    "vsLastWeek": "vs last week",
+    "platformWide": "Platform-wide",
+    "hubs": "hubs",
+    "liveTelemetry": "Live telemetry",
+    "healthy": "Healthy",
+    "warning": "Warning",
+    "critical": "Critical"
+  },
   "featurePill": "Designed for modern operations",
   "featureTitle": "Everything you need to run a professional fleet",
   "featureDescription": "Put planning, execution, and compliance into a single UI. Each card is purpose-built with delightful micro-interactions and tailored insights.",
@@ -195,7 +208,11 @@
     "view": "View",
     "close": "Close",
     "submit": "Submit",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "loggedOut": "Logged Out",
+    "loggedOutMessage": "You have been successfully logged out",
+    "logoutError": "Logout Error",
+    "logoutErrorMessage": "There was an error logging out"
   },
   "auth": {
     "signIn": "Sign In",
@@ -232,7 +249,23 @@
     "totalDrivers": "Total Drivers",
     "activeDrivers": "Active Drivers",
     "pendingInspections": "Pending Inspections",
-    "upcomingMaintenance": "Upcoming Maintenance"
+    "upcomingMaintenance": "Upcoming Maintenance",
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "profile": "Profile",
+      "users": "Users",
+      "vehicles": "Vehicles",
+      "reports": "Reports",
+      "subscription": "Subscription",
+      "settings": "Settings",
+      "maintenance": "Maintenance",
+      "myVehicles": "My Vehicles",
+      "routes": "Routes",
+      "inspections": "Inspections",
+      "signOut": "Sign Out",
+      "company": "Company",
+      "noCompany": "No Company"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -243,6 +276,7 @@
     "about": "About",
     "profile": "Profile",
     "preferences": "Preferences",
+    "preferencesDescription": "Manage your account and application preferences",
     "security": "Security",
     "changePassword": "Change Password",
     "currentPassword": "Current Password",

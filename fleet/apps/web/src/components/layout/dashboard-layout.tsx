@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser, initializeAuth } from '@/store/slices/authSlice';
+import { useTranslation } from 'react-i18next';
 import { setSidebarOpen, addNotification } from '@/store/slices/uiSlice';
 import { NotificationContainer } from '@/components/ui/notification';
 import TrialWarning from '@/components/trial-warning';
@@ -47,6 +48,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const pathname = usePathname();
+  const { t, i18n } = useTranslation();
   
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const { sidebarOpen, unreadNotifications } = useAppSelector((state) => state.ui);
@@ -109,16 +111,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       await dispatch(logoutUser()).unwrap();
       dispatch(addNotification({
         type: 'info',
-        title: 'Logged Out',
-        message: 'You have been successfully logged out',
+        title: t('common.loggedOut'),
+        message: t('common.loggedOutMessage'),
       }));
       router.push('/auth/signin');
     } catch (error) {
       console.error('Logout error:', error);
       dispatch(addNotification({
         type: 'error',
-        title: 'Logout Error',
-        message: 'There was an error logging out',
+        title: t('common.logoutError'),
+        message: t('common.logoutErrorMessage'),
       }));
     }
   };
@@ -127,41 +129,41 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     if (!user) return [];
 
     const baseItems = [
-      { name: 'Dashboard', href: `/dashboard/${user.role}`, icon: Home },
-      { name: 'Profile', href: '/dashboard/profile', icon: User },
+      { name: t('dashboard.sidebar.dashboard'), href: `/dashboard/${user.role}`, icon: Home },
+      { name: t('dashboard.sidebar.profile'), href: '/dashboard/profile', icon: User },
     ];
 
     switch (user.role) {
       case 'admin':
         return [
           ...baseItems,
-          { name: 'Users', href: '/dashboard/admin/users', icon: Users },
-          { name: 'Vehicles', href: '/dashboard/admin/vehicles', icon: Truck },
-          { name: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
-          { name: 'Subscription', href: '/dashboard/subscription', icon: Crown },
-          { name: 'Settings', href: '/dashboard/admin/settings', icon: Settings },
+          { name: t('dashboard.sidebar.users'), href: '/dashboard/admin/users', icon: Users },
+          { name: t('dashboard.sidebar.vehicles'), href: '/dashboard/admin/vehicles', icon: Truck },
+          { name: t('dashboard.sidebar.reports'), href: '/dashboard/admin/reports', icon: BarChart3 },
+          { name: t('dashboard.sidebar.subscription'), href: '/dashboard/subscription', icon: Crown },
+          { name: t('dashboard.sidebar.settings'), href: '/dashboard/admin/settings', icon: Settings },
         ];
       case 'staff':
         return [
           ...baseItems,
-          { name: 'Users', href: '/dashboard/staff/users', icon: Users },
-          { name: 'Vehicles', href: '/dashboard/staff/vehicles', icon: Truck },
-          { name: 'Maintenance', href: '/dashboard/staff/maintenance', icon: Wrench },
-          { name: 'Reports', href: '/dashboard/staff/reports', icon: FileText },
+          { name: t('dashboard.sidebar.users'), href: '/dashboard/staff/users', icon: Users },
+          { name: t('dashboard.sidebar.vehicles'), href: '/dashboard/staff/vehicles', icon: Truck },
+          { name: t('dashboard.sidebar.maintenance'), href: '/dashboard/staff/maintenance', icon: Wrench },
+          { name: t('dashboard.sidebar.reports'), href: '/dashboard/staff/reports', icon: FileText },
         ];
       case 'driver':
         return [
           ...baseItems,
-          { name: 'My Vehicles', href: '/dashboard/driver/vehicles', icon: Truck },
-          { name: 'Routes', href: '/dashboard/driver/routes', icon: FileText },
-          { name: 'Maintenance', href: '/dashboard/driver/maintenance', icon: Wrench },
+          { name: t('dashboard.sidebar.myVehicles'), href: '/dashboard/driver/vehicles', icon: Truck },
+          { name: t('dashboard.sidebar.routes'), href: '/dashboard/driver/routes', icon: FileText },
+          { name: t('dashboard.sidebar.maintenance'), href: '/dashboard/driver/maintenance', icon: Wrench },
         ];
       case 'inspector':
         return [
           ...baseItems,
-          { name: 'Inspections', href: '/dashboard/inspector/inspections', icon: Shield },
-          { name: 'Vehicles', href: '/dashboard/inspector/vehicles', icon: Truck },
-          { name: 'Reports', href: '/dashboard/inspector/reports', icon: FileText },
+          { name: t('dashboard.sidebar.inspections'), href: '/dashboard/inspector/inspections', icon: Shield },
+          { name: t('dashboard.sidebar.vehicles'), href: '/dashboard/inspector/vehicles', icon: Truck },
+          { name: t('dashboard.sidebar.reports'), href: '/dashboard/inspector/reports', icon: FileText },
         ];
       default:
         return baseItems;
@@ -228,9 +230,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center space-x-2 mb-1 sm:mb-2">
               <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
-              <span className="text-xs sm:text-sm font-medium text-gray-900">Company</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-900">{t('dashboard.sidebar.company')}</span>
             </div>
-            <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">{user.company?.name || 'No Company'}</p>
+            <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">{user.company?.name || t('dashboard.sidebar.noCompany')}</p>
             <p className="text-xs text-gray-600 truncate" key={`company-email-${user.company?.id || 'none'}`}>{user.company?.email || 'N/A'}</p>
             <Badge variant="outline" className="text-xs mt-1">
               {user.company?.subscription_plan || 'N/A'}
@@ -294,7 +296,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm"
           >
             <LogOut className="mr-2 sm:mr-3 h-3 w-3 sm:h-4 sm:w-4" />
-            Sign Out
+            {t('dashboard.sidebar.signOut')}
           </Button>
         </div>
       </div>
@@ -313,19 +315,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </button>
               <div className="ml-2 sm:ml-4 lg:ml-0">
                 <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
-                  {navigationItems.find(item => item.href === pathname)?.name || 'Dashboard'}
+                  {navigationItems.find(item => item.href === pathname)?.name || t('dashboard.title')}
                 </h1>
               </div>
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Language switcher */}
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+                {['en', 'pt', 'es', 'fr'].map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => i18n.changeLanguage(code)}
+                    className={`px-2 py-1 text-xs font-medium rounded-md transition ${
+                      i18n.language.startsWith(code)
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {code.toUpperCase()}
+                  </button>
+                ))}
+              </div>
               {/* Search */}
               <div className="hidden sm:block">
                 <div className="relative">
                   <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search..."
+                    placeholder={t('common.search') + '...'}
                     className="pl-8 sm:pl-10 pr-3 sm:pr-4 py-1 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>

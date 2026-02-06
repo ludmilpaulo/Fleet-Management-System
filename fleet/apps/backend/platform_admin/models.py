@@ -144,7 +144,7 @@ class PlatformSettings(models.Model):
     """Platform-wide settings"""
     
     # Trial settings
-    trial_duration_days = models.PositiveIntegerField(default=14)
+    trial_duration_days = models.PositiveIntegerField(default=7)
     trial_max_users = models.PositiveIntegerField(default=5)
     trial_max_vehicles = models.PositiveIntegerField(default=10)
     

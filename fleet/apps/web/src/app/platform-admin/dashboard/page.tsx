@@ -2158,12 +2158,12 @@ export default function PlatformAdminDashboard() {
           setFormIssuePriority('medium');
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent variant="platform-admin-lg" className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-slate-50">
               {entityType ? `Add New ${entityType.charAt(0).toUpperCase() + entityType.slice(1)}` : 'Add New Entity'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-400">
               {entityType 
                 ? `Fill in the details to create a new ${entityType}.`
                 : 'Select the type of entity you want to add.'}
@@ -2204,7 +2204,7 @@ export default function PlatformAdminDashboard() {
             </div>
           ) : (
             // Entity Creation Forms
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 platform-admin-form">
               {entityType === 'company' && (
                 <>
                   <div className="grid gap-2">
@@ -2602,14 +2602,14 @@ export default function PlatformAdminDashboard() {
 
       {/* Edit Entity Dialog */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin-lg" className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit {editingEntityType}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Edit {editingEntityType}</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Make changes to the {editingEntityType} details.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-4 platform-admin-form">
             {editingEntityType === 'companies' && (
               <div className="grid gap-4">
                 <div className="grid gap-2">
@@ -3132,46 +3132,49 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Companies Modal */}
       <Dialog open={showCompaniesModal} onOpenChange={setShowCompaniesModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Companies</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Companies</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete companies.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="company-search">Search Companies</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="company-search" className="text-slate-300 text-sm font-medium">Search Companies</Label>
               <Input
                 id="company-search"
-                placeholder="Search by name or slug"
+                placeholder="Search by name or slug..."
                 value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('company'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('company'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Company
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {companies.filter(company => 
                 company.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
                 company.slug.toLowerCase().includes(companySearchTerm.toLowerCase())
               ).map(company => (
-                <div key={company.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Building2 className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">{company.name}</p>
-                      <p className="text-sm text-gray-600">{company.slug}</p>
+                <div key={company.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">{company.name}</p>
+                      <p className="text-sm text-slate-400 truncate">{company.slug}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(company, 'companies')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(company, 'companies')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(company.id, 'companies')}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteEntity(company.id, 'companies')}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3185,46 +3188,49 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Users Modal */}
       <Dialog open={showUsersModal} onOpenChange={setShowUsersModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Users</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Users</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete users.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="user-search">Search Users</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="user-search" className="text-slate-300 text-sm font-medium">Search Users</Label>
               <Input
                 id="user-search"
-                placeholder="Search by email or username"
-                value={companySearchTerm} // Reusing companySearchTerm for user search
+                placeholder="Search by email or username..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('user'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('user'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New User
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {allUsers.filter(user => 
                 user.email.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
                 user.username.toLowerCase().includes(companySearchTerm.toLowerCase())
               ).map(user => (
-                <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="font-medium">{user.full_name}</p>
-                      <p className="text-sm text-gray-600">{user.email}</p>
+                <div key={user.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">{user.full_name}</p>
+                      <p className="text-sm text-slate-400 truncate">{user.email}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(user, 'users')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(user, 'users')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(user.id, 'users')}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteEntity(user.id, 'users')}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3238,46 +3244,49 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Vehicles Modal */}
       <Dialog open={showVehiclesModal} onOpenChange={setShowVehiclesModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Vehicles</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Vehicles</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete vehicles.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="vehicle-search">Search Vehicles</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="vehicle-search" className="text-slate-300 text-sm font-medium">Search Vehicles</Label>
               <Input
                 id="vehicle-search"
-                placeholder="Search by registration number or VIN"
-                value={companySearchTerm} // Reusing companySearchTerm for vehicle search
+                placeholder="Search by registration number or VIN..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('vehicle'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('vehicle'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Vehicle
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {vehicles.filter(vehicle => 
                 vehicle.reg_number.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
                 vehicle.vin.toLowerCase().includes(companySearchTerm.toLowerCase())
               ).map(vehicle => (
-                <div key={vehicle.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Truck className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <p className="font-medium">{vehicle.make} {vehicle.model}</p>
-                      <p className="text-sm text-gray-600">{vehicle.reg_number}</p>
+                <div key={vehicle.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                      <Truck className="w-5 h-5 text-violet-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">{vehicle.make} {vehicle.model}</p>
+                      <p className="text-sm text-slate-400 truncate">{vehicle.reg_number}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(vehicle, 'vehicles')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(vehicle, 'vehicles')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(vehicle.id, 'vehicles')}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteEntity(vehicle.id, 'vehicles')}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3291,47 +3300,50 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Shifts Modal */}
       <Dialog open={showShiftsModal} onOpenChange={setShowShiftsModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Shifts</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Shifts</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete shifts.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="shift-search">Search Shifts</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="shift-search" className="text-slate-300 text-sm font-medium">Search Shifts</Label>
               <Input
                 id="shift-search"
-                placeholder="Search by driver or vehicle"
-                value={companySearchTerm} // Reusing companySearchTerm for shift search
+                placeholder="Search by driver or vehicle..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('shift'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('shift'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Shift
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {shifts.filter(shift => 
                 shift.driver.toString().includes(companySearchTerm) ||
                 shift.vehicle.toString().includes(companySearchTerm)
               ).map(shift => (
-                <div key={shift.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-orange-600" />
-                    <div>
-                      <p className="font-medium">Shift {shift.id}</p>
-                      <p className="text-sm text-gray-600">Driver: {shift.driver_name}, Vehicle: {shift.vehicle_name}</p>
-                      <p className="text-sm text-gray-600">Start: {format(new Date(shift.start_at), 'MMM dd, HH:mm')}, End: {shift.end_at ? format(new Date(shift.end_at), 'MMM dd, HH:mm') : 'N/A'}</p>
+                <div key={shift.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">Shift {shift.id}</p>
+                      <p className="text-sm text-slate-400 truncate">Driver: {shift.driver_name}, Vehicle: {shift.vehicle_name}</p>
+                      <p className="text-sm text-slate-500">Start: {format(new Date(shift.start_at), 'MMM dd, HH:mm')}, End: {shift.end_at ? format(new Date(shift.end_at), 'MMM dd, HH:mm') : 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(shift, 'shifts')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(shift, 'shifts')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(shift.id, 'shifts')}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteEntity(shift.id, 'shifts')}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3345,47 +3357,50 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Inspections Modal */}
       <Dialog open={showInspectionsModal} onOpenChange={setShowInspectionsModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Inspections</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Inspections</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete inspections.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="inspection-search">Search Inspections</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="inspection-search" className="text-slate-300 text-sm font-medium">Search Inspections</Label>
               <Input
                 id="inspection-search"
-                placeholder="Search by shift or type"
-                value={companySearchTerm} // Reusing companySearchTerm for inspection search
+                placeholder="Search by shift or type..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('inspection'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('inspection'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Inspection
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {inspections.filter(inspection => 
                 inspection.shift.toString().includes(companySearchTerm) ||
                 inspection.type.toLowerCase().includes(companySearchTerm.toLowerCase())
               ).map(inspection => (
-                <div key={inspection.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-indigo-600" />
-                    <div>
-                      <p className="font-medium">Inspection {inspection.id}</p>
-                      <p className="text-sm text-gray-600">Shift: {inspection.shift_name}, Type: {inspection.type}</p>
-                      <p className="text-sm text-gray-600">Status: {inspection.status}</p>
+                <div key={inspection.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-indigo-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">Inspection {inspection.id}</p>
+                      <p className="text-sm text-slate-400 truncate">Shift: {inspection.shift_name}, Type: {inspection.type}</p>
+                      <p className="text-sm text-slate-500">Status: {inspection.status}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(inspection, 'inspections')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(inspection, 'inspections')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(inspection.id, 'inspections')}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteEntity(inspection.id, 'inspections')}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3399,47 +3414,50 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Issues Modal */}
       <Dialog open={showIssuesModal} onOpenChange={setShowIssuesModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Issues</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Issues</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete issues.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="issue-search">Search Issues</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="issue-search" className="text-slate-300 text-sm font-medium">Search Issues</Label>
               <Input
                 id="issue-search"
-                placeholder="Search by title or description"
-                value={companySearchTerm} // Reusing companySearchTerm for issue search
+                placeholder="Search by title or description..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('issue'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('issue'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Issue
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {issues.filter(issue => 
                 issue.title.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
                 issue.description.toLowerCase().includes(companySearchTerm.toLowerCase())
               ).map(issue => (
-                <div key={issue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
-                    <div>
-                      <p className="font-medium">Issue {issue.id}: {issue.title}</p>
-                      <p className="text-sm text-gray-600">Vehicle: {issue.vehicle_name || 'N/A'}, Priority: {issue.priority}</p>
-                      <p className="text-sm text-gray-600">Status: {issue.status}</p>
+                <div key={issue.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-rose-500/20 flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-rose-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">Issue {issue.id}: {issue.title}</p>
+                      <p className="text-sm text-slate-400 truncate">Vehicle: {issue.vehicle_name || 'N/A'}, Priority: {issue.priority}</p>
+                      <p className="text-sm text-slate-500">Status: {issue.status}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(issue, 'issues')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(issue, 'issues')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(issue.id, 'issues')}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteEntity(issue.id, 'issues')}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3453,48 +3471,50 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Subscriptions Modal */}
       <Dialog open={showSubscriptionsModal} onOpenChange={setShowSubscriptionsModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Subscriptions</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Subscriptions</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete subscriptions.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="subscription-search">Search Subscriptions</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="subscription-search" className="text-slate-300 text-sm font-medium">Search Subscriptions</Label>
               <Input
                 id="subscription-search"
-                placeholder="Search by company or status"
-                value={companySearchTerm} // Reusing companySearchTerm for subscription search
+                placeholder="Search by company or status..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('subscription'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('subscription'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Subscription
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {subscriptions.filter(subscription => 
                 subscription.company_name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
                 subscription.status.toLowerCase().includes(companySearchTerm.toLowerCase())
               ).map(subscription => (
-                <div key={subscription.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Package className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <p className="font-medium">Subscription {subscription.id}</p>
-                      <p className="text-sm text-gray-600">Company: {subscription.company_name}, Plan: {subscription.plan_name}</p>
-                      <p className="text-sm text-gray-600">Amount: {subscription.amount} {subscription.currency}</p>
-                      <p className="text-sm text-gray-600">Status: {subscription.status}</p>
+                <div key={subscription.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                      <Package className="w-5 h-5 text-violet-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">Subscription {subscription.id}</p>
+                      <p className="text-sm text-slate-400 truncate">Company: {subscription.company_name}, Plan: {subscription.plan_name}</p>
+                      <p className="text-sm text-slate-500">Amount: {subscription.amount} {subscription.currency} · Status: {subscription.status}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(subscription, 'subscriptions')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(subscription, 'subscriptions')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(subscription.id, 'subscriptions')}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteEntity(subscription.id, 'subscriptions')}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3508,47 +3528,50 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Plans Modal */}
       <Dialog open={showPlansModal} onOpenChange={setShowPlansModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Subscription Plans</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Subscription Plans</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete subscription plans.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="plan-search">Search Plans</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="plan-search" className="text-slate-300 text-sm font-medium">Search Plans</Label>
               <Input
                 id="plan-search"
-                placeholder="Search by name or price"
-                value={companySearchTerm} // Reusing companySearchTerm for plan search
+                placeholder="Search by name or price..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('subscription'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('subscription'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Plan
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {subscriptionPlans.filter(plan => 
                 plan.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
                 plan.price.toString().includes(companySearchTerm)
               ).map(plan => (
-                <div key={plan.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Package className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">Plan {plan.id}: {plan.name}</p>
-                      <p className="text-sm text-gray-600">Price: {plan.price} {plan.currency}</p>
-                      <p className="text-sm text-gray-600">Max Users: {plan.max_users}, Max Vehicles: {plan.max_vehicles}</p>
+                <div key={plan.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <Package className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">Plan {plan.id}: {plan.name}</p>
+                      <p className="text-sm text-slate-400 truncate">Price: {plan.price} {plan.currency}</p>
+                      <p className="text-sm text-slate-500">Max Users: {plan.max_users}, Max Vehicles: {plan.max_vehicles}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(plan, 'plans')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(plan, 'plans')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(plan.id, 'plans')}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteEntity(plan.id, 'plans')}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3562,18 +3585,18 @@ export default function PlatformAdminDashboard() {
 
       {/* Assign Plan Modal */}
       <Dialog open={showAssignPlanModal} onOpenChange={setShowAssignPlanModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Assign Subscription Plan</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Assign Subscription Plan</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Select a company and a plan to assign.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-5 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="assign-company">Company</Label>
+              <Label htmlFor="assign-company" className="text-slate-300 text-sm font-medium">Company</Label>
               <Select onValueChange={(value) => setSelectedCompany(value)} value={selectedCompany || undefined}>
-                <SelectTrigger id="assign-company">
+                <SelectTrigger id="assign-company" className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50">
                   <SelectValue placeholder="Select a company" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3584,9 +3607,9 @@ export default function PlatformAdminDashboard() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="assign-plan">Plan</Label>
+              <Label htmlFor="assign-plan" className="text-slate-300 text-sm font-medium">Plan</Label>
               <Select onValueChange={(value) => setSelectedPlan(value)} value={selectedPlan || undefined}>
-                <SelectTrigger id="assign-plan">
+                <SelectTrigger id="assign-plan" className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50">
                   <SelectValue placeholder="Select a plan" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3596,7 +3619,7 @@ export default function PlatformAdminDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            <Button className="btn-gradient w-full" onClick={handleAssignPlan}>
+            <Button className="btn-gradient w-full py-2.5" onClick={handleAssignPlan}>
               <Package className="w-4 h-4 mr-2" />
               Assign Plan
             </Button>
@@ -3606,47 +3629,50 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Configurations Modal */}
       <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage System Configurations</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage System Configurations</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete system configurations.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="config-search">Search Configurations</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="config-search" className="text-slate-300 text-sm font-medium">Search Configurations</Label>
               <Input
                 id="config-search"
-                placeholder="Search by key or value"
-                value={companySearchTerm} // Reusing companySearchTerm for config search
+                placeholder="Search by key or value..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEditingConfig(null); setConfigFormData({}); setShowEditConfigModal(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEditingConfig(null); setConfigFormData({}); setShowEditConfigModal(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Configuration
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {systemConfigs.filter(config => 
                 config.key.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
                 config.value.toLowerCase().includes(companySearchTerm.toLowerCase())
               ).map(config => (
-                <div key={config.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Database className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">Config {config.id}: {config.key}</p>
-                      <p className="text-sm text-gray-600">Value: {config.value}</p>
-                      <p className="text-sm text-gray-600">Description: {config.description}</p>
+                <div key={config.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                      <Database className="w-5 h-5 text-sky-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">Config {config.id}: {config.key}</p>
+                      <p className="text-sm text-slate-400 truncate">Value: {config.value}</p>
+                      <p className="text-sm text-slate-500 truncate">Description: {config.description}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(config, 'configurations')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(config, 'configurations')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteConfig(config.id)}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteConfig(config.id)}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3660,40 +3686,43 @@ export default function PlatformAdminDashboard() {
 
       {/* Edit Configuration Modal */}
       <Dialog open={showEditConfigModal} onOpenChange={setShowEditConfigModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Edit Configuration</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Edit Configuration</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Modify the selected configuration.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-5 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-config-key">Key</Label>
+              <Label htmlFor="edit-config-key" className="text-slate-300 text-sm font-medium">Key</Label>
               <Input
                 id="edit-config-key"
                 value={configFormData.key || ''}
                 onChange={(e) => setConfigFormData({ ...configFormData, key: e.target.value })}
+                className="platform-admin-modal-search"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-config-value">Value</Label>
+              <Label htmlFor="edit-config-value" className="text-slate-300 text-sm font-medium">Value</Label>
               <Input
                 id="edit-config-value"
                 value={configFormData.value || ''}
                 onChange={(e) => setConfigFormData({ ...configFormData, value: e.target.value })}
+                className="platform-admin-modal-search"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-config-description">Description</Label>
+              <Label htmlFor="edit-config-description" className="text-slate-300 text-sm font-medium">Description</Label>
               <Input
                 id="edit-config-description"
                 value={configFormData.description || ''}
                 onChange={(e) => setConfigFormData({ ...configFormData, description: e.target.value })}
+                className="platform-admin-modal-search"
               />
             </div>
           </div>
-          <Button className="btn-gradient w-full" onClick={handleSaveConfig}>
+          <Button className="btn-gradient w-full py-2.5" onClick={handleSaveConfig}>
             <Edit className="w-4 h-4 mr-2" />
             Save Changes
           </Button>
@@ -3702,46 +3731,49 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Maintenance Modal */}
       <Dialog open={showMaintenanceModal} onOpenChange={setShowMaintenanceModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Maintenance Tasks</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Maintenance Tasks</DialogTitle>
+            <DialogDescription className="text-slate-400">
               View, add, edit, or delete maintenance tasks.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="maintenance-search">Search Maintenance Tasks</Label>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="maintenance-search" className="text-slate-300 text-sm font-medium">Search Maintenance Tasks</Label>
               <Input
                 id="maintenance-search"
-                placeholder="Search by title or status"
-                value={companySearchTerm} // Reusing companySearchTerm for maintenance search
+                placeholder="Search by title or status..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('issue'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('issue'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Maintenance Task
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {allMaintenances.filter(maintenance => 
                 maintenance.title.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
                 maintenance.status.toLowerCase().includes(companySearchTerm.toLowerCase())
               ).map(maintenance => (
-                <div key={maintenance.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Wrench className="w-5 h-5 text-gray-600" />
-                    <div>
-                      <p className="font-medium">Maintenance {maintenance.id}: {maintenance.title}</p>
-                      <p className="text-sm text-gray-600">Status: {maintenance.status}, Scheduled: {format(new Date(maintenance.scheduled_start), 'MMM dd, HH:mm')}</p>
+                <div key={maintenance.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                      <Wrench className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">Maintenance {maintenance.id}: {maintenance.title}</p>
+                      <p className="text-sm text-slate-400 truncate">Status: {maintenance.status}, Scheduled: {format(new Date(maintenance.scheduled_start), 'MMM dd, HH:mm')}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(maintenance, 'maintenance')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(maintenance, 'maintenance')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteEntity(maintenance.id, 'maintenance')}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteEntity(maintenance.id, 'maintenance')}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3755,43 +3787,46 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Trial Settings Modal */}
       <Dialog open={showTrialSettingsModal} onOpenChange={setShowTrialSettingsModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Trial Settings</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Trial Settings</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Configure settings for the trial period.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-5 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="trial-max-users">Max Users for Trial</Label>
+              <Label htmlFor="trial-max-users" className="text-slate-300 text-sm font-medium">Max Users for Trial</Label>
               <Input
                 id="trial-max-users"
                 type="number"
                 value={platformSettingsData.trial_max_users || ''}
                 onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, trial_max_users: parseInt(e.target.value) || 0 })}
+                className="platform-admin-modal-search"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="trial-max-vehicles">Max Vehicles for Trial</Label>
+              <Label htmlFor="trial-max-vehicles" className="text-slate-300 text-sm font-medium">Max Vehicles for Trial</Label>
               <Input
                 id="trial-max-vehicles"
                 type="number"
                 value={platformSettingsData.trial_max_vehicles || ''}
                 onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, trial_max_vehicles: parseInt(e.target.value) || 0 })}
+                className="platform-admin-modal-search"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="trial-duration">Trial Duration (days)</Label>
+              <Label htmlFor="trial-duration" className="text-slate-300 text-sm font-medium">Trial Duration (days)</Label>
               <Input
                 id="trial-duration"
                 type="number"
                 value={platformSettingsData.trial_duration || ''}
                 onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, trial_duration: parseInt(e.target.value) || 0 })}
+                className="platform-admin-modal-search"
               />
             </div>
           </div>
-          <Button className="btn-gradient w-full" onClick={handleSavePlatformSettings}>
+          <Button className="btn-gradient w-full py-2.5" onClick={handleSavePlatformSettings}>
             <Settings className="w-4 h-4 mr-2" />
             Save Trial Settings
           </Button>
@@ -3800,18 +3835,18 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Billing Configuration Modal */}
       <Dialog open={showBillingConfigModal} onOpenChange={setShowBillingConfigModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin" className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Manage Billing Configuration</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Billing Configuration</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Configure billing settings and currency.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-5 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="billing-currency">Default Currency</Label>
+              <Label htmlFor="billing-currency" className="text-slate-300 text-sm font-medium">Default Currency</Label>
               <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, default_currency: value })} value={platformSettingsData.default_currency || 'USD'}>
-                <SelectTrigger id="billing-currency">
+                <SelectTrigger id="billing-currency" className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50">
                   <SelectValue placeholder="Select default currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3825,34 +3860,36 @@ export default function PlatformAdminDashboard() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="billing-tax-rate">Default Tax Rate (%)</Label>
+              <Label htmlFor="billing-tax-rate" className="text-slate-300 text-sm font-medium">Default Tax Rate (%)</Label>
               <Input
                 id="billing-tax-rate"
                 type="number"
                 value={platformSettingsData.tax_rate || ''}
                 onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, tax_rate: parseFloat(e.target.value) || 0 })}
+                className="platform-admin-modal-search"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="billing-invoice-prefix">Invoice Prefix</Label>
+              <Label htmlFor="billing-invoice-prefix" className="text-slate-300 text-sm font-medium">Invoice Prefix</Label>
               <Input
                 id="billing-invoice-prefix"
                 value={platformSettingsData.invoice_prefix || ''}
                 onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, invoice_prefix: e.target.value })}
+                className="platform-admin-modal-search"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="billing-invoice-footer">Invoice Footer</Label>
+              <Label htmlFor="billing-invoice-footer" className="text-slate-300 text-sm font-medium">Invoice Footer</Label>
               <textarea
                 id="billing-invoice-footer"
-                className="border rounded-md p-2"
+                className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50 rounded-lg p-3 min-h-[80px] resize-y"
                 rows={3}
                 value={platformSettingsData.invoice_footer || ''}
                 onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, invoice_footer: e.target.value })}
               />
             </div>
           </div>
-          <Button className="btn-gradient w-full" onClick={handleSavePlatformSettings}>
+          <Button className="btn-gradient w-full py-2.5" onClick={handleSavePlatformSettings}>
             <CreditCard className="w-4 h-4 mr-2" />
             Save Billing Settings
           </Button>
@@ -3861,47 +3898,50 @@ export default function PlatformAdminDashboard() {
 
       {/* Manage Feature Flags Modal */}
       <Dialog open={showFeatureFlagsModal} onOpenChange={setShowFeatureFlagsModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin">
           <DialogHeader>
-            <DialogTitle>Manage Feature Flags</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Manage Feature Flags</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Enable or disable platform features.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-5 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="feature-flag-search">Search Feature Flags</Label>
+              <Label htmlFor="feature-flag-search" className="text-slate-300 text-sm font-medium">Search Feature Flags</Label>
               <Input
                 id="feature-flag-search"
-                placeholder="Search by name or description"
-                value={companySearchTerm} // Reusing companySearchTerm for feature flag search
+                placeholder="Search by name or description..."
+                value={companySearchTerm}
                 onChange={(e) => setCompanySearchTerm(e.target.value)}
+                className="platform-admin-modal-search"
               />
             </div>
-            <Button className="btn-gradient w-full" onClick={() => { setEntityType('company'); setShowAddEntityDialog(true); }}>
+            <Button className="btn-gradient w-full py-2.5" onClick={() => { setEntityType('company'); setShowAddEntityDialog(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add New Feature Flag
             </Button>
-            <div className="overflow-y-auto max-h-96">
+            <div className="platform-admin-modal-scroll">
               {systemConfigs.filter(config => 
                 config.key.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
                 config.description.toLowerCase().includes(companySearchTerm.toLowerCase())
               ).map(config => (
-                <div key={config.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <ToggleLeft className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <p className="font-medium">Feature: {config.key}</p>
-                      <p className="text-sm text-gray-600">Description: {config.description}</p>
-                      <p className="text-sm text-gray-600">Enabled: {config.value === 'true' ? 'Yes' : 'No'}</p>
+                <div key={config.id} className="platform-admin-modal-list-item">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                      <ToggleLeft className="w-5 h-5 text-violet-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-100 truncate">Feature: {config.key}</p>
+                      <p className="text-sm text-slate-400 truncate">Description: {config.description}</p>
+                      <p className="text-sm text-slate-500">Enabled: {config.value === 'true' ? 'Yes' : 'No'}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEditEntity(config, 'feature_flag')}>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100" onClick={() => handleEditEntity(config, 'feature_flag')}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDeleteConfig(config.id)}>
+                    <Button size="sm" variant="outline" className="border-red-900/50 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleDeleteConfig(config.id)}>
                       <X className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
@@ -3915,34 +3955,36 @@ export default function PlatformAdminDashboard() {
 
       {/* Platform Settings Modal */}
       <Dialog open={showPlatformSettingsModal} onOpenChange={setShowPlatformSettingsModal}>
-        <DialogContent>
+        <DialogContent variant="platform-admin-lg" className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Platform Settings</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-50">Platform Settings</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Configure platform-wide settings.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-5 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="system-name">System Name</Label>
+              <Label htmlFor="system-name" className="text-slate-300 text-sm font-medium">System Name</Label>
               <Input
                 id="system-name"
                 value={platformSettingsData.system_name || ''}
                 onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, system_name: e.target.value })}
+                className="platform-admin-modal-search"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="system-logo">System Logo URL</Label>
+              <Label htmlFor="system-logo" className="text-slate-300 text-sm font-medium">System Logo URL</Label>
               <Input
                 id="system-logo"
                 value={platformSettingsData.system_logo || ''}
                 onChange={(e) => setPlatformSettingsData({ ...platformSettingsData, system_logo: e.target.value })}
+                className="platform-admin-modal-search"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="default-currency">Default Currency</Label>
+              <Label htmlFor="default-currency" className="text-slate-300 text-sm font-medium">Default Currency</Label>
               <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, default_currency: value })} value={platformSettingsData.default_currency || 'USD'}>
-                <SelectTrigger id="default-currency">
+                <SelectTrigger id="default-currency" className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50">
                   <SelectValue placeholder="Select default currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3956,9 +3998,9 @@ export default function PlatformAdminDashboard() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="timezone">Time Zone</Label>
+              <Label htmlFor="timezone" className="text-slate-300 text-sm font-medium">Time Zone</Label>
               <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, timezone: value })} value={platformSettingsData.timezone || 'UTC'}>
-                <SelectTrigger id="timezone">
+                <SelectTrigger id="timezone" className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50">
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3972,9 +4014,9 @@ export default function PlatformAdminDashboard() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="date-format">Date Format</Label>
+              <Label htmlFor="date-format" className="text-slate-300 text-sm font-medium">Date Format</Label>
               <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, date_format: value })} value={platformSettingsData.date_format || 'MM/DD/YYYY'}>
-                <SelectTrigger id="date-format">
+                <SelectTrigger id="date-format" className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50">
                   <SelectValue placeholder="Select date format" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3986,9 +4028,9 @@ export default function PlatformAdminDashboard() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="time-format">Time Format</Label>
+              <Label htmlFor="time-format" className="text-slate-300 text-sm font-medium">Time Format</Label>
               <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, time_format: value })} value={platformSettingsData.time_format || 'HH:mm'}>
-                <SelectTrigger id="time-format">
+                <SelectTrigger id="time-format" className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50">
                   <SelectValue placeholder="Select time format" />
                 </SelectTrigger>
                 <SelectContent>
@@ -4000,9 +4042,9 @@ export default function PlatformAdminDashboard() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="decimal-separator">Decimal Separator</Label>
+              <Label htmlFor="decimal-separator" className="text-slate-300 text-sm font-medium">Decimal Separator</Label>
               <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, decimal_separator: value })} value={platformSettingsData.decimal_separator || '.'}>
-                <SelectTrigger id="decimal-separator">
+                <SelectTrigger id="decimal-separator" className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50">
                   <SelectValue placeholder="Select decimal separator" />
                 </SelectTrigger>
                 <SelectContent>
@@ -4012,9 +4054,9 @@ export default function PlatformAdminDashboard() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="thousands-separator">Thousands Separator</Label>
+              <Label htmlFor="thousands-separator" className="text-slate-300 text-sm font-medium">Thousands Separator</Label>
               <Select onValueChange={(value) => setPlatformSettingsData({ ...platformSettingsData, thousands_separator: value })} value={platformSettingsData.thousands_separator || ','}>
-                <SelectTrigger id="thousands-separator">
+                <SelectTrigger id="thousands-separator" className="platform-admin-modal-search border-slate-600/60 bg-slate-800/50">
                   <SelectValue placeholder="Select thousands separator" />
                 </SelectTrigger>
                 <SelectContent>
@@ -4024,7 +4066,7 @@ export default function PlatformAdminDashboard() {
               </Select>
             </div>
           </div>
-          <Button className="btn-gradient w-full" onClick={handleSavePlatformSettings}>
+          <Button className="btn-gradient w-full py-2.5" onClick={handleSavePlatformSettings}>
             <Settings className="w-4 h-4 mr-2" />
             Save Platform Settings
           </Button>

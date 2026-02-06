@@ -14,6 +14,7 @@ urlpatterns = [
     path('companies/<int:pk>/', admin_views.CompanyManagementDetailView.as_view(), name='company-detail'),
     path('companies/<int:company_id>/activate/', views.activate_company, name='activate-company'),
     path('companies/<int:company_id>/deactivate/', views.deactivate_company, name='deactivate-company'),
+    path('companies/<int:company_id>/activate-after-payment/', views.activate_after_payment, name='activate-after-payment'),
     path('companies/<int:company_id>/extend-trial/', views.extend_trial, name='extend-trial'),
     path('companies/<int:company_id>/upgrade-plan/', views.upgrade_company_plan, name='upgrade-plan'),
     

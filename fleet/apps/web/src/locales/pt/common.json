@@ -2,9 +2,22 @@
   "language": {
     "en": "Inglês",
     "pt": "Português",
-    "es": "Espanhol"
+    "es": "Espanhol",
+    "fr": "Francês"
   },
   "trustTitle": "Confiado por equipes em",
+  "liveSnapshot": {
+    "title": "Snapshot ao vivo",
+    "fleetStatus": "Status da frota",
+    "readinessAcrossDepots": "Prontidão por depósitos",
+    "vsLastWeek": "vs semana passada",
+    "platformWide": "Plataforma inteira",
+    "hubs": "hubs",
+    "liveTelemetry": "Telemetria ao vivo",
+    "healthy": "Saudável",
+    "warning": "Atenção",
+    "critical": "Crítico"
+  },
   "featurePill": "Feito para operações modernas",
   "featureTitle": "Tudo o que você precisa para operar uma frota profissional",
   "featureDescription": "Planejamento, execução e compliance em uma única UI. Cada cartão foi feito para microinterações e insights sob medida.",
@@ -195,7 +208,11 @@
     "view": "Ver",
     "close": "Fechar",
     "submit": "Enviar",
-    "confirm": "Confirmar"
+    "confirm": "Confirmar",
+    "loggedOut": "Desconectado",
+    "loggedOutMessage": "Você foi desconectado com sucesso",
+    "logoutError": "Erro ao sair",
+    "logoutErrorMessage": "Ocorreu um erro ao sair"
   },
   "auth": {
     "signIn": "Entrar",
@@ -232,7 +249,23 @@
     "totalDrivers": "Total de Motoristas",
     "activeDrivers": "Motoristas Ativos",
     "pendingInspections": "Inspeções Pendentes",
-    "upcomingMaintenance": "Manutenção Próxima"
+    "upcomingMaintenance": "Manutenção Próxima",
+    "sidebar": {
+      "dashboard": "Painel",
+      "profile": "Perfil",
+      "users": "Usuários",
+      "vehicles": "Veículos",
+      "reports": "Relatórios",
+      "subscription": "Assinatura",
+      "settings": "Configurações",
+      "maintenance": "Manutenção",
+      "myVehicles": "Meus Veículos",
+      "routes": "Rotas",
+      "inspections": "Inspeções",
+      "signOut": "Sair",
+      "company": "Empresa",
+      "noCompany": "Sem empresa"
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -243,6 +276,7 @@
     "about": "Sobre",
     "profile": "Perfil",
     "preferences": "Preferências",
+    "preferencesDescription": "Gerencie sua conta e preferências do aplicativo",
     "security": "Segurança",
     "changePassword": "Alterar Senha",
     "currentPassword": "Senha Atual",

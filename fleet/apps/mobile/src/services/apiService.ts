@@ -1,14 +1,21 @@
 import { authService, AuthUser } from './authService'
 import { analytics } from './mixpanel'
 
-// Base API configuration - uses IP address for iOS simulator and Android device compatibility
+// Base API configuration - production URL for iOS production builds, dev URL for development
 const getApiBaseUrl = (): string => {
   // Environment variable takes highest priority
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
   
-  // Default to IP address (update 192.168.1.110 to your computer's IP if different)
+  // For iOS production builds (App Store), use production API
+  // __DEV__ is automatically false in production builds (EAS build, App Store, etc.)
+  if (!__DEV__) {
+    // Production API URL - iOS production builds go straight to production
+    return 'https://taki.pythonanywhere.com/api';
+  }
+  
+  // Development: Default to IP address for iOS simulator and Android device compatibility
   // This works for both iOS simulator and Android device
   return 'http://192.168.1.110:8000/api';
 };
@@ -53,6 +60,8 @@ export interface Inspection {
   created_by: number
   items: InspectionItem[]
   photos: Photo[]
+  /** From API list/detail: shift.vehicle.reg_number */
+  vehicle_reg?: string
 }
 
 export interface InspectionItem {
@@ -208,6 +217,26 @@ class ApiService {
       analytics.track('Vehicle Details Fetch Failed', {
         vehicle_id: id,
         error: error instanceof Error ? error.message : 'unknown'
+      })
+      throw error
+    }
+  }
+
+  async createVehicle(data: Partial<Vehicle>): Promise<Vehicle> {
+    try {
+      const response = await fetch(`${BASE_URL}/fleet/vehicles/`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(data),
+      })
+      analytics.track('Vehicle Created', {
+        reg_number: data.reg_number,
+        make: data.make,
+      })
+      return this.handleResponse<Vehicle>(response)
+    } catch (error) {
+      analytics.track('Vehicle Creation Failed', {
+        error: error instanceof Error ? error.message : 'unknown',
       })
       throw error
     }
@@ -456,16 +485,17 @@ class ApiService {
     }
   }
 
-  async startShift(vehicleId: number, startLocation?: string, lat?: number, lng?: number): Promise<Shift> {
+  async startShift(vehicleId: number, startAddress?: string, lat?: number, lng?: number): Promise<Shift> {
     try {
       const response = await fetch(`${BASE_URL}/fleet/shifts/start/`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
           vehicle: vehicleId,
-          start_location: startLocation,
-          start_lat: lat,
-          start_lng: lng,
+          start_at: new Date().toISOString(),
+          start_address: startAddress ?? '',
+          start_lat: lat ?? null,
+          start_lng: lng ?? null,
         }),
       })
       

@@ -59,6 +59,9 @@ export default function ContactPage() {
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
           </p>
+          <p className="text-sm text-gray-500 mt-2">
+            This platform is powered by <a href="https://maindo.digital" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Maindo Digital Agency</a>
+          </p>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2 mb-16">
@@ -77,6 +80,9 @@ export default function ContactPage() {
                     <p className="font-semibold text-gray-900">Email</p>
                     <p className="text-gray-600">support@fleetia.com</p>
                     <p className="text-gray-600">sales@fleetia.com</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Powered by <a href="https://maindo.digital" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Maindo Digital Agency</a>
+                    </p>
                   </div>
                 </div>
 

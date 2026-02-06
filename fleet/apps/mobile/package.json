@@ -8,7 +8,17 @@
     "android": "expo start --android",
     "ios": "expo start --ios --localhost",
     "ios:tunnel": "expo start --ios --tunnel",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "increment-version": "node scripts/increment-version.js",
+    "build:ios": "bash scripts/build-production.sh ios",
+    "build:android": "bash scripts/build-production.sh android",
+    "build:production": "bash scripts/build-production.sh all",
+    "submit:ios": "bash scripts/submit-production.sh ios",
+    "submit:android": "bash scripts/submit-production.sh android",
+    "submit:production": "bash scripts/submit-production.sh all",
+    "build-and-submit:ios": "npm run build:ios && npm run submit:ios",
+    "build-and-submit:android": "npm run build:android && npm run submit:android",
+    "build-and-submit:all": "npm run build:production && npm run submit:production"
   },
   "dependencies": {
     "@babel/core": "^7.25.0",

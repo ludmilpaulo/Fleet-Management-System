@@ -102,10 +102,10 @@ class MobileOperationsTest {
 
         const roles = ['admin', 'staff', 'driver', 'inspector'];
         const credentials = {
-            admin: { username: 'admin', password: 'admin123' },
-            staff: { username: 'staff1', password: 'staff123' },
-            driver: { username: 'driver1', password: 'driver123' },
-            inspector: { username: 'inspector1', password: 'inspector123' }
+            admin: { username: 'test_admin', password: 'testpass123' },
+            staff: { username: 'test_staff', password: 'testpass123' },
+            driver: { username: 'test_driver', password: 'testpass123' },
+            inspector: { username: 'test_inspector', password: 'testpass123' }
         };
 
         for (const role of roles) {
@@ -195,7 +195,7 @@ class MobileOperationsTest {
             return;
         }
 
-        // Get vehicles first
+        // Get vehicles first (handle paginated response)
         const vehiclesResponse = await this.makeRequest(
             'GET',
             '/api/fleet/vehicles/',
@@ -203,13 +203,14 @@ class MobileOperationsTest {
             inspectorToken
         );
 
-        if (!vehiclesResponse.success || !vehiclesResponse.data || vehiclesResponse.data.length === 0) {
+        const vehiclesList = vehiclesResponse.data?.results || (Array.isArray(vehiclesResponse.data) ? vehiclesResponse.data : []);
+        if (!vehiclesResponse.success || !vehiclesList.length) {
             this.logResult('Mobile Inspections - Get Vehicles', false,
                 'No vehicles available');
             return;
         }
 
-        const vehicle = vehiclesResponse.data[0];
+        const vehicle = vehiclesList[0];
         this.logResult('Mobile Inspections - Get Vehicles', true,
             `Vehicle: ${vehicle.reg_number || vehicle.id}`);
 
@@ -226,17 +227,30 @@ class MobileOperationsTest {
             return;
         }
 
-        const inspector = profileResponse.data;
+        // Driver must start shift first; inspector creates inspection for that shift
+        const driverToken = this.authTokens['driver'];
+        if (!driverToken) {
+            this.logResult('Mobile Create Inspection', false, 'Driver token needed for shift');
+            return;
+        }
 
-        // Create inspection
+        const shiftStartResponse = await this.makeRequest(
+            'POST',
+            '/api/fleet/shifts/start/',
+            { vehicle: vehicle.id, start_address: '123 Test St', notes: 'Mobile test' },
+            driverToken
+        );
+        if (!shiftStartResponse.success || !shiftStartResponse.data?.id) {
+            this.logResult('Mobile Create Inspection', false,
+                `Shift start failed: ${shiftStartResponse.status || shiftStartResponse.error}`);
+            return;
+        }
+        const shiftId = shiftStartResponse.data.id;
+
         const inspectionData = {
-            vehicle: vehicle.id,
-            inspector: inspector.id,
-            inspection_date: new Date().toISOString(),
-            odometer_reading: (vehicle.mileage || 0) + 100,
-            passed: true,
-            notes: 'Mobile test inspection',
-            next_inspection_due: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+            shift: shiftId,
+            type: 'START',
+            notes: 'Mobile test inspection'
         };
 
         const createResponse = await this.makeRequest(
@@ -247,40 +261,26 @@ class MobileOperationsTest {
         );
 
         if (createResponse.success) {
-            const inspectionId = createResponse.data.id;
+            const inspectionId = createResponse.data?.id;
             this.logResult('Mobile Create Inspection', true, `Inspection ID: ${inspectionId}`);
 
-            // Add inspection items
-            const items = [
-                {
-                    inspection: inspectionId,
-                    category: 'Pre-Trip',
-                    item_name: 'Engine Oil',
-                    status: 'pass',
-                    notes: 'Oil level normal'
-                },
-                {
-                    inspection: inspectionId,
-                    category: 'Pre-Trip',
-                    item_name: 'Tire Pressure',
-                    status: 'pass',
-                    notes: 'All tires properly inflated'
-                }
-            ];
-
-            for (const item of items) {
-                const itemResponse = await this.makeRequest(
-                    'POST',
-                    '/api/inspections/inspection-items/',
-                    item,
-                    inspectorToken
-                );
-
-                if (itemResponse.success) {
-                    this.logResult('Mobile Add Inspection Item', true, `Item: ${item.item_name}`);
-                } else {
-                    this.logResult('Mobile Add Inspection Item', false,
-                        `Item: ${item.item_name}, Status: ${itemResponse.status}`);
+            if (inspectionId) {
+                const items = [
+                    { inspection: inspectionId, part: 'ENGINE', status: 'PASS', notes: 'Oil level normal' },
+                    { inspection: inspectionId, part: 'TYRES', status: 'PASS', notes: 'All tires properly inflated' }
+                ];
+                for (const item of items) {
+                    const itemResponse = await this.makeRequest(
+                        'POST',
+                        '/api/inspections/inspection-items/',
+                        item,
+                        inspectorToken
+                    );
+                    if (itemResponse.success) {
+                        this.logResult('Mobile Add Inspection Item', true, `Part: ${item.part}`);
+                    } else {
+                        this.logResult('Mobile Add Inspection Item', false, `Part: ${item.part}, Status: ${itemResponse.status}`);
+                    }
                 }
             }
 
@@ -321,20 +321,20 @@ class MobileOperationsTest {
             return;
         }
 
-        // Get vehicles
+        // Get vehicles (handle paginated response)
         const vehiclesResponse = await this.makeRequest(
             'GET',
             '/api/fleet/vehicles/',
             null,
             driverToken
         );
-
-        if (!vehiclesResponse.success || !vehiclesResponse.data || vehiclesResponse.data.length === 0) {
+        const vehiclesList = vehiclesResponse.data?.results || (Array.isArray(vehiclesResponse.data) ? vehiclesResponse.data : []);
+        if (!vehiclesResponse.success || !vehiclesList.length) {
             this.logResult('Mobile Shifts - Get Vehicles', false, 'No vehicles available');
             return;
         }
 
-        const vehicle = vehiclesResponse.data[0];
+        const vehicle = vehiclesList[0];
         this.logResult('Mobile Shifts - Get Vehicles', true, `Vehicle: ${vehicle.reg_number || vehicle.id}`);
 
         // Start shift
@@ -410,44 +410,28 @@ class MobileOperationsTest {
             return;
         }
 
-        // Get vehicles
+        // Get vehicles (handle paginated response)
         const vehiclesResponse = await this.makeRequest(
             'GET',
             '/api/fleet/vehicles/',
             null,
             driverToken
         );
-
-        if (!vehiclesResponse.success || !vehiclesResponse.data || vehiclesResponse.data.length === 0) {
+        const vehiclesList = vehiclesResponse.data?.results || (Array.isArray(vehiclesResponse.data) ? vehiclesResponse.data : []);
+        if (!vehiclesResponse.success || !vehiclesList.length) {
             this.logResult('Mobile Issues - Get Vehicles', false, 'No vehicles available');
             return;
         }
 
-        const vehicle = vehiclesResponse.data[0];
+        const vehicle = vehiclesList[0];
 
-        // Get driver profile
-        const profileResponse = await this.makeRequest(
-            'GET',
-            '/api/account/profile/',
-            null,
-            driverToken
-        );
-
-        if (!profileResponse.success) {
-            this.logResult('Mobile Issues - Get Profile', false);
-            return;
-        }
-
-        const driver = profileResponse.data;
-
-        // Create issue
+        // Create issue (title, description, vehicle, category, severity)
         const issueData = {
             vehicle: vehicle.id,
-            reported_by: driver.id,
-            issue_type: 'mechanical',
-            priority: 'high',
-            status: 'open',
-            description: 'Mobile test issue: Engine making unusual noise'
+            title: 'Engine making unusual noise',
+            description: 'Mobile test issue: Engine making unusual noise during acceleration',
+            category: 'MECHANICAL',
+            severity: 'HIGH'
         };
 
         const createResponse = await this.makeRequest(
@@ -458,21 +442,25 @@ class MobileOperationsTest {
         );
 
         if (createResponse.success) {
-            const issueId = createResponse.data.id;
-            this.logResult('Mobile Create Issue', true, `Issue ID: ${issueId}`);
+            const issueId = createResponse.data?.id ?? createResponse.data?.pk;
+            this.logResult('Mobile Create Issue', true, `Issue ID: ${issueId || 'created'}`);
 
-            // Update issue
-            const updateResponse = await this.makeRequest(
-                'PATCH',
-                `/api/issues/issues/${issueId}/`,
-                { status: 'in_progress' },
-                driverToken
-            );
+            // Update issue (use IN_PROGRESS to match API)
+            if (issueId) {
+                const updateResponse = await this.makeRequest(
+                    'PATCH',
+                    `/api/issues/issues/${issueId}/`,
+                    { status: 'IN_PROGRESS' },
+                    driverToken
+                );
 
-            if (updateResponse.success) {
-                this.logResult('Mobile Update Issue', true);
+                if (updateResponse.success) {
+                    this.logResult('Mobile Update Issue', true);
+                } else {
+                    this.logResult('Mobile Update Issue', false, `Status: ${updateResponse.status}`);
+                }
             } else {
-                this.logResult('Mobile Update Issue', false, `Status: ${updateResponse.status}`);
+                this.logResult('Mobile Update Issue', false, 'No issue ID in create response');
             }
 
             // List issues
@@ -515,24 +503,39 @@ class MobileOperationsTest {
         this.logResult('Mobile Camera - Photo Upload Endpoint', true,
             'Photo upload endpoint available (simulated)');
 
-        // Test photo confirmation endpoint
-        const confirmResponse = await this.makeRequest(
+        // Get a real inspection to attach photo to
+        const inspListRes = await this.makeRequest(
+            'GET',
+            '/api/inspections/inspections/',
+            null,
+            inspectorToken
+        );
+        const inspections = inspListRes.data?.results || (Array.isArray(inspListRes.data) ? inspListRes.data : []);
+        const inspectionId = inspections.length ? inspections[0].id : null;
+
+        const confirmResponse = inspectionId ? await this.makeRequest(
             'POST',
             '/api/inspections/photos/confirm/',
             {
-                inspection_id: 1, // Would be actual inspection ID
-                photo_url: 'https://example.com/test-photo.jpg',
-                notes: 'Test photo from mobile'
+                inspection: inspectionId,
+                part: 'ENGINE',
+                angle: 'GENERAL',
+                file_key: 'test/mobile-photo.jpg',
+                file_url: 'https://example.com/test-photo.jpg',
+                width: 1920,
+                height: 1080,
+                file_size: 50000,
+                mime_type: 'image/jpeg',
+                taken_at: new Date().toISOString()
             },
             inspectorToken
-        );
+        ) : { success: false, status: 404 };
 
-        // This might fail if no inspection exists, which is OK for testing
         if (confirmResponse.success) {
             this.logResult('Mobile Camera - Photo Confirm', true);
         } else {
             this.logResult('Mobile Camera - Photo Confirm', false,
-                `Status: ${confirmResponse.status} (may be expected if no inspection exists)`);
+                `Status: ${confirmResponse.status} (no inspection or validation error)`);
         }
     }
 

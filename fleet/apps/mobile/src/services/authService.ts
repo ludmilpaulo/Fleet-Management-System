@@ -25,8 +25,23 @@ export interface AuthResponse {
 }
 
 class AuthService {
-  private baseURL =
-    `${process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.110:8000/api'}/account`;
+  private getBaseURL(): string {
+    if (process.env.EXPO_PUBLIC_API_URL) {
+      return `${process.env.EXPO_PUBLIC_API_URL}/account`;
+    }
+    
+    // For production builds, use production API
+    // __DEV__ is automatically false in production builds (EAS build, App Store, etc.)
+    if (!__DEV__) {
+      // Production API URL - iOS production builds go straight to production
+      return 'https://taki.pythonanywhere.com/api/account';
+    }
+    
+    // Development: Use IP address for iOS simulator and Android device compatibility
+    return 'http://192.168.1.110:8000/api/account';
+  }
+  
+  private baseURL = this.getBaseURL();
   private token: string | null = null;
   private user: AuthUser | null = null;
 

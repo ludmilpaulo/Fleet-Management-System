@@ -109,10 +109,12 @@ class IssueSerializer(serializers.ModelSerializer):
 class IssueCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating issues"""
     
+    id = serializers.IntegerField(read_only=True)
+    
     class Meta:
         model = Issue
         fields = [
-            'vehicle', 'inspection_item', 'title', 'description', 'category',
+            'id', 'vehicle', 'inspection_item', 'title', 'description', 'category',
             'severity', 'location_description', 'lat', 'lng', 'due_date', 'assigned_to'
         ]
     

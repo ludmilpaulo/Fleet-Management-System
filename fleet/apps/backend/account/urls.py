@@ -20,4 +20,7 @@ urlpatterns = [
     
     # Statistics endpoint (admin only)
     path('stats/', views.user_stats_view, name='user_stats'),
+
+    # Public landing page stats (no auth required)
+    path('landing-stats/', views.landing_stats_view, name='landing_stats'),
 ]

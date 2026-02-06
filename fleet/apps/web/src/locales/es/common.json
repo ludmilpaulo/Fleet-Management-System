@@ -2,7 +2,8 @@
   "language": {
     "en": "Inglés",
     "pt": "Portugués",
-    "es": "Español"
+    "es": "Español",
+    "fr": "Francés"
   },
   "trustTitle": "Confiado por equipos en",
   "featurePill": "Diseñado para operaciones modernas",
@@ -243,6 +244,7 @@
     "about": "Acerca de",
     "profile": "Perfil",
     "preferences": "Preferencias",
+    "preferencesDescription": "Administra tu cuenta y preferencias de la aplicación",
     "security": "Seguridad",
     "changePassword": "Cambiar Contraseña",
     "currentPassword": "Contraseña Actual",

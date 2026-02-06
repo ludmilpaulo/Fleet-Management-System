@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -26,11 +26,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { initializeAuth } from '@/store/slices/authSlice';
 import { useTranslation } from 'react-i18next';
+import { API_CONFIG } from '@/config/api';
+
+interface LandingStats {
+  vehicles_orchestrated: string;
+  compliance_adherence: string;
+  automation_coverage: string;
+  average_response: string;
+  trusted_by_teams: string[];
+  readiness_by_depot?: number[];
+  readiness_change_pct?: number;
+  fleet_status?: string;
+  active_hubs?: number;
+}
 
 export default function Home() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const [landingStats, setLandingStats] = useState<LandingStats | null>(null);
 
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
@@ -38,6 +52,7 @@ export default function Home() {
     { code: 'en', label: t('language.en') },
     { code: 'pt', label: t('language.pt') },
     { code: 'es', label: t('language.es') },
+    { code: 'fr', label: t('language.fr') },
   ];
 
   const changeLanguage = (code: string) => {
@@ -45,9 +60,23 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Initialize auth state from localStorage
     dispatch(initializeAuth());
   }, [dispatch]);
+
+  useEffect(() => {
+    const fetchLandingStats = async () => {
+      try {
+        const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LANDING_STATS}`);
+        if (res.ok) {
+          const data = await res.json();
+          setLandingStats(data);
+        }
+      } catch {
+        // Fallback to translations if API fails
+      }
+    };
+    fetchLandingStats();
+  }, []);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
@@ -86,12 +115,23 @@ export default function Home() {
     value: string;
     context: string;
   }>;
-  const stats = statsTranslations.map((item, idx) => ({
-    ...item,
-    icon: [LineChart, ShieldCheck, Activity, BadgeCheck][idx] || LineChart,
-  }));
+  const stats = statsTranslations.map((item, idx) => {
+    const backendValues = landingStats
+      ? [
+          landingStats.vehicles_orchestrated,
+          landingStats.compliance_adherence,
+          landingStats.average_response,
+          landingStats.automation_coverage,
+        ]
+      : [item.value, item.value, item.value, item.value];
+    return {
+      ...item,
+      value: backendValues[idx] ?? item.value,
+      icon: [LineChart, ShieldCheck, Activity, BadgeCheck][idx] || LineChart,
+    };
+  });
 
-  const trustSignals = t('trustSignals', { returnObjects: true }) as string[];
+  const trustSignals = (landingStats?.trusted_by_teams ?? t('trustSignals', { returnObjects: true })) as string[];
 
   const workflowStepsTranslations = t('workflow.steps', { returnObjects: true }) as Array<{
     pill: string;
@@ -226,10 +266,22 @@ export default function Home() {
             <Card className="relative glass-dark border-white/10 rounded-[32px] p-8 space-y-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Live snapshot</p>
-                  <p className="text-2xl font-semibold text-white mt-1">Fleet status</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{t('liveSnapshot.title')}</p>
+                  <p className="text-2xl font-semibold text-white mt-1">{t('liveSnapshot.fleetStatus')}</p>
                 </div>
-                <div className="pill bg-emerald-400/10 text-emerald-200 border-emerald-400/20">Healthy</div>
+                <div className={`pill border ${
+                  (landingStats?.fleet_status ?? 'Healthy') === 'Critical'
+                    ? 'bg-red-400/10 text-red-200 border-red-400/20'
+                    : (landingStats?.fleet_status ?? 'Healthy') === 'Warning'
+                    ? 'bg-amber-400/10 text-amber-200 border-amber-400/20'
+                    : 'bg-emerald-400/10 text-emerald-200 border-emerald-400/20'
+                }`}>
+                  {landingStats?.fleet_status === 'Critical'
+                    ? t('liveSnapshot.critical')
+                    : landingStats?.fleet_status === 'Warning'
+                    ? t('liveSnapshot.warning')
+                    : t('liveSnapshot.healthy')}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {stats.slice(0, 2).map((item) => {
@@ -245,12 +297,17 @@ export default function Home() {
               </div>
               <div className="rounded-3xl bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-purple-500/20 border border-white/10 p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-slate-200">Readiness across depots</p>
-                  <span className="text-xs text-emerald-200">+7.4% vs last week</span>
+                  <p className="text-sm text-slate-200">{t('liveSnapshot.readinessAcrossDepots')}</p>
+                  <span className={`text-xs ${
+                    (landingStats?.readiness_change_pct ?? 0) >= 0 ? 'text-emerald-200' : 'text-red-200'
+                  }`}>
+                    {(landingStats?.readiness_change_pct ?? 7.4) >= 0 ? '+' : ''}
+                    {landingStats?.readiness_change_pct ?? 7.4}% {t('liveSnapshot.vsLastWeek')}
+                  </span>
                 </div>
                 <div className="h-24 bg-black/20 rounded-2xl relative overflow-hidden">
                   <div className="absolute inset-0 flex items-end gap-1 px-4 pb-3">
-                    {[35, 45, 30, 60, 50, 70, 90].map((height, idx) => (
+                    {(landingStats?.readiness_by_depot ?? [35, 45, 30, 60, 50, 70, 90]).map((height, idx) => (
                       <div
                         key={idx}
                         className="flex-1 rounded-full bg-gradient-to-t from-blue-500/40 via-purple-500/50 to-pink-500/60"
@@ -260,8 +317,8 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-300">
-                  <span>Northern region</span>
-                  <span>Live telemetry • 4 hubs</span>
+                  <span>{t('liveSnapshot.platformWide')}</span>
+                  <span>{t('liveSnapshot.liveTelemetry')} • {landingStats?.active_hubs ?? 4} {t('liveSnapshot.hubs')}</span>
                 </div>
               </div>
             </Card>
@@ -513,24 +570,28 @@ export default function Home() {
               <p className="text-xs text-slate-500">{t('footer.copyright')}</p>
             </div>
           </div>
-          <div className="flex gap-6 text-xs uppercase tracking-[0.35em]">
-            {(t('footer.links', { returnObjects: true }) as string[]).map((link) => {
-              const linkMap: Record<string, string> = {
-                Platform: '/platform',
-                Security: '/security',
-                Contact: '/contact',
-              };
-              const href = linkMap[link] || '#';
-              return (
-                <Link
-                  key={link}
-                  href={href}
-                  className="text-slate-500 hover:text-white transition-colors cursor-pointer"
-                >
-                  {link}
-                </Link>
-              );
-            })}
+          <div className="flex flex-wrap gap-4 md:gap-6 text-xs uppercase tracking-[0.35em]">
+            <Link href="/platform" className="text-slate-500 hover:text-white transition-colors cursor-pointer">
+              Platform
+            </Link>
+            <Link href="/security" className="text-slate-500 hover:text-white transition-colors cursor-pointer">
+              Security
+            </Link>
+            <Link href="/contact" className="text-slate-500 hover:text-white transition-colors cursor-pointer">
+              Contact
+            </Link>
+            <Link href="/terms" className="text-slate-500 hover:text-white transition-colors cursor-pointer">
+              Terms
+            </Link>
+            <Link href="/privacy" className="text-slate-500 hover:text-white transition-colors cursor-pointer">
+              Privacy
+            </Link>
+            <Link href="/faq" className="text-slate-500 hover:text-white transition-colors cursor-pointer">
+              FAQ
+            </Link>
+          </div>
+          <div className="text-xs text-slate-500 mt-2">
+            Powered by <a href="https://maindo.digital" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors">Maindo Digital Agency</a>
           </div>
         </div>
       </footer>

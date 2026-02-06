@@ -41,11 +41,20 @@ class DayToDayOperationsTest:
     """Comprehensive test suite for day-to-day operations"""
     
     def __init__(self, api_base_url: str = "http://localhost:8000"):
-        self.api_base_url = api_base_url
+        self.api_base_url = api_base_url.rstrip('/')
         self.client = APIClient()
         self.results: List[TestResult] = []
         self.test_data: Dict = {}
         self.auth_tokens: Dict[str, str] = {}
+    
+    def _path(self, url_or_endpoint: str) -> str:
+        """Get path for Django test client (uses path not full URL)"""
+        if url_or_endpoint.startswith('http'):
+            from urllib.parse import urlparse
+            return urlparse(url_or_endpoint).path or '/'
+        if url_or_endpoint.startswith('/'):
+            return url_or_endpoint
+        return f"/{url_or_endpoint.lstrip('/')}"
         
     def log_result(self, test_name: str, passed: bool, message: str = "", data: dict = None):
         """Log test result"""
@@ -84,6 +93,29 @@ class DayToDayOperationsTest:
             # Create test users for each role
             users = {}
             roles = ['admin', 'staff', 'driver', 'inspector']
+            
+            # Create platform admin (superuser)
+            platform_admin, _ = User.objects.get_or_create(
+                username='test_platform_admin',
+                defaults={
+                    'first_name': 'Platform',
+                    'last_name': 'Admin',
+                    'email': 'platform@test.com',
+                    'role': 'admin',
+                    'company': company,
+                    'is_active': True,
+                    'is_superuser': True,
+                    'is_staff': True,
+                }
+            )
+            if not platform_admin.is_superuser:
+                platform_admin.is_superuser = True
+                platform_admin.is_staff = True
+                platform_admin.save()
+            platform_admin.set_password('testpass123')
+            platform_admin.save()
+            users['platform_admin'] = platform_admin
+            self.log_result("Setup User (platform_admin)", True, "Username: test_platform_admin")
             
             for role in roles:
                 username = f'test_{role}'
@@ -154,11 +186,15 @@ class DayToDayOperationsTest:
         print("="*80)
         
         users = self.test_data.get('users', {})
+        roles_to_test = ['admin', 'staff', 'driver', 'inspector', 'platform_admin']
         
-        for role, user in users.items():
+        for role in roles_to_test:
+            user = users.get(role)
+            if not user:
+                continue
             # Test login
             response = self.client.post(
-                f'{self.api_base_url}/api/account/login/',
+                self._path(f'{self.api_base_url}/api/account/login/'),
                 {'username': user.username, 'password': 'testpass123'},
                 format='json'
             )
@@ -177,7 +213,7 @@ class DayToDayOperationsTest:
             # Test profile access
             if role in self.auth_tokens:
                 self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.auth_tokens[role]}')
-                profile_response = self.client.get(f'{self.api_base_url}/api/account/profile/')
+                profile_response = self.client.get(self._path(f'{self.api_base_url}/api/account/profile/'))
                 if profile_response.status_code == 200:
                     self.log_result(f"Profile Access ({role})", True)
                 else:
@@ -200,7 +236,7 @@ class DayToDayOperationsTest:
         company = self.test_data['company']
         
         # List vehicles
-        response = self.client.get(f'{self.api_base_url}/api/fleet/vehicles/')
+        response = self.client.get(self._path(f'{self.api_base_url}/api/fleet/vehicles/'))
         if response.status_code == 200:
             vehicles = response.json()
             self.log_result("List Vehicles", True, f"Found {len(vehicles)} vehicles")
@@ -208,21 +244,25 @@ class DayToDayOperationsTest:
             self.log_result("List Vehicles", False, f"Status: {response.status_code}")
         
         # Create vehicle
+        unique_reg = f'TNEW-{int(datetime.now().timestamp()) % 1000000}'
         new_vehicle_data = {
-            'reg_number': 'TEST-NEW-001',
+            'reg_number': unique_reg,
             'make': 'Toyota',
             'model': 'Camry',
             'year': 2024,
             'status': 'ACTIVE',
             'fuel_type': 'PETROL',
             'mileage': 0,
-            'org': company.id
         }
         response = self.client.post(
-            f'{self.api_base_url}/api/fleet/vehicles/',
+            self._path(f'{self.api_base_url}/api/fleet/vehicles/'),
             new_vehicle_data,
             format='json'
         )
+        if response.status_code in [200, 201]:
+            vehicle_data = response.json()
+            vehicle_id = vehicle_data.get('id')
+            self.log_result("Create Vehicle", True, f"Vehicle ID: {vehicle_id}")
         if response.status_code in [200, 201]:
             vehicle_data = response.json()
             vehicle_id = vehicle_data.get('id')
@@ -232,7 +272,7 @@ class DayToDayOperationsTest:
             if vehicle_id:
                 update_data = {'mileage': 5000}
                 response = self.client.patch(
-                    f'{self.api_base_url}/api/fleet/vehicles/{vehicle_id}/',
+                    self._path(f'{self.api_base_url}/api/fleet/vehicles/{vehicle_id}/'),
                     update_data,
                     format='json'
                 )
@@ -242,13 +282,14 @@ class DayToDayOperationsTest:
                     self.log_result("Update Vehicle", False, f"Status: {response.status_code}")
                 
                 # Get vehicle details
-                response = self.client.get(f'{self.api_base_url}/api/fleet/vehicles/{vehicle_id}/')
+                response = self.client.get(self._path(f'{self.api_base_url}/api/fleet/vehicles/{vehicle_id}/'))
                 if response.status_code == 200:
                     self.log_result("Get Vehicle Details", True)
                 else:
                     self.log_result("Get Vehicle Details", False, f"Status: {response.status_code}")
         else:
-            self.log_result("Create Vehicle", False, f"Status: {response.status_code}")
+            err_msg = response.json() if response.content else {}
+            self.log_result("Create Vehicle", False, f"Status: {response.status_code} - {err_msg}")
     
     # ==================== INSPECTION TESTS ====================
     
@@ -259,33 +300,49 @@ class DayToDayOperationsTest:
         print("="*80)
         
         inspector_token = self.auth_tokens.get('inspector')
-        if not inspector_token:
-            self.log_result("Inspection Operations", False, "Inspector token not available")
+        driver_token = self.auth_tokens.get('driver')
+        if not inspector_token or not driver_token:
+            self.log_result("Inspection Operations", False, "Inspector or driver token not available")
             return
         
-        self.client.credentials(HTTP_AUTHORIZATION=f'Token {inspector_token}')
         vehicles = self.test_data.get('vehicles', [])
-        inspector = self.test_data['users']['inspector']
-        
         if not vehicles:
             self.log_result("Inspection Operations", False, "No vehicles available")
             return
         
         vehicle = vehicles[0]
         
-        # Create inspection
-        inspection_data = {
+        # Driver must start shift first (shift start sets driver=request.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {driver_token}')
+        shift_start_data = {
             'vehicle': vehicle.id,
-            'inspector': inspector.id,
-            'inspection_date': datetime.now().isoformat(),
-            'odometer_reading': vehicle.mileage + 100,
-            'passed': True,
+            'start_address': '123 Test Street',
+            'notes': 'Test shift for inspection'
+        }
+        shift_resp = self.client.post(
+            self._path(f'{self.api_base_url}/api/fleet/shifts/start/'),
+            shift_start_data,
+            format='json'
+        )
+        if shift_resp.status_code not in [200, 201]:
+            err = shift_resp.json() if shift_resp.content else {}
+            self.log_result("Create Inspection", False, f"Need shift first. Start shift: {shift_resp.status_code} - {err}")
+            return
+        shift_id = shift_resp.json().get('id')
+        if not shift_id:
+            self.log_result("Create Inspection", False, "No shift ID from start shift")
+            return
+
+        # Inspector creates inspection for the shift
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {inspector_token}')
+        inspection_data = {
+            'shift': shift_id,
+            'type': 'START',
             'notes': 'Test inspection',
-            'next_inspection_due': (datetime.now() + timedelta(days=90)).isoformat()
         }
         
         response = self.client.post(
-            f'{self.api_base_url}/api/inspections/inspections/',
+            self._path(f'{self.api_base_url}/api/inspections/inspections/'),
             inspection_data,
             format='json'
         )
@@ -300,23 +357,21 @@ class DayToDayOperationsTest:
                 items_data = [
                     {
                         'inspection': inspection_id,
-                        'category': 'Pre-Trip',
-                        'item_name': 'Engine Oil',
-                        'status': 'pass',
+                        'part': 'ENGINE',
+                        'status': 'PASS',
                         'notes': 'Oil level normal'
                     },
                     {
                         'inspection': inspection_id,
-                        'category': 'Pre-Trip',
-                        'item_name': 'Tire Pressure',
-                        'status': 'pass',
+                        'part': 'TYRES',
+                        'status': 'PASS',
                         'notes': 'All tires properly inflated'
                     }
                 ]
                 
                 for item_data in items_data:
                     response = self.client.post(
-                        f'{self.api_base_url}/api/inspections/inspection-items/',
+                        self._path(f'{self.api_base_url}/api/inspections/inspection-items/'),
                         item_data,
                         format='json'
                     )
@@ -326,14 +381,14 @@ class DayToDayOperationsTest:
                         self.log_result("Add Inspection Item", False, f"Status: {response.status_code}")
                 
                 # Get inspection details
-                response = self.client.get(f'{self.api_base_url}/api/inspections/inspections/{inspection_id}/')
+                response = self.client.get(self._path(f'{self.api_base_url}/api/inspections/inspections/{inspection_id}/'))
                 if response.status_code == 200:
                     self.log_result("Get Inspection Details", True)
                 else:
                     self.log_result("Get Inspection Details", False, f"Status: {response.status_code}")
                 
                 # List inspections
-                response = self.client.get(f'{self.api_base_url}/api/inspections/inspections/')
+                response = self.client.get(self._path(f'{self.api_base_url}/api/inspections/inspections/'))
                 if response.status_code == 200:
                     inspections = response.json()
                     self.log_result("List Inspections", True, f"Found {len(inspections)} inspections")
@@ -373,7 +428,7 @@ class DayToDayOperationsTest:
         }
         
         response = self.client.post(
-            f'{self.api_base_url}/api/fleet/shifts/start/',
+            self._path(f'{self.api_base_url}/api/fleet/shifts/start/'),
             shift_start_data,
             format='json'
         )
@@ -391,7 +446,7 @@ class DayToDayOperationsTest:
                 }
                 
                 response = self.client.post(
-                    f'{self.api_base_url}/api/fleet/shifts/{shift_id}/end/',
+                    self._path(f'{self.api_base_url}/api/fleet/shifts/{shift_id}/end/'),
                     shift_end_data,
                     format='json'
                 )
@@ -402,14 +457,15 @@ class DayToDayOperationsTest:
                     self.log_result("End Shift", False, f"Status: {response.status_code}")
                 
                 # List shifts
-                response = self.client.get(f'{self.api_base_url}/api/fleet/shifts/')
+                response = self.client.get(self._path(f'{self.api_base_url}/api/fleet/shifts/'))
                 if response.status_code == 200:
                     shifts = response.json()
                     self.log_result("List Shifts", True, f"Found {len(shifts)} shifts")
                 else:
                     self.log_result("List Shifts", False, f"Status: {response.status_code}")
         else:
-            self.log_result("Start Shift", False, f"Status: {response.status_code}")
+            err = response.json() if response.content else {}
+            self.log_result("Start Shift", False, f"Status: {response.status_code} - {err}")
     
     # ==================== ISSUE TESTS ====================
     
@@ -434,18 +490,17 @@ class DayToDayOperationsTest:
         
         vehicle = vehicles[0]
         
-        # Create issue
+        # Create issue (title, description, vehicle, category, severity required)
         issue_data = {
             'vehicle': vehicle.id,
-            'reported_by': driver.id,
-            'issue_type': 'mechanical',
-            'priority': 'high',
-            'status': 'open',
-            'description': 'Test issue: Engine making unusual noise'
+            'title': 'Engine making unusual noise',
+            'description': 'Test issue: Engine making unusual noise during acceleration',
+            'category': 'MECHANICAL',
+            'severity': 'HIGH',
         }
         
         response = self.client.post(
-            f'{self.api_base_url}/api/issues/issues/',
+            self._path(f'{self.api_base_url}/api/issues/issues/'),
             issue_data,
             format='json'
         )
@@ -457,9 +512,9 @@ class DayToDayOperationsTest:
             
             if issue_id:
                 # Update issue status
-                update_data = {'status': 'in_progress'}
+                update_data = {'status': 'IN_PROGRESS'}
                 response = self.client.patch(
-                    f'{self.api_base_url}/api/issues/issues/{issue_id}/',
+                    self._path(f'{self.api_base_url}/api/issues/issues/{issue_id}/'),
                     update_data,
                     format='json'
                 )
@@ -469,7 +524,7 @@ class DayToDayOperationsTest:
                     self.log_result("Update Issue", False, f"Status: {response.status_code}")
                 
                 # List issues
-                response = self.client.get(f'{self.api_base_url}/api/issues/issues/')
+                response = self.client.get(self._path(f'{self.api_base_url}/api/issues/issues/'))
                 if response.status_code == 200:
                     issues = response.json()
                     self.log_result("List Issues", True, f"Found {len(issues)} issues")
@@ -497,12 +552,59 @@ class DayToDayOperationsTest:
             self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
             
             # Test dashboard stats endpoint
-            response = self.client.get(f'{self.api_base_url}/api/fleet/stats/dashboard/')
+            response = self.client.get(self._path(f'{self.api_base_url}/api/fleet/stats/dashboard/'))
             if response.status_code == 200:
                 stats = response.json()
                 self.log_result(f"Dashboard Stats ({role})", True, f"Stats retrieved")
             else:
                 self.log_result(f"Dashboard Stats ({role})", False, f"Status: {response.status_code}")
+    
+    # ==================== PLATFORM ADMIN TESTS ====================
+    
+    def test_platform_admin_operations(self):
+        """Test platform admin operations (superuser only)"""
+        print("\n" + "="*80)
+        print("PLATFORM ADMIN TESTS")
+        print("="*80)
+        
+        pa_token = self.auth_tokens.get('platform_admin')
+        if not pa_token:
+            self.log_result("Platform Admin Operations", False, "Platform admin token not available")
+            return
+        
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {pa_token}')
+        base = f'{self.api_base_url}/api/platform-admin'
+        
+        # Platform stats
+        response = self.client.get(self._path(f'{base}/stats/'))
+        if response.status_code == 200:
+            self.log_result("Platform Admin Stats", True)
+        else:
+            self.log_result("Platform Admin Stats", False, f"Status: {response.status_code}")
+        
+        # List companies
+        response = self.client.get(self._path(f'{base}/companies/'))
+        if response.status_code == 200:
+            data = response.json()
+            companies = data.get('results', data) if isinstance(data, dict) else data
+            count = len(companies) if isinstance(companies, list) else companies.get('count', 0)
+            self.log_result("Platform Admin List Companies", True, f"Found {count} companies")
+        else:
+            self.log_result("Platform Admin List Companies", False, f"Status: {response.status_code}")
+        
+        # List users (platform-wide)
+        response = self.client.get(self._path(f'{base}/users/'))
+        if response.status_code == 200:
+            self.log_result("Platform Admin List Users", True)
+        else:
+            self.log_result("Platform Admin List Users", False, f"Status: {response.status_code}")
+        
+        # List vehicles (platform-wide)
+        response = self.client.get(self._path(f'{base}/vehicles/'))
+        if response.status_code == 200:
+            self.log_result("Platform Admin List Vehicles", True)
+        else:
+            self.log_result("Platform Admin List Vehicles", False, f"Status: {response.status_code}")
     
     # ==================== USER MANAGEMENT TESTS (Admin Only) ====================
     
@@ -520,7 +622,7 @@ class DayToDayOperationsTest:
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {admin_token}')
         
         # List users
-        response = self.client.get(f'{self.api_base_url}/api/account/users/')
+        response = self.client.get(self._path(f'{self.api_base_url}/api/account/users/'))
         if response.status_code == 200:
             users = response.json()
             self.log_result("List Users", True, f"Found {len(users)} users")
@@ -528,7 +630,7 @@ class DayToDayOperationsTest:
             self.log_result("List Users", False, f"Status: {response.status_code}")
         
         # Get user stats
-        response = self.client.get(f'{self.api_base_url}/api/account/stats/')
+        response = self.client.get(self._path(f'{self.api_base_url}/api/account/stats/'))
         if response.status_code == 200:
             stats = response.json()
             self.log_result("Get User Stats", True)
@@ -559,6 +661,7 @@ class DayToDayOperationsTest:
         self.test_shift_operations()
         self.test_issue_operations()
         self.test_user_management()
+        self.test_platform_admin_operations()
         
         # Print summary
         self.print_summary()

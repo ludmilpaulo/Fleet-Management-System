@@ -1,9 +1,24 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, Company, CompanyStats } from '../types';
 
-// Use IP address for iOS simulator and Android device compatibility
-// Default to 192.168.1.110 (update this to your computer's IP if different)
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.110:8000/api';
+// Production API for iOS production builds, dev API for development
+const getApiBaseUrl = (): string => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  
+  // For production builds, use production API
+  // __DEV__ is automatically false in production builds (EAS build, App Store, etc.)
+  if (!__DEV__) {
+    // Production API URL - iOS production builds go straight to production
+    return 'https://taki.pythonanywhere.com/api';
+  }
+  
+  // Development: Use IP address for iOS simulator and Android device compatibility
+  return 'http://192.168.1.110:8000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Log API configuration on initialization
 console.log('[API Service] Base URL:', API_BASE_URL);

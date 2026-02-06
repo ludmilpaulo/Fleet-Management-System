@@ -54,7 +54,7 @@ class WebOperationsTest {
         console.log('='.repeat(80));
 
         this.browser = await chromium.launch({ 
-            headless: false,
+            headless: process.env.HEADLESS !== 'false',
             timeout: 30000
         });
         this.context = await this.browser.newContext({

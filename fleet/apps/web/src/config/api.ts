@@ -86,6 +86,9 @@ export const API_CONFIG = {
       LOGOUT: '/account/logout/',
       ME: '/account/profile/',
     },
+
+    // Public landing page
+    LANDING_STATS: '/account/landing-stats/',
     
     // Vehicles
     VEHICLES: {

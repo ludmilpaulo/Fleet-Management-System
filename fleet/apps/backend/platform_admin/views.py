@@ -175,10 +175,21 @@ def deactivate_company(request, company_id):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, IsPlatformAdmin])
 def extend_trial(request, company_id):
-    """Extend trial period for a company"""
+    """Extend trial period for a company (only if trial not yet used)"""
     try:
         company = Company.objects.get(id=company_id)
-        days = request.data.get('days', 14)
+        # Mark trial as used if it has already expired (one trial per company)
+        if company.trial_ends_at and timezone.now() > company.trial_ends_at and not company.trial_used:
+            company.trial_used = True
+            company.subscription_status = 'expired'
+            company.is_trial_active = False
+            company.save()
+        if company.trial_used:
+            return Response(
+                {'error': 'Company has already used its one trial period. No re-trial allowed.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        days = request.data.get('days', 7)
         
         if company.trial_ends_at:
             company.trial_ends_at += timedelta(days=days)
@@ -221,6 +232,7 @@ def upgrade_company_plan(request, company_id):
         company.subscription_plan = plan_name
         company.subscription_status = 'active'
         company.is_trial_active = False
+        company.trial_used = True  # One trial per company - they've converted to paid
         company.subscription_started_at = timezone.now()
         
         if billing_cycle == 'yearly':
@@ -259,6 +271,98 @@ def upgrade_company_plan(request, company_id):
         )
         
         return Response({'message': f'Company upgraded to {plan.display_name} plan'})
+    except Company.DoesNotExist:
+        return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, IsPlatformAdmin])
+def activate_after_payment(request, company_id):
+    """Activate company subscription after proof of payment (manual verification by platform admin)"""
+    try:
+        company = Company.objects.get(id=company_id)
+        plan_name = request.data.get('plan')
+        payment_reference = request.data.get('payment_reference')
+        amount = request.data.get('amount')
+        billing_cycle = request.data.get('billing_cycle', 'monthly')
+        notes = request.data.get('notes', '')
+        
+        if not plan_name or not payment_reference:
+            return Response(
+                {'error': 'plan and payment_reference are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            plan = SubscriptionPlan.objects.get(name=plan_name)
+        except SubscriptionPlan.DoesNotExist:
+            return Response({'error': 'Plan not found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Use plan price if amount not provided
+        paid_amount = amount if amount is not None else (
+            plan.yearly_price if billing_cycle == 'yearly' else plan.monthly_price
+        )
+        
+        # Activate company
+        company.subscription_plan = plan_name
+        company.subscription_status = 'active'
+        company.is_active = True
+        company.is_trial_active = False
+        company.trial_used = True
+        company.subscription_started_at = timezone.now()
+        if billing_cycle == 'yearly':
+            company.subscription_ends_at = timezone.now() + timedelta(days=365)
+        else:
+            company.subscription_ends_at = timezone.now() + timedelta(days=30)
+        company.save()
+        
+        # Create or update CompanySubscription
+        subscription, created = CompanySubscription.objects.update_or_create(
+            company=company,
+            defaults={
+                'plan': plan,
+                'status': 'active',
+                'billing_cycle': billing_cycle,
+                'current_period_start': timezone.now(),
+                'current_period_end': company.subscription_ends_at,
+                'trial_ends_at': company.trial_ends_at or timezone.now(),
+                'amount': paid_amount,
+            }
+        )
+        
+        # Create BillingHistory with paid status (proof of payment)
+        import uuid
+        invoice_number = f"INV-{company_id}-{uuid.uuid4().hex[:8].upper()}"
+        due_date = timezone.now() + timedelta(days=30)
+        BillingHistory.objects.create(
+            company=company,
+            subscription=subscription,
+            invoice_number=invoice_number,
+            amount=paid_amount,
+            status='paid',
+            due_date=due_date,
+            paid_at=timezone.now(),
+            transaction_id=payment_reference,
+            notes=notes or f'Activated after proof of payment. Ref: {payment_reference}',
+        )
+        
+        AuditLog.objects.create(
+            action='subscription_activated',
+            description=f'Company {company.name} activated after payment proof (ref: {payment_reference})',
+            company=company,
+            user=request.user,
+            metadata={
+                'action': 'activate_after_payment',
+                'plan': plan_name,
+                'payment_reference': payment_reference,
+                'company_id': company_id,
+            }
+        )
+        
+        return Response({
+            'message': f'Company activated successfully. Invoice {invoice_number} marked as paid.',
+            'invoice_number': invoice_number,
+        })
     except Company.DoesNotExist:
         return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
 

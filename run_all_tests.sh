@@ -68,10 +68,10 @@ if [ "$BACKEND_OK" = true ]; then
     echo -e "${BLUE}========================================${NC}"
     
     cd "$BACKEND_DIR"
-    python3 ../test_day_to_day_operations.py --api-url "$API_URL" 2>&1 | tee "../$RESULTS_DIR/backend_tests.log"
+    python3 ../../test_day_to_day_operations.py --api-url "$API_URL" 2>&1 | tee "../../$RESULTS_DIR/backend_tests.log"
     cd - > /dev/null
     
-    # Move result files
+    # Move result files (from project root)
     mv test_results_*.json "$RESULTS_DIR/" 2>/dev/null || true
     echo ""
 else

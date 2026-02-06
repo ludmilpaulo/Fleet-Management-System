@@ -123,7 +123,10 @@ def start_shift(request):
     """Start a new shift"""
     serializer = ShiftCreateSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
-        shift = serializer.save(driver=request.user)
+        save_kwargs = {'driver': request.user}
+        if 'start_at' not in serializer.validated_data or serializer.validated_data.get('start_at') is None:
+            save_kwargs['start_at'] = timezone.now()
+        shift = serializer.save(**save_kwargs)
         return Response(ShiftSerializer(shift).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

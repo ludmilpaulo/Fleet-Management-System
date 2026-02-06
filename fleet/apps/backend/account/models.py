@@ -88,6 +88,7 @@ class Company(models.Model):
     is_active = models.BooleanField(default=True, help_text="Whether the company is active")
     is_trial_active = models.BooleanField(default=True, help_text="Whether trial is active")
     is_payment_overdue = models.BooleanField(default=False, help_text="Whether payment is overdue")
+    trial_used = models.BooleanField(default=False, help_text="Whether company has used its one trial period (no re-trial)")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -100,11 +101,15 @@ class Company(models.Model):
         ordering = ['name']
     
     def save(self, *args, **kwargs):
-        # Set trial end date if not set and this is a new company
+        from datetime import timedelta
+        # New company: 1-week trial only
         if not self.pk and not self.trial_ends_at:
-            from datetime import timedelta
-            self.trial_ends_at = timezone.now() + timedelta(days=14)  # 2 weeks trial
-        
+            self.trial_ends_at = timezone.now() + timedelta(days=7)
+        # Mark trial as used when trial has expired (one trial per company)
+        if self.pk and self.trial_ends_at and timezone.now() > self.trial_ends_at and self.subscription_status == 'trial':
+            self.trial_used = True
+            self.subscription_status = 'expired'
+            self.is_trial_active = False
         super().save(*args, **kwargs)
     
     def is_trial_expired(self):

@@ -49,6 +49,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
     { code: 'en', name: t('language.en'), native: 'English' },
     { code: 'pt', name: t('language.pt'), native: 'Português' },
     { code: 'es', name: t('language.es'), native: 'Español' },
+    { code: 'fr', name: t('language.fr'), native: 'Français' },
   ]
   
   const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0]
@@ -148,7 +149,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
       setLanguageModalVisible(false)
     } catch (error) {
       console.error('Error changing language:', error)
-      Alert.alert(t('common.error'), 'Failed to change language')
+      Alert.alert(t('common.error'), t('settings.failedToChangeLanguage'))
     }
   }
 

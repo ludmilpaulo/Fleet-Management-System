@@ -149,6 +149,8 @@ class ShiftSerializer(serializers.ModelSerializer):
 class ShiftCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating shifts"""
     
+    start_at = serializers.DateTimeField(required=False)
+    
     class Meta:
         model = Shift
         fields = [
