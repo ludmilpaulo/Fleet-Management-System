@@ -1,0 +1,8 @@
+# Exclude package-lock.json to avoid mixed lockfile warning (use yarn.lock only)
+**/package-lock.json
+
+# Standard build artifacts
+.expo/
+node_modules/.cache/
+*.log
+.DS_Store

@@ -38,8 +38,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://taki.pythonanywhere.com/api"
-      },
-      "prebuildCommand": "cd . && node scripts/pre-build-hook.js || true"
+      }
     }
   },
   "submit": {

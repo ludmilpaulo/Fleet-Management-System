@@ -21,6 +21,8 @@ import KeyTrackerScreen from './src/screens/ble/KeyTrackerScreen'
 import LocationScreen from './src/screens/location/LocationScreen'
 import NotificationsScreen from './src/screens/notifications/NotificationsScreen'
 import SettingsScreen from './src/screens/settings/SettingsScreen'
+import { VehiclesScreen } from './src/screens/vehicles/VehiclesScreen'
+import AddVehicleScreen from './src/screens/vehicles/AddVehicleScreen'
 
 // Import inspection screens
 import InspectionDetailScreen from './src/screens/inspections/InspectionDetailScreen'
@@ -53,6 +55,20 @@ function InspectionsStack() {
   )
 }
 
+// Stack navigator for vehicles (list + add)
+function VehiclesStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="VehiclesList" component={VehiclesScreen} />
+      <Stack.Screen name="AddVehicle" component={AddVehicleScreen} />
+    </Stack.Navigator>
+  )
+}
+
 // Main tab navigator
 function MainTabs() {
   const { t } = useTranslation()
@@ -65,6 +81,8 @@ function MainTabs() {
 
           if (route.name === 'Dashboard') {
             iconName = focused ? 'home' : 'home-outline'
+          } else if (route.name === 'Vehicles') {
+            iconName = focused ? 'car' : 'car-outline'
           } else if (route.name === 'Inspections') {
             iconName = focused ? 'checkmark-circle' : 'checkmark-circle-outline'
           } else if (route.name === 'Camera') {
@@ -103,6 +121,11 @@ function MainTabs() {
         name="Dashboard" 
         component={DashboardScreen}
         options={{ tabBarLabel: t('tabs.dashboard') }}
+      />
+      <Tab.Screen 
+        name="Vehicles" 
+        component={VehiclesStack}
+        options={{ tabBarLabel: t('tabs.vehicles') }}
       />
       <Tab.Screen 
         name="Inspections" 
